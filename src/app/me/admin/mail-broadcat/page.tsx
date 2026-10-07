@@ -14,7 +14,7 @@ export const maxDuration = 300;
 export default async function MailBroadcastPage() {
     await protectAdminPage();
     const recentResult = await getRecentNewsletterBroadcastsAction();
-    const broadcasts = 'broadcasts' in recentResult ? recentResult.broadcasts : [];
+    const broadcasts = 'broadcasts' in recentResult ? recentResult.broadcasts ?? [] : [];
 
     return (
         <main className="min-h-screen bg-[#070707] px-4 py-6 text-zinc-100 sm:px-7 sm:py-9 lg:px-10">

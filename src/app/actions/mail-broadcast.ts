@@ -91,7 +91,7 @@ export async function createNewsletterBroadcastAction(input: {
                 ...(mode === 'draft'
                     ? { send: false as const }
                     : { send: true as const, ...(scheduledAt ? { scheduledAt } : {}) }),
-            }, { idempotencyKey });
+            }, { headers: { 'Idempotency-Key': idempotencyKey } });
         }
 
         if (result.error) throw new Error(result.error.message);
