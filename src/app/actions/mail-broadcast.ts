@@ -6,6 +6,8 @@ import {
     createResendClient,
     getNewsletterAudienceId,
     htmlToPlainText,
+    issueTestUnsubscribeLink,
+    removeUnsubscribeLink,
     syncAudienceUnsubscribeLinks,
     validateBroadcastFrom,
 } from '@/lib/newsletter-broadcast';
@@ -132,26 +134,29 @@ export async function getNewsletterBroadcastAction(id: string) {
 export async function sendNewsletterTestAction(input: { from: string; to: string; subject: string; html: string }) {
     const { authorized } = await verifyAdmin();
     if (!authorized) return { error: 'Unauthorized.' };
+    let testToken: string | undefined;
     try {
         if (!input || typeof input !== 'object') throw new Error('Invalid test email payload.');
         const from = validateBroadcastFrom(input.from);
         const to = input.to.trim().toLowerCase();
         if (to.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error('Enter a valid test recipient address.');
         if (!input.subject.trim() || /[\r\n]/.test(input.subject) || !input.html.trim() || input.html.length > 500_000) throw new Error('Enter a valid subject and HTML (HTML limit: 500 KB).');
-        const testHtml = appendUnsubscribeFooter(input.html)
-            .replace(/\{\{\{UNSUBSCRIBE_URL\}\}\}/g, 'https://unsub.avrxt.dev')
-            .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, 'https://resend.com');
+        const unsubscribeLink = await issueTestUnsubscribeLink(to);
+        testToken = unsubscribeLink.token;
+        const testHtml = appendUnsubscribeFooter(input.html, 'test')
+            .replace(/\{\{\{UNSUBSCRIBE_URL\}\}\}/g, unsubscribeLink.url);
         const resend = createResendClient();
         const result = await resend.emails.send({
             from,
             to,
             subject: `[TEST] ${input.subject.trim().slice(0, 190)}`,
             html: testHtml,
-            text: htmlToPlainText(testHtml),
+            text: `${htmlToPlainText(testHtml)}\n\nUnsubscribe: ${unsubscribeLink.url}`,
         });
         if (result.error) throw new Error(result.error.message);
         return { success: true };
     } catch (error) {
+        if (testToken) await removeUnsubscribeLink(testToken);
         return { error: error instanceof Error ? error.message : 'Could not send test email.' };
     }
 }

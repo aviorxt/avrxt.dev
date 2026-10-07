@@ -23,11 +23,14 @@ const templates = {
 };
 
 function withPreviewFooter(html: string) {
-    if (html.includes('{{{UNSUBSCRIBE_URL}}}') && html.includes('{{{RESEND_UNSUBSCRIBE_URL}}}')) return html;
-    const footer = `<!-- avrxt-unsubscribe-footer --><div style="margin:32px auto 0;padding:20px 12px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7280">You are receiving this email because you subscribed to avrxt updates.<br><a href="{{{UNSUBSCRIBE_URL}}}" style="color:#4b5563;text-decoration:underline">Unsubscribe from avrxt emails</a> &nbsp;·&nbsp; <a href="{{{RESEND_UNSUBSCRIBE_URL}}}" style="color:#4b5563;text-decoration:underline">Resend unsubscribe</a></div>`;
-    if (/<\/body\s*>/i.test(html)) return html.replace(/<\/body\s*>/i, `${footer}</body>`);
-    if (/<\/html\s*>/i.test(html)) return html.replace(/<\/html\s*>/i, `${footer}</html>`);
-    return `${html}\n${footer}`;
+    let content = html.replace(/<!--\s*avrxt-unsubscribe-footer\s*-->[\s\S]*?<\/div\s*>/gi, '');
+    content = content.replace(/<a\b[^>]*href=["']\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}["'][^>]*>[\s\S]*?<\/a\s*>/gi, '');
+    content = content.replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, '');
+    if (content.includes('{{{UNSUBSCRIBE_URL}}}')) return content;
+    const footer = `<!-- avrxt-unsubscribe-footer --><div style="margin:32px auto 0;padding:20px 12px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7280">You are receiving this email because you subscribed to avrxt updates.<br><a href="{{{UNSUBSCRIBE_URL}}}" style="color:#4b5563;text-decoration:underline">Unsubscribe from avrxt emails</a></div>`;
+    if (/<\/body\s*>/i.test(content)) return content.replace(/<\/body\s*>/i, `${footer}</body>`);
+    if (/<\/html\s*>/i.test(content)) return content.replace(/<\/html\s*>/i, `${footer}</html>`);
+    return `${content}\n${footer}`;
 }
 
 function formatDate(value: string | null) {
@@ -62,8 +65,7 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
         .replace(/\{\{\{FIRST_NAME\}\}\}/g, 'Alex')
         .replace(/\{\{\{LAST_NAME\}\}\}/g, 'Reader')
         .replace(/\{\{\{EMAIL\}\}\}/g, 'reader@example.com')
-        .replace(/\{\{\{UNSUBSCRIBE_URL\}\}\}/g, 'https://unsub.avrxt.dev/mail/example-key')
-        .replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, 'https://resend.com/unsubscribe'), [html]);
+        .replace(/\{\{\{UNSUBSCRIBE_URL\}\}\}/g, 'https://unsub.avrxt.dev/mail/example-key'), [html]);
 
     const insertHtml = (snippet: string) => {
         const input = htmlRef.current;

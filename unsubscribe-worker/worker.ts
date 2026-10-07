@@ -17,6 +17,7 @@ interface UnsubscribeRecord {
 }
 
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{40,60}$/;
+const TEST_AUDIENCE_ID = '__avrxt_test__';
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const AUDIENCE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
 const SECURITY_HEADERS = {
@@ -110,24 +111,27 @@ async function findRecord(token: string, env: Env): Promise<UnsubscribeRecord | 
 }
 
 async function unsubscribe(record: UnsubscribeRecord, env: Env) {
-  const resendUrl = new URL(
-    `/audiences/${encodeURIComponent(record.audience_id)}/contacts/${encodeURIComponent(record.email)}`,
-    'https://api.resend.com',
-  );
-  const resendResponse = await fetch(resendUrl, {
-    method: 'PATCH',
-    redirect: 'error',
-    signal: AbortSignal.timeout(8_000),
-    headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({ unsubscribed: true }),
-  });
-  if (!resendResponse.ok) throw new Error(`Resend update failed (${resendResponse.status})`);
+  if (record.audience_id !== TEST_AUDIENCE_ID) {
+    const resendUrl = new URL(
+      `/audiences/${encodeURIComponent(record.audience_id)}/contacts/${encodeURIComponent(record.email)}`,
+      'https://api.resend.com',
+    );
+    const resendResponse = await fetch(resendUrl, {
+      method: 'PATCH',
+      redirect: 'error',
+      signal: AbortSignal.timeout(8_000),
+      headers: {
+        authorization: `Bearer ${env.RESEND_API_KEY}`,
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({ unsubscribed: true }),
+    });
+    if (!resendResponse.ok) throw new Error(`Resend update failed (${resendResponse.status})`);
+  }
 
   const supabaseUrl = new URL('/rest/v1/newsletter_unsubscribe_tokens', env.SUPABASE_URL);
   supabaseUrl.searchParams.set('email', `eq.${record.email}`);
+  supabaseUrl.searchParams.set('audience_id', `eq.${record.audience_id}`);
   supabaseUrl.searchParams.set('unsubscribed_at', 'is.null');
   const dbResponse = await fetch(supabaseUrl, {
     method: 'PATCH',
@@ -177,11 +181,19 @@ export default {
     try {
       const record = await findRecord(token, env);
       if (!record) return page('Link unavailable', 'This unsubscribe link is invalid or expired. You can close this page.');
+      const isTestLink = record.audience_id === TEST_AUDIENCE_ID;
       if (request.method === 'POST' && !record.unsubscribed_at) {
         await unsubscribe(record, env);
-        return page('You’re unsubscribed', 'You will no longer receive avrxt newsletter broadcasts.', '', true);
+        return isTestLink
+          ? page('Test link confirmed', 'The unsubscribe link is working. Your newsletter subscription was not changed.', '', true)
+          : page('You’re unsubscribed', 'You will no longer receive avrxt newsletter broadcasts.', '', true);
       }
-      if (record.unsubscribed_at) return page('You’re unsubscribed', 'You will no longer receive avrxt newsletter broadcasts.', '', true);
+      if (record.unsubscribed_at) {
+        return isTestLink
+          ? page('Test link confirmed', 'The unsubscribe link is working. Your newsletter subscription was not changed.', '', true)
+          : page('You’re unsubscribed', 'You will no longer receive avrxt newsletter broadcasts.', '', true);
+      }
+      if (isTestLink) return page('Verify unsubscribe link', 'Confirm below to test this link. Your newsletter subscription will not be changed.', token);
       return page('Leave the mailing list?', 'Confirm below and we’ll stop sending avrxt newsletter broadcasts to this address.', token);
     } catch (error) {
       console.error('[NEWSLETTER_UNSUBSCRIBE_FAILED]', error instanceof Error ? error.name : 'unknown');
