@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { connection } from 'next/server';
 import { getMeConfigAction } from '@/app/actions/me';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import MeClient from './MeClient';
@@ -20,9 +21,9 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
     });
 }
 
-export const revalidate = 60; // Revalidate data every 60 seconds
-
 export default async function MePage() {
+    // The profile action reads Supabase session cookies; keep it out of static prerendering.
+    await connection();
     const config = await getMeConfigAction();
     return <MeClient config={config} />;
 }
