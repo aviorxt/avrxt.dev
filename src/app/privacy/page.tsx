@@ -58,7 +58,7 @@ export default function Privacy() {
                     </PolicySection>
 
                     <PolicySection number="04" title="Features and third-party services">
-                        <p>The site uses service providers to run requested features. These currently include Vercel for web hosting, Cloudflare for edge services and media delivery, Supabase for application data, Resend for newsletter delivery, and Gmail for contact and project inquiry delivery. Authentication can involve GitHub, Discord, and the OpenAuth service.</p>
+                        <p>The site uses service providers to run requested features. These currently include Vercel for web hosting, Cloudflare for edge services, media delivery, and the newsletter unsubscribe Worker, Supabase for application data, Resend for newsletter delivery, and Gmail for contact and project inquiry delivery. Authentication can involve GitHub, Discord, and the OpenAuth service.</p>
                         <p>Optional profile features may request data from Spotify, Discord/Lanyard, YouTube, and Open-Meteo for music, presence, embeds, or weather. These requests may reveal technical connection information to the service involved. Third-party sites and services have their own privacy terms and controls.</p>
                     </PolicySection>
 

@@ -1,0 +1,13 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "avrxt-newsletter-unsubscribe",
+  "main": "worker.ts",
+  "compatibility_date": "2026-08-19",
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "unsub.avrxt.dev", "custom_domain": true }
+  ],
+  "secrets": {
+    "required": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "RESEND_API_KEY"]
+  }
+}

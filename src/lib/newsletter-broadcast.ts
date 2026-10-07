@@ -46,18 +46,6 @@ export async function removeUnsubscribeLink(token: string) {
     await supabase.from('newsletter_unsubscribe_tokens').delete().eq('token_hash', hashToken(token));
 }
 
-export async function findUnsubscribeRecord(token: string) {
-    if (!/^[A-Za-z0-9_-]{40,60}$/.test(token)) return null;
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
-        .from('newsletter_unsubscribe_tokens')
-        .select('email,audience_id,unsubscribed_at')
-        .eq('token_hash', hashToken(token))
-        .maybeSingle();
-    if (error) throw new Error(`Could not verify unsubscribe key: ${error.message}`);
-    return data;
-}
-
 export async function ensureUnsubscribeProperty(resend: Resend) {
     let after: string | undefined;
     do {
