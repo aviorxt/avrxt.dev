@@ -31,11 +31,11 @@ export default async function CupcakePage() {
       <div className="fixed inset-0 z-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1a1a1a_0%,#000_70%)] opacity-80" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:40px_40px]" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-emerald-500/5 blur-[120px] rounded-full" />
+        <div className="cupcake-glow absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-full bg-white/[.025] blur-[120px] rounded-full" />
       </div>
 
       {/* Profile Header section - BMC Style */}
-      <div className="relative z-10 w-full pt-40 pb-20 flex flex-col items-center">
+      <div className="relative z-10 flex w-full flex-col items-center pb-12 pt-28 sm:pb-20 sm:pt-40">
         <Reveal direction="down" delay={0.1}>
           <div className="mb-6 relative">
             <div className="absolute inset-0 animate-pulse bg-emerald-500/20 blur-2xl rounded-full scale-110 opacity-30" />
@@ -48,7 +48,7 @@ export default async function CupcakePage() {
         </Reveal>
 
         <Reveal direction="up" delay={0.2} className="text-center px-6">
-          <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-4 italic uppercase">
+          <h1 className="mb-4 text-[clamp(2.2rem,9vw,3.75rem)] font-black italic uppercase leading-[.95] tracking-tighter">
             Support avrxt<span className="text-emerald-500">_</span>
           </h1>
           <p className="max-w-xl mx-auto text-zinc-500 text-sm md:text-base font-mono uppercase tracking-widest leading-relaxed">
@@ -61,7 +61,7 @@ export default async function CupcakePage() {
         {/* Main Support Card */}
         <div className="lg:col-span-7">
           <SpotlightBox className="rounded-[2.5rem] p-px bg-white/5 overflow-hidden">
-            <div className="bg-[#050505] rounded-[2.5rem] p-8 md:p-12">
+            <div className="rounded-3xl bg-[#050505] p-5 sm:rounded-[2.5rem] sm:p-8 md:p-12">
               <div className="flex items-center gap-3 mb-10">
                 <div className="w-10 h-10 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
                   <Coffee className="w-5 h-5 text-emerald-500" />

@@ -33,8 +33,8 @@ export default async function GuestbookPage() {
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,#1a1a1a_0%,#000_70%)]"></div>
             </div>
 
-            <div className="relative z-10 max-w-2xl mx-auto px-6 pt-32 pb-24">
-                <header className="mb-12">
+            <div className="relative z-10 mx-auto max-w-2xl px-4 pb-16 pt-24 sm:px-6 sm:pb-24 sm:pt-32">
+                <header className="mb-8 sm:mb-12">
                     <h1 className="text-4xl md:text-5xl font-bold tracking-tighter uppercase mb-4 font-mono italic gradient-heading">Guestbook</h1>
                     <p className="text-zinc-500 font-mono text-sm tracking-widest uppercase">Leave a footprint or just say hi.</p>
                 </header>

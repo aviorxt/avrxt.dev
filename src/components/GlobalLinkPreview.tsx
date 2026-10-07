@@ -23,6 +23,8 @@ export default function GlobalLinkPreview() {
   }, [pos]);
 
   useEffect(() => {
+    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
     const clearHide = () => {
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
       hideTimer.current = null;

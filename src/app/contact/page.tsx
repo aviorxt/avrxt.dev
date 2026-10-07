@@ -47,10 +47,10 @@ export default function Contact() {
     };
 
     return (
-        <main className="max-w-6xl mx-auto px-4 py-16 md:py-24 pt-40">
+        <main className="mx-auto max-w-6xl px-4 pb-16 pt-28 sm:px-6 sm:pb-24 sm:pt-40">
             <Reveal className="text-center mb-12 active">
                 <p className="text-zinc-500 mb-4 tracking-widest font-mono">// INITIATE_CONNECTION</p>
-                <h1 className="text-5xl md:text-7xl font-extrabold mb-4 font-mono text-white">
+                <h1 className="mb-4 text-[clamp(2.5rem,10vw,4.5rem)] font-extrabold leading-[.98] font-mono text-white">
                     Let&apos;s <span className="text-zinc-500">Connect_</span>
                 </h1>
                 <p className="text-lg text-zinc-400 font-mono max-w-2xl mx-auto">
@@ -58,7 +58,7 @@ export default function Contact() {
                 </p>
             </Reveal>
 
-            <Reveal className="max-w-3xl mx-auto p-6 md:p-10 border border-zinc-800 bg-black/40 backdrop-blur-xl">
+            <Reveal className="mx-auto max-w-3xl border border-zinc-800 bg-black/40 p-5 backdrop-blur-xl sm:p-8 md:p-10">
                 {formStatus.type && (
                     <div className={`mb-6 p-4 font-mono text-sm border ${formStatus.type === 'success'
                         ? 'bg-green-900/10 text-green-400 border-green-900/50'

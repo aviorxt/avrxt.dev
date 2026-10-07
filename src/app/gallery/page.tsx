@@ -16,21 +16,19 @@ export default function Gallery() {
     ];
 
     useEffect(() => {
-        // Anti-save security protocols from original site
-        const handleContextMenu = (e: MouseEvent) => e.preventDefault();
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.ctrlKey && (e.key === 's' || e.key === 'u' || e.key === 'p')) e.preventDefault();
-            if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && e.key === 'I')) e.preventDefault();
+        if (!selectedImg) return;
+        const previousOverflow = document.body.style.overflow;
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setSelectedImg(null);
         };
-
-        document.addEventListener('contextmenu', handleContextMenu);
+        document.body.style.overflow = 'hidden';
         document.addEventListener('keydown', handleKeyDown);
 
         return () => {
-            document.removeEventListener('contextmenu', handleContextMenu);
+            document.body.style.overflow = previousOverflow;
             document.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [selectedImg]);
 
     return (
         <main className={cn(
@@ -50,7 +48,7 @@ export default function Gallery() {
                     className="fixed inset-0 z-[100] flex items-center justify-center bg-black/98 backdrop-blur-3xl transition-opacity duration-500 animate-in fade-in"
                     onClick={() => setSelectedImg(null)}
                 >
-                    <button className="absolute top-10 right-10 z-[120] text-zinc-500 hover:text-white transition-all">
+                    <button type="button" aria-label="Close image viewer" onClick={() => setSelectedImg(null)} className="absolute right-4 top-[max(1rem,env(safe-area-inset-top))] z-[120] flex min-h-11 min-w-11 items-center justify-center text-zinc-300 transition-colors hover:text-white sm:right-8 sm:top-8">
                         <X className="w-8 h-8" />
                     </button>
                     <img
@@ -62,7 +60,7 @@ export default function Gallery() {
             )}
 
             {/* Header */}
-            <header className="relative z-30 w-full max-w-6xl mx-auto px-8 pt-12 flex justify-between items-center animate-fade-in">
+            <header className="relative z-30 mx-auto flex w-full max-w-6xl items-center justify-between px-4 pt-[max(1.25rem,env(safe-area-inset-top))] sm:px-8 sm:pt-12 animate-fade-in">
                 <Link href="/" className="flex items-center gap-4 group">
                     <div className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center transition-all group-hover:bg-white/10">
                         <ArrowLeft className="w-4 h-4 text-zinc-400" />
@@ -76,46 +74,47 @@ export default function Gallery() {
             </header>
 
             {/* Content */}
-            <section className="relative z-20 w-full max-w-6xl mx-auto px-8 pt-20 pb-32">
-                <div className="mb-20 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-                    <span className="text-[11px] font-mono text-zinc-500 uppercase tracking-[0.3em]"># Visual_Archive_2025</span>
-                    <h1 className="text-6xl md:text-8xl font-black tracking-tighter uppercase mb-6 italic" style={{ fontWeight: 900 }}>Vault</h1>
-                    <p className="text-lg text-zinc-400 max-w-xl leading-relaxed font-light">
+            <section className="relative z-20 mx-auto w-full max-w-6xl px-4 pb-20 pt-14 sm:px-8 sm:pb-32 sm:pt-20">
+                <div className="mb-12 animate-fade-in sm:mb-20" style={{ animationDelay: '0.2s' }}>
+                    <span className="font-mono text-[9px] uppercase tracking-[.22em] text-zinc-500 sm:text-[11px] sm:tracking-[0.3em]"># Visual_Archive_2025</span>
+                    <h1 className="mb-4 text-[clamp(3.5rem,15vw,6rem)] font-black italic uppercase leading-[.9] tracking-tighter sm:mb-6 md:text-8xl" style={{ fontWeight: 900 }}>Vault</h1>
+                    <p className="max-w-xl text-base font-light leading-7 text-zinc-400 sm:text-lg sm:leading-relaxed">
                         Secured artifacts from the digital frontier. Previews optimized for high-resolution displays.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div className="grid grid-cols-1 gap-5 sm:gap-8 md:grid-cols-2 md:gap-10">
                     {images.map((img, i) => (
-                        <div
+                        <button
+                            type="button"
                             key={img.id}
-                            className="gallery-card group cursor-pointer rounded-xl overflow-hidden animate-fade-in"
+                            aria-label={`View ${img.name} image`}
+                            className="gallery-card group w-full cursor-pointer overflow-hidden rounded-xl border border-white/10 bg-white/[.02] text-left transition-colors hover:border-white/25 animate-fade-in"
                             style={{ animationDelay: `${0.4 + (i * 0.1)}s` }}
                             onClick={() => setSelectedImg(img.src)}
                         >
-                            <div className="aspect-[16/10] overflow-hidden">
+                            <div className="aspect-[4/3] overflow-hidden sm:aspect-[16/10]">
                                 <img
                                     src={img.src}
                                     alt={img.name}
                                     className="w-full h-full object-cover transition-all duration-700 saturate-0 contrast-[1.2] group-hover:scale-105 group-hover:saturate-100 group-hover:contrast-100"
-                                    onContextMenu={(e) => e.preventDefault()}
                                 />
                             </div>
-                            <div className="p-8 border-t border-white/5">
+                            <div className="border-t border-white/5 p-4 sm:p-7">
                                 <div>
                                     <p className="text-[9px] font-mono text-zinc-600 uppercase tracking-widest mb-2">Ref. {img.id}</p>
-                                    <h3 className="text-2xl font-bold tracking-tight uppercase text-white">{img.name}</h3>
+                                    <h3 className="break-words text-xl font-bold uppercase tracking-tight text-white sm:text-2xl">{img.name}</h3>
                                     {img.description && (
-                                        <p className="font-accent text-xl text-zinc-400 mt-2 italic">{img.description}</p>
+                                    <p className="mt-2 font-accent text-lg italic text-zinc-400 sm:text-xl">{img.description}</p>
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </button>
                     ))}
                 </div>
 
-                <footer className="mt-40 pt-12 text-center border-t border-white/5">
-                    <p className="text-[10px] text-zinc-700 font-mono uppercase tracking-[0.5em]">&copy; 2025 // AVRXT.DEV // SILO_SECURED</p>
+                <footer className="mt-20 border-t border-white/5 pt-8 text-center sm:mt-40 sm:pt-12">
+                    <p className="font-mono text-[9px] uppercase tracking-[.2em] text-zinc-700 sm:text-[10px] sm:tracking-[0.5em]">&copy; 2026 // AVRXT.DEV // SILO_SECURED</p>
                 </footer>
             </section>
 

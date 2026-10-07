@@ -412,8 +412,19 @@ button:active, a:active {
 @supports not (mask-image: linear-gradient(#000, transparent)) { .home-screen::before { opacity: .08; } }
 @supports (-webkit-text-stroke: 1px white) { .home-outline-word { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.68); } }
 
-@media (hover: none) { .hover-lift:hover { transform: none; } }
-@media (hover: none) { .me-weather-widget:hover { transform: none; } }
+@media (hover: none) {
+  .hover-lift:hover, .me-weather-widget:hover, .card-3d:hover, .resend-card:hover { transform: none !important; }
+}
+
+@media (max-width: 640px) {
+  .theme-v7::before { background-size: 34px 34px; opacity: .18; }
+  .theme-v7 input, .theme-v7 textarea, .theme-v7 select { font-size: 16px; }
+  .card-3d, .link-card { will-change: auto; }
+  .card-3d { transform-style: flat; }
+  .me-v7 > .relative.z-20 { animation-duration: 500ms; }
+  .portfolio-glow, .docs-glow, .cupcake-glow { animation: none !important; filter: blur(54px); opacity: .45; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }

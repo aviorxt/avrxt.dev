@@ -116,18 +116,18 @@ export default function PortfolioClient() {
     });
 
     return (
-        <main className="min-h-screen bg-black text-white selection:bg-white/10 overflow-x-hidden pt-24 sm:pt-32 pb-20">
+        <main className="min-h-screen overflow-x-hidden bg-black pb-16 pt-20 text-white selection:bg-white/10 sm:pb-20 sm:pt-32">
             {/* Ambient Background */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[80%] h-[60%] bg-emerald-500/10 blur-[120px] rounded-full animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[90%] h-[70%] bg-blue-500/10 blur-[150px] rounded-full" />
-                <div className="absolute top-[30%] left-[40%] w-[40%] h-[40%] bg-purple-500/10 blur-[150px] rounded-full animate-pulse" />
+                <div className="portfolio-glow absolute top-[-10%] left-[-10%] w-[80%] h-[60%] bg-white/[.025] blur-[120px] rounded-full animate-pulse" />
+                <div className="portfolio-glow absolute bottom-[-10%] right-[-10%] w-[90%] h-[70%] bg-white/[.02] blur-[150px] rounded-full" />
+                <div className="portfolio-glow absolute top-[30%] left-[40%] w-[40%] h-[40%] bg-white/[.02] blur-[150px] rounded-full animate-pulse" />
                 <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.05] mix-blend-overlay"></div>
             </div>
 
-            <div className="max-w-6xl mx-auto px-6 relative z-10">
+            <div className="relative z-10 mx-auto w-full max-w-6xl px-4 sm:px-6">
                 {/* Header */}
-                <Reveal className="mb-20" direction="down" delay={0.1}>
+                <Reveal className="mb-12 sm:mb-20" direction="down" delay={0.1}>
                     <div className="flex flex-wrap items-center gap-4 mb-6">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[9px] font-mono uppercase tracking-[0.3em] text-zinc-500">
                             <Layers className="w-3 h-3" /> System_Archive
@@ -136,7 +136,7 @@ export default function PortfolioClient() {
                             <Briefcase className="w-3 h-3" /> Active: Indigo Airlines
                         </div>
                     </div>
-                    <h1 className="text-6xl md:text-9xl font-black tracking-tighter mb-8 gradient-heading leading-[0.8] py-2">
+                    <h1 className="mb-6 py-2 text-[clamp(3.15rem,14vw,6rem)] font-black leading-[.84] tracking-tighter gradient-heading sm:mb-8 md:text-9xl">
                         Portfolio.
                     </h1>
                     <p className="max-w-2xl text-zinc-400 text-base md:text-xl leading-relaxed mb-10 px-1 border-l-2 border-white/5">
@@ -184,11 +184,11 @@ export default function PortfolioClient() {
                         <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-[0.5em] whitespace-nowrap">The_Engineer_Visuals</span>
                         <div className="h-px flex-1 bg-gradient-to-r from-emerald-500/50 via-white/5 to-transparent" />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 md:gap-12">
                         {PERSONAL_PHOTOS.map((photo, i) => (
                             <Reveal key={i} delay={0.3 + (i * 0.1)} direction="up" className="group">
                                 <Tilt intensity={5}>
-                                    <div className="relative aspect-[4/5] md:aspect-[16/10] rounded-[2rem] md:rounded-[3rem] overflow-hidden border border-white/5 shadow-2xl transition-all duration-700">
+                                    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl border border-white/5 shadow-2xl transition-all duration-700 sm:aspect-[4/5] sm:rounded-[2rem] md:aspect-[16/10] md:rounded-[3rem]">
                                         <img
                                             src={photo}
                                             alt="avrxt"
@@ -239,14 +239,14 @@ export default function PortfolioClient() {
                 </Reveal>
 
                 {/* Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 gap-5 sm:gap-8 md:grid-cols-2">
                     {filteredProjects.length > 0 ? (
                         filteredProjects.map((project, idx) => (
                             <Reveal key={project.id} className="group" delay={idx * 0.1} direction="up">
                                 <Link
                                     href={project.link}
                                     target="_blank"
-                                    className="block h-full cursor-none"
+                                    className="block h-full"
                                 >
                                     <Tilt intensity={8} className="h-full">
                                         <SpotlightBox className="h-full overflow-hidden rounded-[2rem] md:rounded-[3rem] border border-white/5 bg-[#0a0a0a]/40 backdrop-blur-xl transition-all duration-700 group-hover:border-emerald-500/30 group-hover:bg-[#111]/60 shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)]">
@@ -279,7 +279,7 @@ export default function PortfolioClient() {
 
                                             <div className="p-6 md:p-12">
                                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-                                                    <h3 className="text-3xl md:text-5xl font-black tracking-tighter text-white group-hover:text-emerald-400 transition-colors uppercase italic">
+                                                    <h3 className="min-w-0 break-words text-2xl font-black tracking-tighter text-white transition-colors group-hover:text-white sm:text-3xl md:text-5xl uppercase italic">
                                                         {project.title}
                                                     </h3>
                                                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-white/5 self-start">
@@ -319,7 +319,7 @@ export default function PortfolioClient() {
                 </div>
 
                 {/* CTA */}
-                <Reveal className="mt-32 p-12 rounded-[2.5rem] border border-white/5 bg-gradient-to-br from-white/[0.03] to-transparent text-center relative overflow-hidden group">
+                <Reveal className="relative mt-20 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-white/[0.035] to-transparent p-6 text-center group sm:mt-32 sm:rounded-[2.5rem] sm:p-12">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/10 blur-[100px] rounded-full -mr-32 -mt-32 group-hover:bg-emerald-500/20 transition-colors duration-700" />
                     <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-500/10 blur-[100px] rounded-full -ml-32 -mb-32 group-hover:bg-blue-500/20 transition-colors duration-700" />
 
@@ -327,21 +327,21 @@ export default function PortfolioClient() {
                         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-white/10 bg-white/5 text-[10px] font-mono uppercase tracking-widest text-zinc-400 mb-8">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Available For Freelance Web Development
                         </div>
-                        <h2 className="text-4xl md:text-6xl font-black tracking-tighter text-white mb-6">
+                        <h2 className="mb-5 text-[clamp(2rem,8vw,3.75rem)] font-black leading-[.95] tracking-tighter text-white sm:mb-6 md:text-6xl">
                             Initiate a <span className="text-zinc-500">New_Build_</span>
                         </h2>
-                        <p className="text-zinc-500 mb-12 max-w-xl mx-auto leading-relaxed text-lg">
+                        <p className="mx-auto mb-8 max-w-xl text-sm leading-6 text-zinc-400 sm:mb-12 sm:text-lg sm:leading-relaxed">
                             Accepting premium commissions for enterprise infrastructure,
                             advanced AI systems, and high-performance Web apps.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                             <Magnetic>
-                                <Link href="/hireme" className="w-full sm:w-auto inline-flex items-center justify-center gap-3 bg-white text-black px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:scale-105 hover:shadow-[0_0_50px_rgba(255,255,255,0.2)] transition-all">
+                                <Link href="/hireme" className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-black transition-all hover:bg-zinc-200 sm:w-auto sm:rounded-2xl sm:px-12 sm:py-5 sm:tracking-[0.2em]">
                                     Initiate Hire <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </Magnetic>
                             <Magnetic>
-                                <Link href="/contact" className="w-full sm:w-auto inline-flex items-center justify-center gap-3 border border-white/10 hover:bg-white/5 px-12 py-5 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all backdrop-blur-sm">
+                                <Link href="/contact" className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl border border-white/15 px-6 py-4 text-xs font-black uppercase tracking-[0.16em] transition-all hover:bg-white/5 sm:w-auto sm:rounded-2xl sm:px-12 sm:py-5 sm:tracking-[0.2em]">
                                     Consultation <ChevronRight className="w-4 h-4" />
                                 </Link>
                             </Magnetic>

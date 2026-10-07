@@ -74,10 +74,10 @@ export default function HireMe() {
     };
 
     return (
-        <main className="max-w-5xl mx-auto px-6 pt-48 pb-32">
+        <main className="mx-auto max-w-5xl px-4 pb-20 pt-32 sm:px-6 sm:pb-32 sm:pt-48">
             <Reveal className="text-center mb-16 active">
                 <p className="text-xs uppercase tracking-[0.4em] text-zinc-500 mb-6 font-mono">// Project_Inquiry_v2.0</p>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 gradient-heading">
+                <h1 className="mb-8 text-[clamp(2.5rem,10vw,4.5rem)] font-black leading-[.98] tracking-tighter gradient-heading">
                     Project <span className="text-zinc-500">Intake_</span>
                 </h1>
             </Reveal>
@@ -104,15 +104,15 @@ export default function HireMe() {
                     ))}
                 </div>
 
-                <div className="max-w-md mx-auto p-8 border border-white/5 rounded-3xl bg-white/[0.01] text-center">
-                    <div className="grid grid-cols-2 gap-8">
+                <div className="mx-auto max-w-md rounded-3xl border border-white/10 bg-white/[0.015] p-5 text-center sm:p-8">
+                    <div className="grid grid-cols-2 gap-4 sm:gap-8">
                         <div>
                             <p className="text-[10px] uppercase text-zinc-600 font-bold mb-1">Est. Budget</p>
-                            <p className="text-2xl font-mono text-white">₹{totalPrice.toLocaleString()}</p>
+                            <p className="break-words text-xl font-mono text-white sm:text-2xl">₹{totalPrice.toLocaleString()}</p>
                         </div>
                         <div>
                             <p className="text-[10px] uppercase text-zinc-600 font-bold mb-1">Est. Time</p>
-                            <p className="text-2xl font-mono text-white">{totalWeeks}w</p>
+                            <p className="text-xl font-mono text-white sm:text-2xl">{totalWeeks}w</p>
                         </div>
                     </div>
                 </div>

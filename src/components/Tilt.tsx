@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback } from 'react';
+import React, { useRef, useCallback } from 'react';
 
 interface TiltProps {
     children: React.ReactNode;
@@ -10,10 +10,9 @@ interface TiltProps {
 
 export default function Tilt({ children, className, intensity = 10 }: TiltProps) {
     const cardRef = useRef<HTMLDivElement>(null);
-    const [style, setStyle] = useState({});
 
-    const onMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-        if (!cardRef.current) return;
+    const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+        if (!cardRef.current || e.pointerType !== 'mouse' || !window.matchMedia('(hover: hover) and (pointer: fine)').matches || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
         
         const card = cardRef.current;
         const rect = card.getBoundingClientRect();
@@ -25,25 +24,21 @@ export default function Tilt({ children, className, intensity = 10 }: TiltProps)
         const rotateX = ((y - centerY) / centerY) * -intensity;
         const rotateY = ((x - centerX) / centerX) * intensity;
         
-        setStyle({
-            transform: `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`,
-            transition: 'transform 0.1s ease-out'
-        });
+        card.style.transition = 'transform 100ms ease-out';
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.015, 1.015, 1.015)`;
     }, [intensity]);
 
-    const onMouseLeave = useCallback(() => {
-        setStyle({
-            transform: 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)',
-            transition: 'transform 0.5s ease-out'
-        });
+    const onPointerLeave = useCallback(() => {
+        if (!cardRef.current) return;
+        cardRef.current.style.transition = 'transform 420ms cubic-bezier(.2,.75,.25,1)';
+        cardRef.current.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
     }, []);
 
     return (
         <div
             ref={cardRef}
-            onMouseMove={onMouseMove}
-            onMouseLeave={onMouseLeave}
-            style={style}
+            onPointerMove={onPointerMove}
+            onPointerLeave={onPointerLeave}
             className={className}
         >
             {children}
