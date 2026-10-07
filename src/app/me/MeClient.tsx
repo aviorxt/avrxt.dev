@@ -50,6 +50,13 @@ const LOCAL_QUOTES = [
 
 const pickQuote = () => LOCAL_QUOTES[Math.floor(Math.random() * LOCAL_QUOTES.length)];
 
+type WeatherSnapshot = {
+    temperature_2m: number;
+    relative_humidity_2m: number;
+    wind_speed_10m: number;
+    time?: string;
+};
+
 
 const ensureYouTubeIframeApi = () => {
     if (typeof window === 'undefined') return Promise.resolve();
@@ -95,7 +102,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const [isMuted, setIsMuted] = useState(false);
     const [isImmersive, setIsImmersive] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [weather, setWeather] = useState<any>(null);
+    const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
+    const [weatherState, setWeatherState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
     const [quote, setQuote] = useState<any>(null);
     const [spotifyData, setSpotifyData] = useState<any>(null);
     const [spotifyLast, setSpotifyLast] = useState<any>(null);
@@ -116,6 +124,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const [ytReady, setYtReady] = useState(false);
     const spotifyProgressBarRef = useRef<HTMLDivElement>(null);
     const spotifyProgressLastStateUpdateRef = useRef<number>(0);
+    const galleryVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+    const [playingGalleryVideo, setPlayingGalleryVideo] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -125,16 +135,47 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
     // Weather: only fetch when enabled
     useEffect(() => {
-        if (!weatherEnabled) return;
+        if (!weatherEnabled) {
+            setWeatherState('unavailable');
+            return;
+        }
+        const controller = new AbortController();
+        let isActive = true;
+        const query = '?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m';
+        const endpoints = [...new Set([
+            apiUrl(`/v1/geo/forecast${query}`, edgeUrl(`/v1/fnc/geo/forecast${query}`)),
+            edgeUrl(`/v1/fnc/geo/forecast${query}`),
+        ])];
         const fetchWeather = async () => {
-            try {
-                const res = await fetch(apiUrl('/v1/geo/forecast?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m', edgeUrl('/v1/fnc/geo/forecast?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m')), { cache: 'no-store' });
-                const data = await res.json();
-                setWeather(data.current);
-            } catch (e) { console.error(e); }
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint, { cache: 'no-store', signal: controller.signal });
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    const current = data?.current;
+                    if (!current || ![current.temperature_2m, current.relative_humidity_2m, current.wind_speed_10m].every((value: unknown) => typeof value === 'number' && Number.isFinite(value))) continue;
+                    if (!isActive) return;
+                    setWeather({
+                        temperature_2m: current.temperature_2m,
+                        relative_humidity_2m: current.relative_humidity_2m,
+                        wind_speed_10m: current.wind_speed_10m,
+                        time: typeof current.time === 'string' ? current.time : undefined,
+                    });
+                    setWeatherState('ready');
+                    return;
+                } catch {
+                    if (!isActive || controller.signal.aborted) return;
+                }
+            }
+            if (isActive) setWeatherState('unavailable');
         };
         fetchWeather();
-        // Weather doesn't need aggressive polling (limits-friendly).
+        const refreshId = window.setInterval(fetchWeather, 10 * 60 * 1000);
+        return () => {
+            isActive = false;
+            controller.abort();
+            window.clearInterval(refreshId);
+        };
     }, [weatherEnabled]);
 
     // Discord Presence: only fetch when auto mode + id present, poll every 60s
@@ -819,12 +860,18 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         </p>
                     )}
                     {weatherEnabled && (
-                        <div className="flex items-center justify-center gap-4 text-[9px] font-mono text-zinc-600 bg-white/5 py-1.5 px-4 rounded-full border border-white/5 backdrop-blur">
-                        <span className="flex items-center gap-1.5"><Cloud size={10} /> {weather?.temperature_2m || '??'}°C</span>
-                        <span className="opacity-20">|</span>
-                        <span className="flex items-center gap-1.5"><Droplets size={10} /> {weather?.relative_humidity_2m || '??'}%</span>
-                        <span className="opacity-20">|</span>
-                        <span className="flex items-center gap-1.5"><Wind size={10} /> {weather?.wind_speed_10m || '??'}km/h</span>
+                        <div
+                            className="me-weather-widget motion-safe:animate-fade-in flex max-w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 font-mono text-[9px] text-zinc-400 backdrop-blur-xl"
+                            role="status"
+                            aria-live="polite"
+                            title={weather?.time ? `Current conditions · ${weather.time} UTC` : weatherState === 'unavailable' ? 'Live weather is temporarily unavailable' : 'Current weather for Chennai'}
+                        >
+                            <span className="flex items-center gap-1.5"><Cloud size={11} aria-hidden="true" />{weather ? `${weather.temperature_2m.toFixed(1)}°C` : '--°C'}</span>
+                            <span className="hidden text-white/15 sm:inline" aria-hidden="true">|</span>
+                            <span className="flex items-center gap-1.5"><Droplets size={11} aria-hidden="true" />{weather ? `${weather.relative_humidity_2m}%` : '--%'}</span>
+                            <span className="hidden text-white/15 sm:inline" aria-hidden="true">|</span>
+                            <span className="flex items-center gap-1.5"><Wind size={11} aria-hidden="true" />{weather ? `${weather.wind_speed_10m} km/h` : '-- km/h'}</span>
+                            {weatherState === 'unavailable' && <span className="w-full text-center text-[8px] tracking-widest text-zinc-600 sm:w-auto">LIVE DATA OFFLINE</span>}
                         </div>
                     )}
                     <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/10">
@@ -1069,18 +1116,25 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         <div className="grid grid-cols-2 gap-3">
                             {config.gallery.map((item) => (
                                 <Reveal key={item.id} direction="up" delay={0.4}>
-                                    <div className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 bg-zinc-900/50">
+                                    <div className="group relative aspect-square select-none overflow-hidden rounded-xl border border-white/10 bg-zinc-900/50 transition-[border-color,transform,box-shadow] duration-500 hover:border-white/25 hover:shadow-[0_16px_60px_rgba(255,255,255,0.06)]" onContextMenu={event => event.preventDefault()}>
                                         {item.type === 'video' ? (
                                             <video
+                                                ref={element => { galleryVideoRefs.current[item.id] = element; }}
                                                 src={item.url}
+                                                aria-label={item.caption || 'Gallery video'}
                                                 className="w-full h-full object-cover"
-                                                controls
                                                 muted
                                                 loop
                                                 playsInline
                                                 preload="none"
-                                                onMouseOver={e => e.currentTarget.play()}
-                                                onMouseOut={e => e.currentTarget.pause()}
+                                                controls={false}
+                                                controlsList="nodownload noremoteplayback"
+                                                disablePictureInPicture
+                                                disableRemotePlayback
+                                                draggable={false}
+                                                onContextMenu={event => event.preventDefault()}
+                                                onPlay={() => setPlayingGalleryVideo(item.id)}
+                                                onPause={() => setPlayingGalleryVideo(active => active === item.id ? null : active)}
                                             />
                                         ) : (
                                             <img src={item.url} alt={item.caption || 'Gallery Image'} loading="lazy" decoding="async" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
@@ -1091,9 +1145,28 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                             </div>
                                         )}
                                         {item.type === 'video' && (
-                                            <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-black/50 backdrop-blur flex items-center justify-center border border-white/20 select-none pointer-events-none">
-                                                <Play size={6} className="fill-white text-white ml-0.5" />
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-xl transition duration-300 hover:scale-110 hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                                aria-label={playingGalleryVideo === item.id ? 'Pause gallery video' : 'Play gallery video'}
+                                                aria-pressed={playingGalleryVideo === item.id}
+                                                title={playingGalleryVideo === item.id ? 'Pause video' : 'Play video'}
+                                                onContextMenu={event => event.preventDefault()}
+                                                onClick={async () => {
+                                                    const video = galleryVideoRefs.current[item.id];
+                                                    if (!video) return;
+                                                    if (video.paused) {
+                                                        Object.entries(galleryVideoRefs.current).forEach(([id, otherVideo]) => {
+                                                            if (id !== item.id) otherVideo?.pause();
+                                                        });
+                                                        try { await video.play(); } catch { setPlayingGalleryVideo(null); }
+                                                    } else {
+                                                        video.pause();
+                                                    }
+                                                }}
+                                            >
+                                                {playingGalleryVideo === item.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                                            </button>
                                         )}
                                     </div>
                                 </Reveal>
