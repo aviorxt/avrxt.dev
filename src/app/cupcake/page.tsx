@@ -1,4 +1,5 @@
 import { buildPageMetadata } from '@/lib/page-metadata';
+import { connection } from 'next/server';
 import { Heart, User, Clock, ShieldCheck, Zap, Coffee } from 'lucide-react';
 import { getRecentTips } from '@/app/actions/cupcake';
 import Reveal from '@/components/Reveal';
@@ -23,6 +24,9 @@ type Tip = {
 };
 
 export default async function CupcakePage() {
+  // Recent supporter details come from the server-side service-role client.
+  // Defer this database query to a request instead of running it at build time.
+  await connection();
   const recentTips = (await getRecentTips()) as Tip[];
 
   return (

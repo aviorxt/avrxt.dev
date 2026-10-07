@@ -4,7 +4,7 @@ import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 import Razorpay from 'razorpay';
 import { Resend } from 'resend';
-import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
 
 type RazorpayOrderSummary = {
   id: string;
@@ -127,7 +127,9 @@ export async function verifyTipAndSave(paymentDetails: PaymentDetails, tipDetail
 
     const amount = Math.round(Number(order.amount) / 100);
 
-    const supabase = await createClient();
+    // Payment was verified above; write through the server-only service role so
+    // cupcake_tips can stay inaccessible to direct anonymous PostgREST writes.
+    const supabase = createAdminClient();
     const { error: dbError } = await supabase.from('cupcake_tips').insert([
       {
         user_name: userName,
@@ -205,7 +207,8 @@ export async function verifyTipAndSave(paymentDetails: PaymentDetails, tipDetail
 }
 
 export async function getRecentTips() {
-  const supabase = await createClient();
+  // The public feed intentionally exposes only these three safe display fields.
+  const supabase = createAdminClient();
   const { data } = await supabase
     .from('cupcake_tips')
     .select('user_name, created_at, amount')
