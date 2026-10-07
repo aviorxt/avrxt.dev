@@ -2,7 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react';
 import { AlertCircle, Check, Code2, Eye, FilePlus2, Mail, Monitor, Send, Smartphone, Sparkles, WandSparkles } from 'lucide-react';
-import { createNewsletterBroadcastAction, getNewsletterBroadcastAction, getRecentNewsletterBroadcastsAction, sendNewsletterTestAction } from '@/app/actions/mail-broadcast';
+import { createNewsletterBroadcastAction, generateNewsletterEmailAction, getNewsletterBroadcastAction, getRecentNewsletterBroadcastsAction, sendNewsletterTestAction } from '@/app/actions/mail-broadcast';
 
 type RecentBroadcast = {
     id: string;
@@ -58,6 +58,7 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
     const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
     const [broadcasts, setBroadcasts] = useState(initialBroadcasts);
     const [editingId, setEditingId] = useState('');
+    const [aiPrompt, setAiPrompt] = useState('');
     const htmlRef = useRef<HTMLTextAreaElement>(null);
 
     const previewHtml = useMemo(() => withPreviewFooter(html)
@@ -154,6 +155,27 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
         }
     };
 
+    const generateWithAi = async () => {
+        setBusy(true);
+        setStatus('Generating an email draft…');
+        try {
+            const result = await generateNewsletterEmailAction({ prompt: aiPrompt });
+            if ('error' in result) {
+                setStatus(`ERROR: ${result.error}`);
+            } else {
+                setSubject(result.draft.subject);
+                setPreviewText(result.draft.previewText);
+                setHtml(result.draft.html);
+                setStatus('AI draft ready. Review the subject and preview, then edit or send when you are satisfied.');
+                setAiPrompt('');
+            }
+        } catch (error) {
+            setStatus(`ERROR: ${error instanceof Error ? error.message : 'Could not generate an email.'}`);
+        } finally {
+            setBusy(false);
+        }
+    };
+
     return (
         <div className="space-y-6">
             <header className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
@@ -169,6 +191,14 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
             </header>
 
             {status && <div role="status" aria-live="polite" className={`flex items-start gap-2 rounded-xl border p-3 text-xs ${status.startsWith('ERROR') ? 'border-red-500/20 bg-red-500/5 text-red-300' : 'border-white/10 bg-white/[0.03] text-zinc-300'}`}>{status.startsWith('ERROR') ? <AlertCircle size={15} className="mt-0.5 shrink-0" /> : <Check size={15} className="mt-0.5 shrink-0" />}<span>{status}</span></div>}
+
+            <section className="rounded-2xl border border-white/10 bg-gradient-to-br from-white/[0.06] to-white/[0.015] p-4 sm:p-5">
+                <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><WandSparkles size={16} className="text-zinc-300" /> AI email draft <span className="rounded-full border border-white/10 px-2 py-0.5 text-[9px] font-mono uppercase tracking-wider text-zinc-500">Workers AI · free tier</span></div>
+                <p className="mb-3 text-xs leading-5 text-zinc-400">Describe the audience, goal, tone, and any exact details or links. AI fills the subject, inbox preview, and responsive HTML for you to review.</p>
+                <label htmlFor="mail-ai-prompt" className="sr-only">Describe the email you want</label>
+                <textarea id="mail-ai-prompt" value={aiPrompt} onChange={event => setAiPrompt(event.target.value)} maxLength={2000} rows={3} placeholder="Example: Write a concise launch email announcing our new portfolio gallery. Keep it calm and monochrome, explain what changed, and include a button linking to https://avrxt.dev/me." className="mail-field min-h-24 resize-y !text-sm !leading-6" />
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><span className="text-[10px] text-zinc-500">Do not include secrets or subscriber personal information.</span><button type="button" onClick={generateWithAi} disabled={busy || aiPrompt.trim().length < 8} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-white px-4 text-xs font-semibold text-black transition hover:bg-zinc-200 disabled:cursor-not-allowed disabled:opacity-40"><WandSparkles size={14} /> {busy ? 'Generating…' : 'Generate draft'}</button></div>
+            </section>
 
             <section className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(360px,0.9fr)]">
                 <div className="space-y-5">

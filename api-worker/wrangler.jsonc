@@ -4,6 +4,10 @@
   "main": "worker.ts",
   "compatibility_date": "2026-08-19",
   "keep_vars": true,
+  "ai": { "binding": "AI" },
+  "ratelimits": [
+    { "name": "MAIL_AI_LIMITER", "namespace_id": "2026100701", "simple": { "limit": 8, "period": 60 } }
+  ],
   "vars": {
     "SITE_ORIGIN": "https://www.avrxt.dev",
     "EDGE_ORIGIN": "https://edge.avrxt.space"

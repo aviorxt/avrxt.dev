@@ -1,6 +1,8 @@
 'use server';
 
 import { verifyAdmin } from '@/lib/auth-checks';
+import { isRateLimited } from '@/lib/api-rate-limit';
+import { headers } from 'next/headers';
 import {
     appendUnsubscribeFooter,
     createResendClient,
@@ -11,6 +13,52 @@ import {
     syncAudienceUnsubscribeLinks,
     validateBroadcastFrom,
 } from '@/lib/newsletter-broadcast';
+
+export async function generateNewsletterEmailAction(input: { prompt: string }) {
+    const { authorized } = await verifyAdmin();
+    if (!authorized) return { error: 'Unauthorized.' };
+
+    const requestHeaders = await headers();
+    if (isRateLimited(requestHeaders, 'newsletter-ai', 5, 60_000)) {
+        return { error: 'Too many AI requests. Please wait a minute and try again.' };
+    }
+
+    const secret = process.env.MAIL_AI_SHARED_SECRET;
+    if (!secret) return { error: 'Email AI is not configured yet.' };
+    if (!input || typeof input.prompt !== 'string') return { error: 'Describe the email you want to create.' };
+    const prompt = input.prompt.trim();
+    if (prompt.length < 8 || prompt.length > 2_000) return { error: 'Prompt must be between 8 and 2,000 characters.' };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 45_000);
+    try {
+        const response = await fetch(process.env.MAIL_AI_API_URL || 'https://api.avrxt.dev/v1/mail/generate', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${secret}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ prompt }),
+            signal: controller.signal,
+            cache: 'no-store',
+        });
+        const result = await response.json().catch(() => null) as {
+            draft?: { subject?: unknown; previewText?: unknown; html?: unknown };
+            error?: string;
+            model?: string;
+        } | null;
+        if (!response.ok || !result?.draft) {
+            return { error: response.status === 429 ? 'Email AI is busy. Please try again shortly.' : result?.error || 'Could not generate the email draft.' };
+        }
+        const { subject, previewText, html } = result.draft;
+        if (typeof subject !== 'string' || typeof previewText !== 'string' || typeof html !== 'string'
+            || !subject.trim() || !html.trim() || subject.length > 200 || previewText.length > 240 || html.length > 50_000) {
+            return { error: 'The AI returned an invalid draft. Please try a more specific prompt.' };
+        }
+        return { success: true, draft: { subject: subject.trim(), previewText: previewText.trim(), html: html.trim() }, model: result.model || 'Cloudflare Workers AI' };
+    } catch {
+        return { error: 'Email AI could not be reached. Please try again.' };
+    } finally {
+        clearTimeout(timeout);
+    }
+}
 
 export async function createNewsletterBroadcastAction(input: {
     name: string;
