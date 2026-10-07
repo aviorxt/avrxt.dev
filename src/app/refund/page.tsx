@@ -43,14 +43,7 @@ export default function Refund() {
                     </section>
 
                     <section className="legal-section">
-                        <h2 className="text-white font-mono text-lg font-bold uppercase tracking-widest border-l-2 border-zinc-800 pl-4 mb-4">03. Digital Contributions (Cupcakes)</h2>
-                        <p className="text-zinc-400 leading-relaxed text-sm">
-                            Payments made via the &quot;Buy Me a Cupcake&quot; portal are considered <span className="text-white font-semibold">voluntary digital contributions</span> to support open-source work. These contributions are <span className="text-white font-bold text-red-400">strictly non-refundable</span>.
-                        </p>
-                    </section>
-
-                    <section className="legal-section">
-                        <h2 className="text-white font-mono text-lg font-bold uppercase tracking-widest border-l-2 border-zinc-800 pl-4 mb-4">04. Execution & Timelines</h2>
+                        <h2 className="text-white font-mono text-lg font-bold uppercase tracking-widest border-l-2 border-zinc-800 pl-4 mb-4">03. Execution & Timelines</h2>
                         <p className="text-zinc-400 leading-relaxed text-sm">
                             Approved refunds are initiated within <span className="text-white font-semibold">48 hours</span> and may take <span className="text-white font-semibold">5-10 bank working days</span> to reflect in your original payment source. To initiate a refund request, provide your Transaction ID and Project Reference to: <span className="text-white font-bold underline decoration-zinc-800">{supportEmail}</span>.
                         </p>

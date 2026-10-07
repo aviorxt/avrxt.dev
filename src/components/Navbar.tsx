@@ -25,7 +25,6 @@ export default function Navbar() {
             { name: '/gallery', href: '/gallery', description: 'Visual gallery' },
             { name: '/docs', href: '/docs', description: 'Docs and resources' },
             { name: '/hireme', href: '/hireme', description: 'Work with avrxt' },
-            { name: '/cupcake', href: '/cupcake', description: 'Support the work' },
             { name: '/privacy', href: '/privacy', description: 'Privacy policy' },
             { name: '/terms', href: '/terms', description: 'Terms of service' },
             { name: '/refund', href: '/refund', description: 'Refund policy' },
@@ -51,7 +50,6 @@ export default function Navbar() {
         { name: 'About', href: '/#about' },
         { name: 'Works', href: '/portfolio' },
         { name: 'Docs', href: '/docs' },
-        { name: 'Support', href: '/cupcake' },
     ];
 
     const handleToggleMenu = () => {

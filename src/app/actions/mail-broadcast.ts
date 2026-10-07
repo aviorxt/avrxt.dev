@@ -23,7 +23,7 @@ export async function generateNewsletterEmailAction(input: { prompt: string }) {
         return { error: 'Too many AI requests. Please wait a minute and try again.' };
     }
 
-    const secret = process.env.MAIL_AI_SHARED_SECRET;
+    const secret = process.env.MAIL_AI_SHARED_SECRET?.trim();
     if (!secret) return { error: 'Email AI is not configured yet.' };
     if (!input || typeof input.prompt !== 'string') return { error: 'Describe the email you want to create.' };
     const prompt = input.prompt.trim();
@@ -45,7 +45,16 @@ export async function generateNewsletterEmailAction(input: { prompt: string }) {
             model?: string;
         } | null;
         if (!response.ok || !result?.draft) {
-            return { error: response.status === 429 ? 'Email AI is busy. Please try again shortly.' : result?.error || 'Could not generate the email draft.' };
+            if (response.status === 401) {
+                console.error('[newsletter-ai] Cloudflare rejected the configured shared secret.');
+                return { error: 'Email AI authentication failed. Check that the Vercel and Cloudflare shared secrets match.' };
+            }
+            if (response.status === 429) return { error: 'Email AI is busy. Please try again shortly.' };
+            if (response.status >= 500) {
+                console.error(`[newsletter-ai] Cloudflare AI endpoint failed with HTTP ${response.status}.`);
+                return { error: 'Cloudflare could not generate the draft. Check the Worker AI binding and its logs.' };
+            }
+            return { error: result?.error || 'Could not generate the email draft.' };
         }
         const { subject, previewText, html } = result.draft;
         if (typeof subject !== 'string' || typeof previewText !== 'string' || typeof html !== 'string'
@@ -53,8 +62,14 @@ export async function generateNewsletterEmailAction(input: { prompt: string }) {
             return { error: 'The AI returned an invalid draft. Please try a more specific prompt.' };
         }
         return { success: true, draft: { subject: subject.trim(), previewText: previewText.trim(), html: html.trim() }, model: result.model || 'Cloudflare Workers AI' };
-    } catch {
-        return { error: 'Email AI could not be reached. Please try again.' };
+    } catch (error) {
+        if (error instanceof Error && error.name === 'AbortError') {
+            console.error('[newsletter-ai] Cloudflare request timed out.');
+            return { error: 'Email AI timed out. Please try a shorter prompt and try again.' };
+        }
+        // Log only a broad failure category. Never log prompts, authorization values, or request headers.
+        console.error('[newsletter-ai] Cloudflare endpoint connection failed.', error instanceof Error ? error.name : 'UnknownError');
+        return { error: 'Email AI could not connect to Cloudflare. Check MAIL_AI_API_URL and the Vercel function logs.' };
     } finally {
         clearTimeout(timeout);
     }

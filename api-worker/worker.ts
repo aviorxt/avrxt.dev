@@ -3,7 +3,7 @@ interface Env {
   EDGE_ORIGIN?: string;
   YOUTUBE_API_KEY?: string;
   MAIL_AI_SHARED_SECRET?: string;
-  AI: { run(model: string, input: { messages: Array<{ role: 'system' | 'user'; content: string }>; response_format?: { type: 'json_object' } }): Promise<unknown> };
+  AI: { run(model: string, input: { messages: Array<{ role: 'system' | 'user'; content: string }>; response_format?: { type: 'json_object' }; max_completion_tokens?: number }): Promise<unknown> };
   MAIL_AI_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
@@ -106,8 +106,8 @@ function escapeAiHtml(html: string) {
 
 async function generateMailDraft(request: Request, env: Env) {
   if (request.method !== 'POST') return json(request, { error: 'Method not allowed' }, 405, { Allow: 'POST', 'Cache-Control': 'no-store' });
-  const expected = env.MAIL_AI_SHARED_SECRET;
-  const supplied = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') || '';
+  const expected = env.MAIL_AI_SHARED_SECRET?.trim();
+  const supplied = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim() || '';
   const suppliedBytes = new TextEncoder().encode(supplied);
   const expectedBytes = new TextEncoder().encode(expected || 'missing-secret');
   let mismatch = suppliedBytes.length ^ expectedBytes.length;
@@ -129,14 +129,18 @@ async function generateMailDraft(request: Request, env: Env) {
     return json(request, { error: 'Prompt must be between 8 and 2,000 characters' }, 400, { 'Cache-Control': 'no-store' });
   }
   const model = '@cf/zai-org/glm-4.7-flash';
+  let failureStage: 'inference' | 'response' = 'inference';
   try {
     const output = await env.AI.run(model, {
       response_format: { type: 'json_object' },
+      // Keep synchronous generation within server-action limits and avoid enormous drafts.
+      max_completion_tokens: 4096,
       messages: [
         { role: 'system', content: 'Create an email marketing/newsletter draft from the user request. Return a JSON object with exactly subject, previewText, and html string fields. HTML must be complete, responsive, email-client-safe HTML using tables and inline CSS; use a restrained black, white, and grayscale visual style. Keep the writing clear and polished. Do not invent company facts, claims, dates, prices, links, or offers absent from the prompt; use neutral copy/placeholders where needed. Do not include scripts, forms, iframes, external stylesheets, tracking pixels, or unsubscribe links/footers. The application adds the unsubscribe footer. Do not use markdown fences.' },
         { role: 'user', content: prompt.trim() },
       ],
     }) as { response?: unknown; choices?: Array<{ message?: { content?: unknown } }> };
+    failureStage = 'response';
     const generatedText: unknown = typeof output.response === 'string' ? output.response : output.choices?.[0]?.message?.content;
     if (typeof generatedText !== 'string') throw new Error('Invalid AI response');
     const responseText = generatedText.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
@@ -146,8 +150,14 @@ async function generateMailDraft(request: Request, env: Env) {
       throw new Error('Invalid AI draft');
     }
     return json(request, { draft: { subject: parsed.subject.trim(), previewText: parsed.previewText.trim(), html: escapeAiHtml(parsed.html.trim()) }, model }, 200, { 'Cache-Control': 'no-store' });
-  } catch {
-    return json(request, { error: 'Could not generate the email draft' }, 502, { 'Cache-Control': 'no-store' });
+  } catch (error) {
+    // Do not log prompt text, authorization values, or generated email content.
+    console.error('mail_ai_generation_failed', failureStage, error instanceof Error ? error.name : 'UnknownError');
+    return json(request, {
+      error: failureStage === 'inference'
+        ? 'Cloudflare Workers AI inference failed. Check that the AI binding is enabled and the model is available.'
+        : 'The AI response was not valid email JSON. Try a shorter or more specific prompt.',
+    }, 502, { 'Cache-Control': 'no-store' });
   }
 }
 

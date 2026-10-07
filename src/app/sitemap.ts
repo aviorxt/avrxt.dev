@@ -20,7 +20,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { route: '/docs/nxtdev.xyz', priority: 0.6, changeFrequency: 'monthly' },
         { route: '/uses',       priority: 0.6, changeFrequency: 'monthly' },
         { route: '/subscribe',  priority: 0.6, changeFrequency: 'monthly' },
-        { route: '/cupcake',    priority: 0.5, changeFrequency: 'monthly' },
         { route: '/privacy',    priority: 0.3, changeFrequency: 'yearly'  },
         { route: '/terms',      priority: 0.3, changeFrequency: 'yearly'  },
         { route: '/dc/privacy', priority: 0.3, changeFrequency: 'yearly'  },

@@ -25,7 +25,6 @@ graph TD
         P_DOCS_ADMIN["/docs/admin"]
         P_ME["/me"]
         P_ME_ADMIN["/me/admin"]
-        P_CUPCAKE["/cupcake"]
         P_AUTH_CB["/auth/callback"]
 
         API_CONTACT["/api/contact"]
@@ -44,7 +43,6 @@ graph TD
     ROUTER --> P_DOCS_ADMIN
     ROUTER --> P_ME
     ROUTER --> P_ME_ADMIN
-    ROUTER --> P_CUPCAKE
     ROUTER --> P_AUTH_CB
     ROUTER --> API_CONTACT
     ROUTER --> API_HIREME
@@ -61,7 +59,6 @@ graph TD
         ACT_ME["actions/me.ts"]
         ACT_R2["actions/r2.ts"]
         ACT_SPOTIFY["actions/spotify.ts"]
-        ACT_CUPCAKE["actions/cupcake.ts"]
         AUTH_CHECKS["verifyAdmin and protectAdminPage"]
         MOD_PIPE["guestbook moderation pipeline"]
     end
@@ -78,7 +75,6 @@ graph TD
     P_ME_ADMIN --> ACT_ME
     P_ME_ADMIN --> ACT_R2
     P_ME_ADMIN --> ACT_SPOTIFY
-    P_CUPCAKE --> ACT_CUPCAKE
     P_AUTH_CB --> AUTH_CHECKS
 
     API_SPOTIFY_AUTH --> AUTH_CHECKS
@@ -93,7 +89,6 @@ graph TD
         DB_ME["Supabase table me_config"]
         DB_SPOT_TOKENS["Supabase table spotify_tokens"]
         DB_SPOT_HISTORY["Supabase table spotify_history"]
-        DB_TIPS["Supabase table cupcake_tips"]
         R2["Cloudflare R2 bucket"]
         CDN_I["cdn.avxt.qzz.io image CDN"]
         CDN_V["cdn.avxt.qzz.io media CDN"]
@@ -106,7 +101,6 @@ graph TD
     API_NOW_PLAYING --> DB_SPOT_TOKENS
     API_NOW_PLAYING --> DB_SPOT_HISTORY
     API_SPOTIFY_CB --> DB_SPOT_TOKENS
-    ACT_CUPCAKE --> DB_TIPS
     ACT_R2 --> R2
     R2 --> CDN_I
     R2 --> CDN_V
@@ -402,7 +396,7 @@ src/
 
 │   │   ├── subscribe/     # Hardened Newsletter API Node (New)
 
-│   ├── action/           # Secured Server Actions (Cupcake, Docs)
+│   ├── actions/          # Secured Server Actions (Docs, profile, newsletter)
 │   ├── me/                # Personalized profile & bio terminal
 
 │   ├── robots.ts       # Dynamic Robots configuration
