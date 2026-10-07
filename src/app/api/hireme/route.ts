@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
+import { isRateLimited } from '@/lib/api-rate-limit';
+import { readJsonLimited, RequestBodyError } from '@/lib/read-json-limited';
 
 function escapeHtml(value: string): string {
   return value
@@ -23,22 +25,37 @@ function getAllowedOrigin(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = (await request.json()) as {
-      name?: string;
-      email?: string;
-      projectType?: string;
-      budget?: string;
-      timeline?: string;
-      description?: string;
+    if (isRateLimited(request.headers, 'hireme', 5, 60 * 60 * 1000)) {
+      return NextResponse.json({ message: 'Too many requests. Please try again later.' }, { status: 429 });
+    }
+    const body = await readJsonLimited(request, 24_576);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ message: 'Invalid request body.' }, { status: 400 });
+    }
+    const payload = body as {
+      name?: unknown;
+      email?: unknown;
+      projectType?: unknown;
+      budget?: unknown;
+      timeline?: unknown;
+      description?: unknown;
     };
 
     const { name, email, projectType, budget, timeline, description } = payload;
 
-    if (!name || !email || !projectType || !budget || !timeline || !description) {
+    if ([name, email, projectType, budget, timeline, description].some((value) => typeof value !== 'string' || !value.trim())) {
       return NextResponse.json({ message: 'Missing required payload fields.' }, { status: 400 });
     }
 
-    const userEmail = email.trim().toLowerCase();
+    const cleanName = (name as string).trim().replace(/[\r\n]+/g, ' ');
+    const cleanProjectType = (projectType as string).trim().replace(/[\r\n]+/g, ' ');
+    const cleanBudget = (budget as string).trim();
+    const cleanTimeline = (timeline as string).trim();
+    const cleanDescription = (description as string).trim();
+    const userEmail = (email as string).trim().toLowerCase();
+    if (cleanName.length > 120 || userEmail.length > 254 || cleanProjectType.length > 120 || cleanBudget.length > 80 || cleanTimeline.length > 80 || cleanDescription.length > 8000) {
+      return NextResponse.json({ message: 'One or more fields are too long.' }, { status: 400 });
+    }
     if (!isValidEmail(userEmail)) {
       return NextResponse.json({ message: 'Invalid email format.' }, { status: 400 });
     }
@@ -65,17 +82,17 @@ export async function POST(request: NextRequest) {
           from: '"avrxt_intake" <aviorxtaero@gmail.com>',
           to: adminEmail,
           replyTo: userEmail,
-          subject: `NEW_PROJECT: ${escapeHtml(projectType.trim())} - ${escapeHtml(name.trim())}`,
+          subject: `NEW_PROJECT: ${cleanProjectType} - ${cleanName}`,
           html: `
             <div style="background:#000; color:#fff; font-family:monospace; padding:30px; border:1px solid #333; max-width:600px; margin:auto;">
               <h2 style="color:#666; font-size:14px; border-bottom:1px solid #222; padding-bottom:10px;">// INTAKE_SIGNAL</h2>
-              <p><strong>CLIENT:</strong> ${escapeHtml(name.trim())}</p>
+              <p><strong>CLIENT:</strong> ${escapeHtml(cleanName)}</p>
               <p><strong>EMAIL:</strong> ${escapeHtml(userEmail)}</p>
-              <p><strong>TYPE:</strong> ${escapeHtml(projectType.trim())}</p>
-              <p><strong>BUDGET:</strong> ${escapeHtml(budget.trim())}</p>
-              <p><strong>TIMELINE:</strong> ${escapeHtml(timeline.trim())}</p>
+              <p><strong>TYPE:</strong> ${escapeHtml(cleanProjectType)}</p>
+              <p><strong>BUDGET:</strong> ${escapeHtml(cleanBudget)}</p>
+              <p><strong>TIMELINE:</strong> ${escapeHtml(cleanTimeline)}</p>
               <div style="background:#050505; border:1px solid #222; padding:15px; margin-top:20px; white-space:pre-wrap; color:#ccc; line-height:1.6;">
-                ${escapeHtml(description.trim())}
+                ${escapeHtml(cleanDescription)}
               </div>
             </div>
           `,
@@ -102,9 +119,9 @@ export async function POST(request: NextRequest) {
       { status: 503 }
     );
   } catch (error: unknown) {
+    if (error instanceof RequestBodyError) return NextResponse.json({ message: error.message }, { status: error.status });
     console.error('HireMe API Error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    return NextResponse.json({ message: 'SYSTEM_FAILURE', details: errorMessage }, { status: 500 });
+    return NextResponse.json({ message: 'SYSTEM_FAILURE' }, { status: 500 });
   }
 }
 

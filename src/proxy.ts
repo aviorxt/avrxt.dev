@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
     '/me/admin',
+    '/mail',
     '/auth',
     '/api',
 ]
@@ -34,11 +35,11 @@ async function isMaintenanceModeEnabled() {
 }
 
 export default async function proxy(request: NextRequest) {
-    const host = request.headers.get('host') || ''
+    const host = request.nextUrl.hostname.toLowerCase()
     const url = request.nextUrl
 
     // Subdomain routing for status.avrxt.dev
-    if (host.includes('status.avrxt.dev')) {
+    if (host === 'status.avrxt.dev') {
         // Map root, /incidents, and /maintenance to the status route group
         if (url.pathname === '/') {
             return NextResponse.rewrite(new URL('/status', request.url))

@@ -70,43 +70,43 @@ export default function StatusBadge() {
         switch (data.status) {
             case 'down':
                 return {
-                    color: 'text-red-400',
-                    bg: 'bg-red-500/20',
-                    dot: 'bg-red-500',
-                    shadow: 'shadow-[0_0_10px_rgba(239,68,68,0.7)]',
-                    border: 'border-red-400/30',
+                    color: 'text-zinc-200',
+                    bg: 'bg-white/15',
+                    dot: 'bg-white',
+                    shadow: 'shadow-[0_0_10px_rgba(255,255,255,0.35)]',
+                    border: 'border-white/25',
                     icon: AlertCircle,
-                    glow: 'via-red-500/5'
+                    glow: 'via-white/5'
                 };
             case 'maintenance':
                 return {
-                    color: 'text-yellow-400',
-                    bg: 'bg-yellow-500/20',
-                    dot: 'bg-yellow-500',
-                    shadow: 'shadow-[0_0_10px_rgba(234,179,8,0.7)]',
-                    border: 'border-yellow-400/30',
+                    color: 'text-zinc-200',
+                    bg: 'bg-white/15',
+                    dot: 'bg-white',
+                    shadow: 'shadow-[0_0_10px_rgba(255,255,255,0.35)]',
+                    border: 'border-white/25',
                     icon: AlertTriangle,
-                    glow: 'via-yellow-500/5'
+                    glow: 'via-white/5'
                 };
             case 'degraded':
                 return {
-                    color: 'text-amber-400',
-                    bg: 'bg-amber-500/20',
-                    dot: 'bg-amber-500',
-                    shadow: 'shadow-[0_0_10px_rgba(245,158,11,0.7)]',
-                    border: 'border-amber-400/30',
+                    color: 'text-zinc-200',
+                    bg: 'bg-white/15',
+                    dot: 'bg-white',
+                    shadow: 'shadow-[0_0_10px_rgba(255,255,255,0.35)]',
+                    border: 'border-white/25',
                     icon: AlertTriangle,
-                    glow: 'via-amber-500/5'
+                    glow: 'via-white/5'
                 };
             default:
                 return {
-                    color: 'text-emerald-400/90',
-                    bg: 'bg-emerald-500/10',
-                    dot: 'bg-emerald-500',
-                    shadow: 'shadow-[0_0_10px_rgba(16,185,129,0.7)]',
-                    border: 'border-emerald-400/20',
+                    color: 'text-zinc-300',
+                    bg: 'bg-white/10',
+                    dot: 'bg-zinc-300',
+                    shadow: 'shadow-[0_0_10px_rgba(255,255,255,0.28)]',
+                    border: 'border-white/20',
                     icon: ShieldCheck,
-                    glow: 'via-emerald-500/5'
+                    glow: 'via-white/5'
                 };
         }
     };

@@ -13,6 +13,7 @@ export default function DocContent({ content }: { content: string }) {
             const { default: remarkGfm } = await import('remark-gfm');
             const { default: remarkRehype } = await import('remark-rehype');
             const { default: rehypeRaw } = await import('rehype-raw');
+            const { default: rehypeSanitize } = await import('rehype-sanitize');
             const { default: rehypeHighlight } = await import('rehype-highlight');
             const { default: rehypeStringify } = await import('rehype-stringify');
             const result = await unified()
@@ -20,6 +21,7 @@ export default function DocContent({ content }: { content: string }) {
                 .use(remarkGfm)
                 .use(remarkRehype, { allowDangerousHtml: true })
                 .use(rehypeRaw)
+                .use(rehypeSanitize)
                 .use(rehypeHighlight)
                 .use(rehypeStringify)
                 .process(content);
@@ -44,8 +46,8 @@ export default function DocContent({ content }: { content: string }) {
                 .doc-prose h3 { font-size: 1.3em; }
                 .doc-prose h4 { font-size: 1.1em; }
                 .doc-prose p { margin: 1em 0; }
-                .doc-prose a { color: #60a5fa; text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s; }
-                .doc-prose a:hover { color: #93c5fd; }
+                .doc-prose a { color: #d4d4d8; text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s; }
+                .doc-prose a:hover { color: #fafafa; }
                 .doc-prose strong { color: #f4f4f5; font-weight: 600; }
                 .doc-prose em { color: #a1a1aa; }
                 .doc-prose code {
@@ -63,12 +65,12 @@ export default function DocContent({ content }: { content: string }) {
                     color: #e2e8f0; line-height: 1.7;
                 }
                 .doc-prose blockquote {
-                    border-left: 3px solid #3b82f6; padding: 0.6rem 1.2rem;
-                    color: #a1a1aa; margin: 1.4em 0; background: rgba(59,130,246,0.04);
+                    border-left: 3px solid #737373; padding: 0.6rem 1.2rem;
+                    color: #a1a1aa; margin: 1.4em 0; background: rgba(255,255,255,0.025);
                     border-radius: 0 8px 8px 0;
                 }
                 .doc-prose ul { list-style: none; padding-left: 1.2rem; margin: 0.75em 0; }
-                .doc-prose ul li::before { content: '→'; color: #3b82f6; margin-right: 0.5rem; }
+                .doc-prose ul li::before { content: '→'; color: #a3a3a3; margin-right: 0.5rem; }
                 .doc-prose ol { padding-left: 1.5rem; margin: 0.75em 0; }
                 .doc-prose li { margin: 0.4em 0; }
                 .doc-prose hr { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 2.5em 0; }
@@ -91,16 +93,16 @@ export default function DocContent({ content }: { content: string }) {
                     margin: 1.5em 0; display: block;
                 }
                 /* Highlight.js base */
-                .hljs-keyword, .hljs-selector-tag { color: #c792ea; }
-                .hljs-string, .hljs-attr { color: #c3e88d; }
-                .hljs-number, .hljs-literal { color: #f78c6c; }
-                .hljs-comment { color: #546e7a; font-style: italic; }
-                .hljs-function { color: #82aaff; }
-                .hljs-title { color: #ffcb6b; }
-                .hljs-variable { color: #f07178; }
-                .hljs-built_in { color: #80cbc4; }
+                .hljs-keyword, .hljs-selector-tag { color: #d4d4d8; }
+                .hljs-string, .hljs-attr { color: #a3a3a3; }
+                .hljs-number, .hljs-literal { color: #f4f4f5; }
+                .hljs-comment { color: #71717a; font-style: italic; }
+                .hljs-function { color: #e4e4e7; }
+                .hljs-title { color: #fafafa; }
+                .hljs-variable { color: #c4c4c4; }
+                .hljs-built_in { color: #d4d4d8; }
                 /* Callout style */
-                .doc-prose blockquote strong { color: #fbbf24; }
+                .doc-prose blockquote strong { color: #e4e4e7; }
                 @media (max-width: 640px) {
                     .doc-prose h1 { font-size: 1.7em; }
                     .doc-prose h2 { font-size: 1.3em; }

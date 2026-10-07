@@ -1,87 +1,41 @@
+import Link from 'next/link';
+import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+
 export default function HomePage() {
     return (
-        <>
-            <style>{`
-                html:has(.plain-home),
-                body:has(.plain-home) {
-                    overflow: hidden;
-                }
+        <main className="home-screen page-enter relative flex min-h-screen min-h-[100svh] flex-col overflow-hidden px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-10 lg:px-16">
+            <header className="relative z-10 flex items-center justify-between font-mono text-[10px] uppercase tracking-[.2em] text-zinc-500 sm:text-xs">
+                <Link href="/" aria-label="avrxt home" className="transition-colors hover:text-white">AVRXT<span className="text-zinc-700"> / 01</span></Link>
+                <Link href="/me" className="group inline-flex items-center gap-2 transition-colors hover:text-white">
+                    Profile <ArrowUpRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </Link>
+            </header>
 
-                body:has(.plain-home) > *:not(main) {
-                    display: none !important;
-                }
+            <section className="relative z-10 mx-auto flex w-full max-w-[90rem] flex-1 flex-col justify-center py-16 sm:py-20">
+                <p className="mb-6 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[.25em] text-zinc-500 sm:text-xs">
+                    <span className="h-px w-7 bg-zinc-500" /> Independent by design
+                </p>
+                <h1 aria-label="Nothing Special" className="font-[family-name:var(--font-outfit)] text-[clamp(4.2rem,17.8vw,17rem)] font-semibold uppercase leading-[.72] tracking-[-.085em]">
+                    <span className="home-word block">Nothing</span>
+                    <span className="home-word home-outline-word block">Special</span>
+                </h1>
+                <div className="home-tagline ml-auto mt-8 flex w-fit flex-col items-end gap-4 border-r border-white/35 pr-4 text-right sm:mt-12 sm:pr-6">
+                    <p className="font-mono text-[clamp(.62rem,1.4vw,.9rem)] uppercase tracking-[.22em] text-zinc-400 sm:tracking-[.42em]">Just Leave IT</p>
+                    <Link href="/portfolio" className="group inline-flex min-h-11 items-center gap-3 border border-white/15 bg-white/[.035] px-4 font-mono text-[10px] uppercase tracking-[.16em] text-zinc-300 transition-colors hover:border-white/45 hover:bg-white/[.08] hover:text-white sm:px-5">
+                        Explore the work <ArrowDownRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
+                    </Link>
+                </div>
+            </section>
 
-                .home-display-word {
-                    font-size: clamp(3.25rem, 16vw, 13rem);
-                }
-
-                .plain-home {
-                    padding-top: max(1.25rem, env(safe-area-inset-top));
-                    padding-right: max(1.25rem, env(safe-area-inset-right));
-                    padding-bottom: max(5rem, env(safe-area-inset-bottom));
-                    padding-left: max(1.25rem, env(safe-area-inset-left));
-                }
-
-                .home-signature {
-                    bottom: max(1.5rem, env(safe-area-inset-bottom));
-                }
-
-                @media (max-width: 380px) {
-                    .home-display-word {
-                        font-size: clamp(2.8rem, 15.5vw, 4rem);
-                    }
-                }
-
-                @media (max-height: 620px) {
-                    .home-display-word {
-                        font-size: min(13vw, 19vh);
-                    }
-
-                    .home-panel {
-                        padding-top: 1rem;
-                        padding-bottom: 1rem;
-                    }
-
-                    .home-tagline {
-                        margin-top: 1.25rem;
-                        padding-top: 0.5rem;
-                        padding-bottom: 0.5rem;
-                    }
-
-                    .home-signature {
-                        bottom: max(0.75rem, env(safe-area-inset-bottom));
-                    }
-                }
-            `}</style>
-            <div className="plain-home fixed inset-0 z-[9999] flex min-h-[100dvh] items-center justify-center overflow-hidden bg-[#050505] text-white sm:px-10">
-                <section className="home-panel relative w-full max-w-6xl border-l border-white/20 py-8 pl-4 sm:py-12 sm:pl-10">
-                    <span className="absolute -left-[3px] top-0 h-1.5 w-1.5 rounded-full bg-white" />
-                    <span className="absolute -left-[3px] bottom-0 h-1.5 w-1.5 rounded-full bg-white" />
-                    <h1 className="flex flex-col uppercase leading-[0.78]">
-                        <span className="home-display-word font-[family-name:var(--font-outfit)] font-black tracking-[-0.075em] sm:tracking-[-0.09em]">
-                            Nothing
-                        </span>
-                        <span className="home-display-word ml-[clamp(0rem,6vw,5rem)] font-[family-name:var(--font-outfit)] font-black tracking-[-0.075em] text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.7)] sm:tracking-[-0.09em]">
-                            Special
-                        </span>
-                        <span className="home-tagline mt-7 self-end whitespace-nowrap border border-violet-400/30 bg-gradient-to-r from-cyan-300 via-blue-400 to-violet-400 bg-clip-text px-3 py-2.5 font-mono text-[clamp(0.56rem,1.3vw,0.9rem)] font-normal tracking-[0.25em] text-transparent shadow-[0_0_30px_rgba(99,102,241,0.08)] min-[390px]:tracking-[0.38em] sm:mt-9 sm:px-6 sm:py-3 sm:tracking-[0.45em]">
-                            Just Leave IT
-                        </span>
-                    </h1>
-                </section>
-                <footer className="home-signature absolute inset-x-0 flex justify-center px-6">
-                    <a
-                        href="sites-project://appgprj_6a83f97e75688191a6c353debd1ee5cd"
-                        className="group flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.18em]"
-                    >
-                        <span className="text-zinc-600">with</span>
-                        <span className="text-sm grayscale transition duration-300 group-hover:grayscale-0">🩶</span>
-                        <span className="border-b border-blue-500/50 pb-0.5 text-blue-400 transition-colors group-hover:border-blue-300 group-hover:text-blue-300">
-                            @avrxt
-                        </span>
-                    </a>
-                </footer>
-            </div>
-        </>
+            <footer className="relative z-10 flex flex-col gap-4 border-t border-white/10 pt-5 font-mono text-[9px] uppercase tracking-[.16em] text-zinc-600 sm:flex-row sm:items-center sm:justify-between sm:text-[10px]">
+                <span>Designing in the quiet</span>
+                <nav aria-label="Quick links" className="flex flex-wrap gap-x-5 gap-y-2">
+                    <Link className="transition-colors hover:text-white" href="/docs">Notes</Link>
+                    <Link className="transition-colors hover:text-white" href="/gallery">Gallery</Link>
+                    <Link className="transition-colors hover:text-white" href="/contact">Contact</Link>
+                </nav>
+                <Link href="/me" className="hidden transition-colors hover:text-white sm:inline">© avrxt</Link>
+            </footer>
+        </main>
     );
 }

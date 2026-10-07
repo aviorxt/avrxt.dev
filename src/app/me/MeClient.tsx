@@ -744,7 +744,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
     return (
         <main className={cn(
-            "me-v7 min-h-[100dvh] bg-[#050505] text-white relative flex flex-col items-center select-none overflow-x-hidden px-1 pt-12 pb-12 sm:pt-16",
+            "me-v7 min-h-[100dvh] bg-[#050505] text-white relative flex flex-col items-center overflow-x-hidden px-1 pt-12 pb-12 sm:pt-16 selection:bg-white/20",
             isImmersive && "immersive-mode"
         )}>
             {/* Background Decor */}
@@ -753,20 +753,20 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 isImmersive ? "blur-xl scale-110" : ""
             )}>
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(34,211,238,0.08),transparent_28%),radial-gradient(circle_at_85%_80%,rgba(139,92,246,0.08),transparent_32%),#050505]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.055),transparent_28%),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.035),transparent_32%),#050505]"></div>
 
                 {/* Spotify Ambient (cover-based) */}
                 {showSpotifyAmbient && (
                     <div className="absolute inset-0 pointer-events-none transition-opacity duration-700">
                         <div
-                            className="absolute inset-0 opacity-35 blur-3xl scale-125 saturate-150"
+                            className="absolute inset-0 opacity-25 blur-3xl scale-125 saturate-0"
                             style={{
                                 backgroundImage: `url(${spotifyData.albumImageUrl})`,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                             }}
                         />
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(16,185,129,0.18),transparent_55%),radial-gradient(circle_at_75%_85%,rgba(59,130,246,0.14),transparent_60%)] mix-blend-screen opacity-80" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.10),transparent_55%),radial-gradient(circle_at_75%_85%,rgba(255,255,255,0.06),transparent_60%)] mix-blend-screen opacity-80" />
                         <div className="absolute inset-0 bg-black/55" />
                     </div>
                 )}
@@ -785,10 +785,13 @@ export default function MeClient({ config }: { config: MeConfig }) {
                     isImmersive ? "opacity-20 animate-pulse" : "opacity-0"
                 )} />
 
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.08] mix-blend-overlay pointer-events-none"></div>
             </div>
 
             <div className="relative z-20 w-full max-w-2xl px-5 sm:px-8 flex flex-col items-center [perspective:1000px]">
+                <nav aria-label="Profile navigation" className="mb-8 flex w-full items-center justify-between border-b border-white/10 pb-4 font-mono text-[9px] uppercase tracking-[.2em] text-zinc-600">
+                    <Link href="/" className="transition-colors hover:text-white">AVRXT <span className="text-zinc-800">/ HOME</span></Link>
+                    <Link href="/portfolio" className="transition-colors hover:text-white">Selected work ↗</Link>
+                </nav>
                 {/* Profile Header */}
                 <Reveal className="me-profile-header w-full border-l border-white/20 py-7 pl-5 text-left mb-10 sm:py-10 sm:pl-8" direction="down" delay={0.1}>
                     <div className="mb-6 relative inline-block">
@@ -796,6 +799,10 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         <img
                             src={config.profile.avatarUrl}
                             alt={config.profile.handle}
+                            width={96}
+                            height={96}
+                            fetchPriority="high"
+                            decoding="async"
                             className="w-24 h-24 rounded-none border border-white/20 relative z-10 shadow-2xl hover:scale-105 transition-transform duration-500"
                         />
                         <div className={cn(
@@ -1004,7 +1011,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                     <div className="mt-3 relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                                         <div
                                             ref={spotifyProgressBarRef}
-                                            className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                            className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_10px_rgba(255,255,255,0.22)]"
                                             style={{ width: `${spotifyData?.isPlaying ? spotifyProgress : progress}%` }}
                                         />
                                         <input
@@ -1067,15 +1074,16 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                             <video
                                                 src={item.url}
                                                 className="w-full h-full object-cover"
-                                                controls={false}
+                                                controls
                                                 muted
                                                 loop
                                                 playsInline
+                                                preload="none"
                                                 onMouseOver={e => e.currentTarget.play()}
                                                 onMouseOut={e => e.currentTarget.pause()}
                                             />
                                         ) : (
-                                            <img src={item.url} alt={item.caption || 'Gallery Image'} className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
+                                            <img src={item.url} alt={item.caption || 'Gallery Image'} loading="lazy" decoding="async" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
                                         )}
                                         {item.caption && (
                                             <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1127,10 +1135,6 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="w-full py-3 bg-white text-black font-bold rounded-xl text-xs uppercase tracking-widest hover:opacity-90 transition-all font-mono disabled:opacity-50"
-                                    style={{
-                                        backgroundColor: config.profile.themeColor || '#ffffff',
-                                        color: config.profile.themeColor ? (parseInt(config.profile.themeColor.replace('#', ''), 16) > 0xffffff / 2 ? '#000' : '#fff') : '#000'
-                                    }}
                                 >
                                     {isSubmitting ? 'CONNECTING...' : 'Subscribe_'}
                                 </button>
@@ -1260,7 +1264,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 .me-v7 .link-card,
                 .me-v7 .card-3d,
                 .me-v7 .sub-card {
-                    border-radius: 0 !important;
+                    border-radius: 14px !important;
                     border-color: rgba(255, 255, 255, 0.12) !important;
                     background: rgba(255, 255, 255, 0.025) !important;
                     box-shadow: none;
@@ -1268,15 +1272,15 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 .me-v7 .link-card:hover,
                 .me-v7 .card-3d:hover,
                 .me-v7 .sub-card:hover {
-                    border-color: rgba(96, 165, 250, 0.4) !important;
-                    background: linear-gradient(110deg, rgba(34, 211, 238, 0.045), rgba(139, 92, 246, 0.035)) !important;
+                    border-color: rgba(255, 255, 255, 0.34) !important;
+                    background: linear-gradient(110deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)) !important;
                 }
                 .me-v7 input:not([type='range']) {
-                    border-radius: 0 !important;
+                    border-radius: 12px !important;
                 }
                 .me-v7 .sub-card button[type='submit'] {
-                    border-radius: 0 !important;
-                    background: linear-gradient(90deg, #67e8f9, #60a5fa, #a78bfa) !important;
+                    border-radius: 12px !important;
+                    background: linear-gradient(90deg, #e5e5e5, #bcbcbc, #8a8a8a) !important;
                     color: #050505 !important;
                 }
                 @media (max-width: 420px) {

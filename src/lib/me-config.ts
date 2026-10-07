@@ -76,7 +76,7 @@ export const defaultMeConfig: MeConfig = {
         avatarUrl: "https://cdn.avxt.qzz.io/assets/IMG_20251108_224641_264.webp",
         logoUrl: "https://cdn.avxt.qzz.io/assets/logo-02.png",
         bannerUrl: "https://cdn.avxt.qzz.io/images/aviorxt_01.jpg",
-        themeColor: "#10b981",
+        themeColor: "#ffffff",
         status: { text: 'Online', color: 'green' },
         presence: {
             mode: 'manual',

@@ -84,34 +84,45 @@ export async function createTipOrder(amount: number) {
 
 export async function verifyTipAndSave(paymentDetails: PaymentDetails, tipDetails: TipDetails) {
   try {
+    const userName = tipDetails.userName.trim().replace(/[\r\n]+/g, ' ').slice(0, 100);
     const userEmail = tipDetails.userEmail.trim().toLowerCase();
-    if (!isValidEmail(userEmail)) {
+    const note = (tipDetails.note || '').trim().slice(0, 2000);
+    if (!userName || userEmail.length > 254 || !isValidEmail(userEmail)) {
       return { success: false, error: 'Invalid email address.' };
     }
 
     const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = paymentDetails;
+    if (!razorpay_order_id || razorpay_order_id.length > 64 || !razorpay_payment_id || razorpay_payment_id.length > 64 || !/^[a-f\d]{64}$/i.test(razorpay_signature)) {
+      return { success: false, error: 'Invalid payment details.' };
+    }
 
+    const keySecret = process.env.RAZORPAY_KEY_SECRET;
+    if (!keySecret) return { success: false, error: 'Payment verification is not configured.' };
     const expectedSignature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET || '')
+      .createHmac('sha256', keySecret)
       .update(`${razorpay_order_id}|${razorpay_payment_id}`)
       .digest('hex');
 
-    if (expectedSignature !== razorpay_signature) {
+    if (!crypto.timingSafeEqual(Buffer.from(expectedSignature, 'hex'), Buffer.from(razorpay_signature, 'hex'))) {
       return { success: false, error: 'Invalid payment signature' };
     }
 
     const instance = getRazorpayClient();
     const [order, payment] = await Promise.all([
-      instance.orders.fetch(razorpay_order_id) as Promise<{ amount: number; id: string }>,
-      instance.payments.fetch(razorpay_payment_id) as Promise<{ order_id: string; status: string }>,
+      instance.orders.fetch(razorpay_order_id) as Promise<{ amount: number; id: string; currency: string }>,
+      instance.payments.fetch(razorpay_payment_id) as Promise<{ order_id: string; status: string; amount: number; currency: string }>,
     ]);
 
-    if (payment.order_id !== razorpay_order_id) {
+    if (order.id !== razorpay_order_id || payment.order_id !== razorpay_order_id) {
       return { success: false, error: 'Payment/order mismatch detected.' };
     }
 
-    if (!['captured', 'authorized'].includes(payment.status)) {
+    if (payment.status !== 'captured') {
       return { success: false, error: `Unexpected payment status: ${payment.status}` };
+    }
+
+    if (order.currency !== 'INR' || payment.currency !== order.currency || Number(payment.amount) !== Number(order.amount) || Number(order.amount) <= 0) {
+      return { success: false, error: 'Payment amount or currency mismatch.' };
     }
 
     const amount = Math.round(Number(order.amount) / 100);
@@ -119,10 +130,10 @@ export async function verifyTipAndSave(paymentDetails: PaymentDetails, tipDetail
     const supabase = await createClient();
     const { error: dbError } = await supabase.from('cupcake_tips').insert([
       {
-        user_name: tipDetails.userName,
+        user_name: userName,
         user_email: userEmail,
         amount,
-        note: tipDetails.note || null,
+        note: note || null,
         order_id: razorpay_order_id,
         payment_id: razorpay_payment_id,
       },
@@ -130,11 +141,12 @@ export async function verifyTipAndSave(paymentDetails: PaymentDetails, tipDetail
 
     if (dbError) {
       console.error('Supabase Insert Error:', dbError);
+      return { success: false, error: 'Payment received, but saving the receipt failed. Please contact support.' };
     }
 
-    const safeName = escapeHtml(tipDetails.userName);
+    const safeName = escapeHtml(userName);
     const safeEmail = escapeHtml(userEmail);
-    const safeNote = escapeHtml(tipDetails.note || 'No note attached');
+    const safeNote = escapeHtml(note || 'No note attached');
 
     try {
       const resend = new Resend(process.env.RESEND_API_KEY);

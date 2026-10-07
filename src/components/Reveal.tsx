@@ -18,6 +18,11 @@ export default function Reveal({ children, className, id, style, delay = 0, dire
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (!('IntersectionObserver' in window)) {
+            setIsVisible(true);
+            return;
+        }
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {

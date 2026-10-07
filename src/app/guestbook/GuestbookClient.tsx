@@ -62,11 +62,7 @@ export default function GuestbookClient({ user, initialMessages }: { user: AuthU
         if (!input.trim() || !user) return;
 
         setIsSubmitting(true);
-        // Better fallback for names and avatars
-        const name = user.user_metadata.full_name || user.user_metadata.user_name || user.email?.split('@')[0] || 'Anonymous';
-        const avatar = user.user_metadata.avatar_url || `https://ui-avatars.com/api/?name=${name}&background=random&color=fff`;
-
-        const result = await postMessage(input, name, avatar);
+        const result = await postMessage(input);
         if (result.error) {
             openErrorDialog('Transmission blocked', result.error);
         } else {

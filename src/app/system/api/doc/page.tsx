@@ -40,7 +40,7 @@ function Code({ children }: { children: string }) {
 export default function ApiDocumentationPage() {
     return (
         <div className="min-h-screen bg-[#050505] text-zinc-300 selection:bg-cyan-300/20 selection:text-white">
-            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_5%,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_85%_30%,rgba(99,102,241,0.06),transparent_28%)]" />
+            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_5%,rgba(255,255,255,0.055),transparent_30%),radial-gradient(circle_at_85%_30%,rgba(255,255,255,0.035),transparent_28%)]" />
 
             <main className="relative mx-auto max-w-6xl px-5 pb-28 pt-36 sm:px-8 lg:px-12">
                 <header className="border-b border-white/10 pb-16">

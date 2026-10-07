@@ -62,9 +62,9 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         setUploading(true);
         setError('');
         try {
-            const res = await getPresignedR2UrlAction(file.name, file.type);
-            if ('error' in res && res.error) throw new Error(res.error);
-            const { uploadUrl, publicUrl } = res as { uploadUrl: string; publicUrl: string; key: string; success: boolean };
+            const res = await getPresignedR2UrlAction(file.name, file.type, file.size);
+            if ('error' in res) throw new Error(res.error);
+            const { uploadUrl, publicUrl } = res;
             // Upload directly to R2
             const uploadResponse = await fetch(uploadUrl, {
                 method: 'PUT',
@@ -80,6 +80,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
             setError(err.message);
         } finally {
             setUploading(false);
+            if (fileRef.current) fileRef.current.value = '';
         }
     };
 
@@ -112,7 +113,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
                         </>
                     ) : (
                         <>
-                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleFileUpload} />
                             <button onClick={() => fileRef.current?.click()}
                                 disabled={uploading}
                                 className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-bold font-mono uppercase transition-all flex items-center justify-center gap-2 border border-white/10">
@@ -453,7 +454,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                         <button
                             onClick={handleSave}
                             disabled={isPending || !selectedDoc}
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold font-mono transition-all shadow-[0_0_15px_rgba(59,130,246,0.25)]">
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold font-mono transition-all shadow-[0_0_15px_rgba(255,255,255,0.14)]">
                             {isPending ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
                             {isPending ? 'SAVING...' : 'SAVE'}
                         </button>
@@ -500,7 +501,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
 
                     {/* New Doc Button */}
                     <button onClick={handleNewDoc}
-                        className="w-full p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                        className="w-full p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.12)]">
                         <Plus size={16} /> New Document
                     </button>
 
@@ -512,7 +513,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                 className={cn(
                                     'w-full p-3 rounded-xl text-left transition-all border group',
                                     selectedDoc?.id === doc.id
-                                        ? 'bg-blue-600/15 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.08)]'
+                                        ? 'bg-blue-600/15 border-blue-500/40 shadow-[0_0_15px_rgba(255,255,255,0.06)]'
                                         : 'bg-zinc-900/40 border-white/5 hover:bg-zinc-800/60 hover:border-white/10'
                                 )}>
                                 <div className="flex items-start justify-between mb-1.5">
@@ -753,7 +754,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                     outline: none;
                     transition: border-color 0.2s;
                 }
-                .editor-input:focus { border-color: rgba(59,130,246,0.5); }
+                .editor-input:focus { border-color: rgba(255,255,255,0.5); }
                 /* Scrollbar */
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style:none;scrollbar-width:none; }
@@ -764,11 +765,11 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                 .prose h2 { font-size: 1.5em; }
                 .prose h3 { font-size: 1.25em; }
                 .prose p { margin: 0.75em 0; line-height: 1.75; }
-                .prose a { color: #60a5fa; text-decoration: underline; }
+                .prose a { color: #d4d4d8; text-decoration: underline; }
                 .prose code { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 2px 6px; font-size: 0.85em; font-family: var(--font-mono, monospace); color: #e2e8f0; }
                 .prose pre { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.25rem; overflow-x: auto; margin: 1.25em 0; }
                 .prose pre code { background: none; padding: 0; font-size: 0.875em; }
-                .prose blockquote { border-left: 3px solid #3b82f6; padding-left: 1rem; color: #a1a1aa; margin: 1em 0; }
+                .prose blockquote { border-left: 3px solid #737373; padding-left: 1rem; color: #a1a1aa; margin: 1em 0; }
                 .prose ul, .prose ol { padding-left: 1.5rem; margin: 0.75em 0; }
                 .prose li { margin: 0.3em 0; }
                 .prose hr { border-color: rgba(255,255,255,0.1); margin: 2em 0; }

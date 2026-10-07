@@ -15,7 +15,7 @@ import { saveMeConfigAction } from '@/app/actions/me';
 import { logout } from '@/app/actions/auth';
 import { disconnectSpotifyAction } from '@/app/actions/spotify';
 import { searchYouTubeAction } from '@/app/actions/youtube';
-import { uploadToR2Action, getPresignedR2UrlAction, deleteFromR2Action } from '@/app/actions/r2';
+import { getPresignedR2UrlAction, deleteFromR2Action } from '@/app/actions/r2';
 import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
@@ -33,26 +33,55 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     const [ytError, setYtError] = useState('');
     const [saveStatus, setSaveStatus] = useState<string>('');
     const [isPending, setIsPending] = useState(false);
+    const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => new Set());
 
     const handleSave = async () => {
         setIsPending(true);
         setSaveStatus('SYNCING...');
+        try {
+            const result = await saveMeConfigAction(config);
+            if ('error' in result) {
+                setSaveStatus(`ERROR: ${result.error}`);
+                return;
+            }
 
-        const result = await saveMeConfigAction(config);
+            const referencedUrls = new Set([
+                config.profile.avatarUrl,
+                config.profile.logoUrl,
+                config.profile.bannerUrl,
+                config.music.coverUrl,
+                config.music.audioUrl,
+                ...config.links.map(link => link.icon || ''),
+                ...config.gallery.map(item => item.url),
+                ...config.resources.flatMap(resource => [resource.url, resource.previewUrl || '']),
+            ]);
+            const cleanupUrls = [...pendingAssetCleanup].filter(url => !referencedUrls.has(url));
+            const cleanupResults = await Promise.all(cleanupUrls.map(async url => ({
+                url,
+                result: await deleteFromR2Action(url).catch(error => ({
+                    error: error instanceof Error ? error.message : 'R2_DELETE_FAILED',
+                })),
+            })));
+            const failedCleanupUrls = cleanupResults.filter(item => 'error' in item.result).map(item => item.url);
+            const completedCleanupUrls = new Set(cleanupResults.filter(item => !('error' in item.result)).map(item => item.url));
+            setPendingAssetCleanup(current => new Set([...current].filter(url => !completedCleanupUrls.has(url))));
 
-        if ('error' in result) {
-            setSaveStatus(`ERROR: ${result.error}`);
-        } else {
-            setSaveStatus('SUCCESS: CONFIG_SYNCED');
-            setTimeout(() => setSaveStatus(''), 3000);
+            setSaveStatus(failedCleanupUrls.length
+                ? `SAVED: R2_CLEANUP_FAILED (${failedCleanupUrls.length}); SAVE_AGAIN_TO_RETRY`
+                : 'SUCCESS: CONFIG_SYNCED');
+            if (!failedCleanupUrls.length) setTimeout(() => setSaveStatus(''), 3000);
+        } catch (error) {
+            setSaveStatus(`ERROR: ${error instanceof Error ? error.message : 'SAVE_FAILED'}`);
+        } finally {
+            setIsPending(false);
         }
-        setIsPending(false);
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: string, galleryType?: 'image' | 'video') => {
         const file = e.target.files?.[0];
         if (!file) return;
 
+        let uploadFailed = false;
         setIsPending(true);
         setSaveStatus('UPLOADING...');
 
@@ -71,7 +100,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
 
             // Step 1: Get Presigned URL from Server Action
             setSaveStatus('STEP 1: PREPARING CLOUD...');
-            const result = await getPresignedR2UrlAction(file.name, file.type, oldUrl);
+            const result = await getPresignedR2UrlAction(file.name, file.type, file.size);
 
             if ('error' in result) {
                 throw new Error(`S1_ERROR: ${result.error}`);
@@ -128,50 +157,36 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                 setConfig({ ...config, links: newLinks });
             }
 
-            // Step 4: Auto-delete old file if it was a replacement
-            if (oldUrl) {
-                await deleteFromR2Action(oldUrl);
+            // Keep the old asset live until the config update has been saved.
+            if (oldUrl && /^https?:\/\//i.test(oldUrl) && oldUrl !== publicUrl) {
+                const cleanupUrl = oldUrl;
+                setPendingAssetCleanup(current => new Set(current).add(cleanupUrl));
             }
 
             setSaveStatus('SUCCESS: UPLOAD_COMPLETE');
         } catch (error: any) {
+            uploadFailed = true;
             console.error('Upload error:', error);
             setSaveStatus(`ERROR: ${error.message || 'UPLOAD_FAILED'}`);
         } finally {
             setIsPending(false);
+            e.target.value = '';
             // Keep error messages visible longer (8 seconds)
             // but clear success messages faster (2 seconds)
-            const isError = saveStatus?.startsWith('ERROR');
-            setTimeout(() => setSaveStatus(''), isError ? 12000 : 2000);
+            setTimeout(() => setSaveStatus(''), uploadFailed ? 12000 : 2000);
         }
     };
 
-    const handleDeleteGalleryItem = async (id: string, url: string) => {
-        if (!confirm('ARE_YOU_SURE? THIS_WILL_DELETE_FROM_CLOUD')) return;
-
-        setIsPending(true);
-        setSaveStatus('STEP 1: WIPING CLOUD...');
-
-        try {
-            const result = await deleteFromR2Action(url);
-            if (result && 'error' in result) {
-                throw new Error(result.error);
-            }
-
-            setConfig({ ...config, gallery: config.gallery?.filter(i => i.id !== id) });
-            setSaveStatus('SUCCESS: ASSET_PURGED');
-        } catch (error: any) {
-            console.error('Delete error:', error);
-            setSaveStatus(`ERROR: ${error.message || 'PURGE_FAILED'}`);
-        } finally {
-            setIsPending(false);
-            setTimeout(() => setSaveStatus(''), 3000);
-        }
+    const handleDeleteGalleryItem = (id: string, url: string) => {
+        if (!confirm('Remove this item from your profile? Its R2 file will be deleted after you save.')) return;
+        setConfig(current => ({ ...current, gallery: current.gallery?.filter(item => item.id !== id) }));
+        if (/^https?:\/\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url));
+        setSaveStatus('REMOVED_FROM_DRAFT: SAVE_TO_APPLY');
     };
 
     return (
         <>
-            <main className="min-h-screen bg-black text-white p-6 md:p-12 selection:bg-white/10">
+            <main className="me-admin-page page-enter min-h-screen bg-black text-white p-5 sm:p-7 md:p-12 selection:bg-white/10">
                 <div className="max-w-4xl mx-auto">
                     <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
                         <div>
@@ -182,6 +197,9 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto">
+                            <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10">
+                                AVRXT HOME
+                            </Link>
                             <Link
                                 href="/me"
                                 target="_blank"
@@ -197,10 +215,17 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             >
                                 DOCS
                             </Link>
+                            <Link
+                                href="/me/admin/mail-broadcat"
+                                prefetch={false}
+                                className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10"
+                            >
+                                MAIL BROADCAST
+                            </Link>
                             <button
                                 onClick={handleSave}
                                 disabled={isPending}
-                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold font-mono transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)] disabled:opacity-50"
+                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold font-mono transition-all shadow-[0_0_20px_rgba(255,255,255,0.12)] disabled:opacity-50"
                             >
                                 <Save size={14} /> {isPending ? 'SYNCING...' : 'SAVE'}
                             </button>
@@ -218,6 +243,10 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             <img
                                 src={config.profile.avatarUrl}
                                 alt="Preview"
+                                                width={80}
+                                                height={80}
+                                                loading="lazy"
+                                                decoding="async"
                                 className="w-20 h-20 rounded-full object-cover border-2 border-white/10 shadow-2xl mb-4 bg-zinc-800"
                             />
                             <h2 className="text-2xl font-bold font-mono tracking-[0.15em] uppercase text-white">{config.profile.handle || '@USERNAME'}</h2>
@@ -228,11 +257,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                     {saveStatus && (
                         <div className={cn(
                             "mb-6 p-4 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-2",
-                            saveStatus.includes('ERROR')
+                            saveStatus.includes('ERROR') || saveStatus.includes('FAILED')
                                 ? "bg-red-500/10 border border-red-500/20 text-red-500"
                                 : "bg-emerald-500/10 border border-emerald-500/20 text-emerald-500"
                         )}>
-                            {saveStatus.includes('ERROR') ? <AlertCircle size={16} /> : <Check size={16} />}
+                            {saveStatus.includes('ERROR') || saveStatus.includes('FAILED') ? <AlertCircle size={16} /> : <Check size={16} />}
                             <span className="text-[10px] font-mono uppercase tracking-widest">{saveStatus}</span>
                         </div>
                     )}
@@ -319,7 +348,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                             <input
                                                 type="file"
                                                 className="hidden"
-                                                accept="image/*"
+                                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                                 onChange={(e) => handleFileUpload(e, 'profile.avatarUrl')}
                                             />
                                         </label>
@@ -399,25 +428,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                             <input
                                                 type="file"
                                                 className="hidden"
-                                                accept="image/*"
+                                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                                 onChange={(e) => handleFileUpload(e, 'profile.bannerUrl')}
                                             />
                                         </label>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={config.profile.themeColor || ''}
-                                            onChange={(e) => setConfig({ ...config, profile: { ...config.profile, themeColor: e.target.value } })}
-                                            className="admin-input flex-1"
-                                            placeholder="Theme Color (Hex)"
-                                        />
-                                        <div
-                                            className="w-12 h-12 rounded-xl border border-white/10"
-                                            style={{ backgroundColor: config.profile.themeColor || '#fff' }}
-                                        ></div>
-                                    </div>
-
                                 </div>
                             </div>
 
@@ -875,7 +890,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                     className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-all text-left group"
                                                 >
                                                     <div className="relative shrink-0 w-16 h-9 rounded overflow-hidden border border-white/5">
-                                                        <img src={item.thumbnail} className="w-full h-full object-cover" alt="" />
+                                                        <img src={item.thumbnail} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
                                                         <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <div className="w-4 h-4 bg-red-500 rounded-sm flex items-center justify-center">
                                                                 <div className="w-0 h-0 border-t-[4px] border-t-transparent border-l-[7px] border-l-white border-b-[4px] border-b-transparent ml-0.5" />
@@ -897,7 +912,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                         <div className="flex items-center gap-3">
                                             {config.music.youtubeVideoId ? (
                                                 <div className="relative w-16 h-9 rounded overflow-hidden border border-red-500/20 shrink-0">
-                                                    <img src={`https://img.youtube.com/vi/${config.music.youtubeVideoId}/mqdefault.jpg`} className="w-full h-full object-cover" alt="" />
+                                                    <img src={`https://img.youtube.com/vi/${config.music.youtubeVideoId}/mqdefault.jpg`} className="w-full h-full object-cover" alt="" loading="lazy" decoding="async" />
                                                     <div className="absolute bottom-0.5 right-0.5">
                                                         <Youtube size={10} className="text-red-500" />
                                                     </div>
@@ -1151,7 +1166,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                             <input
                                                                 type="file"
                                                                 className="hidden"
-                                                                accept="image/*"
+                                                                accept="image/png,image/jpeg,image/webp,image/gif,image/avif"
                                                                 onChange={(e) => handleFileUpload(e, `link:${link.id}`)}
                                                             />
                                                         </label>
@@ -1303,11 +1318,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                     <div className="flex gap-2">
                                         <label className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-all font-bold border border-white/10 uppercase tracking-tighter cursor-pointer flex items-center gap-2">
                                             <Upload size={10} /> ADD_IMG
-                                            <input type="file" className="hidden" accept="image/*" onChange={(e) => handleFileUpload(e, 'gallery', 'image')} />
+                                            <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" onChange={(e) => handleFileUpload(e, 'gallery', 'image')} />
                                         </label>
                                         <label className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-all font-bold border border-white/10 uppercase tracking-tighter cursor-pointer flex items-center gap-2">
                                             <Upload size={10} /> ADD_VID
-                                            <input type="file" className="hidden" accept="video/*" onChange={(e) => handleFileUpload(e, 'gallery', 'video')} />
+                                            <input type="file" className="hidden" accept="video/mp4,video/webm,video/ogg" onChange={(e) => handleFileUpload(e, 'gallery', 'video')} />
                                         </label>
                                     </div>
                                 </div>
@@ -1350,9 +1365,9 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                 </button>
                                             </div>
                                             {item.type === 'image' ? (
-                                                <img src={item.url} className="w-full h-24 object-cover rounded-lg border border-white/5" />
+                                                <img src={item.url} className="w-full h-24 object-cover rounded-lg border border-white/5" alt={item.caption || 'Gallery item'} loading="lazy" decoding="async" />
                                             ) : (
-                                                <video src={item.url} className="w-full h-24 object-cover rounded-lg border border-white/5" controls />
+                                                <video src={item.url} className="w-full h-24 object-cover rounded-lg border border-white/5" controls preload="none" />
                                             )}
                                             <input
                                                 className="admin-input py-1.5 text-[10px] bg-zinc-900/50"
@@ -1381,6 +1396,15 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>
                     </div>
                 </div>
+
+                    <div className="sticky bottom-3 z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/90 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/75">
+                        <span className="min-w-0 truncate px-2 font-mono text-[10px] uppercase tracking-widest text-zinc-500" aria-live="polite">
+                            {saveStatus || 'Profile settings'}
+                        </span>
+                        <button type="button" onClick={handleSave} disabled={isPending} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60">
+                            <Save size={14} /> {isPending ? 'Saving…' : 'Save changes'}
+                        </button>
+                    </div>
 
                 <style jsx global>{`
            .admin-input {

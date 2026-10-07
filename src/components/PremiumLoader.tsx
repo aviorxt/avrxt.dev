@@ -60,7 +60,7 @@ export default function PremiumLoader() {
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 0.3 }}
-                        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(16,185,129,0.1)_0%,transparent_50%)] pointer-events-none"
+                        className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.06)_0%,transparent_50%)] pointer-events-none"
                     />
                 </motion.div>
             )}

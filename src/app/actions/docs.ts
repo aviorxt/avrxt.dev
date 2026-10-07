@@ -48,6 +48,7 @@ export async function getDocBySlug(slug: string) {
         .from('documents')
         .select('*')
         .eq('slug', slug)
+        .eq('published', true)
         .single(); // Assuming slug is unique
 
     if (error) {

@@ -132,7 +132,7 @@ export default function PortfolioClient() {
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/10 bg-white/5 text-[9px] font-mono uppercase tracking-[0.3em] text-zinc-500">
                             <Layers className="w-3 h-3" /> System_Archive
                         </div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[9px] font-mono uppercase tracking-[0.3em] text-emerald-400 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-emerald-500/20 bg-emerald-500/10 text-[9px] font-mono uppercase tracking-[0.3em] text-emerald-400 shadow-[0_0_15px_rgba(255,255,255,0.08)]">
                             <Briefcase className="w-3 h-3" /> Active: Indigo Airlines
                         </div>
                     </div>
@@ -285,7 +285,7 @@ export default function PortfolioClient() {
                                                     <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/5 bg-white/5 self-start">
                                                         <div className={cn(
                                                             "w-1.5 h-1.5 rounded-full",
-                                                            ['Operational', 'Live', 'Production', 'Team Backend Engineer'].includes(project.status) ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" : "bg-zinc-600"
+                                                            ['Operational', 'Live', 'Production', 'Team Backend Engineer'].includes(project.status) ? "bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(255,255,255,0.25)]" : "bg-zinc-600"
                                                         )} />
                                                         <span className="text-[8px] font-mono text-zinc-500 uppercase tracking-widest">{project.status}</span>
                                                     </div>
