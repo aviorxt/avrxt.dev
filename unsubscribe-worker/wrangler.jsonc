@@ -7,6 +7,18 @@
   "routes": [
     { "pattern": "unsub.avrxt.dev", "custom_domain": true }
   ],
+  "ratelimits": [
+    {
+      "name": "REQUEST_LIMITER",
+      "namespace_id": "2026100701",
+      "simple": { "limit": 120, "period": 60 }
+    },
+    {
+      "name": "UNSUBSCRIBE_LIMITER",
+      "namespace_id": "2026100702",
+      "simple": { "limit": 8, "period": 60 }
+    }
+  ],
   "secrets": {
     "required": ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "RESEND_API_KEY"]
   }

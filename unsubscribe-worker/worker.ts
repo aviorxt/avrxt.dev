@@ -2,6 +2,12 @@ interface Env {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
   RESEND_API_KEY: string;
+  REQUEST_LIMITER: RateLimiter;
+  UNSUBSCRIBE_LIMITER: RateLimiter;
+}
+
+interface RateLimiter {
+  limit(options: { key: string }): Promise<{ success: boolean }>;
 }
 
 interface UnsubscribeRecord {
@@ -11,19 +17,39 @@ interface UnsubscribeRecord {
 }
 
 const TOKEN_PATTERN = /^[A-Za-z0-9_-]{40,60}$/;
-const HTML_HEADERS = {
-  'content-type': 'text/html; charset=utf-8',
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const AUDIENCE_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const SECURITY_HEADERS = {
   'cache-control': 'no-store, max-age=0',
   'x-content-type-options': 'nosniff',
   'x-frame-options': 'DENY',
   'referrer-policy': 'no-referrer',
-  'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
+  'strict-transport-security': 'max-age=31536000',
+  'permissions-policy': 'camera=(), microphone=(), geolocation=(), payment=()',
+  'cross-origin-resource-policy': 'same-origin',
+  'cross-origin-opener-policy': 'same-origin',
+  'x-permitted-cross-domain-policies': 'none',
+  'content-security-policy': "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'; img-src 'none'; font-src 'none'; connect-src 'none'; object-src 'none'",
+} as const;
+const HTML_HEADERS = {
+  'content-type': 'text/html; charset=utf-8',
+  ...SECURITY_HEADERS,
 } as const;
 const JSON_HEADERS = {
   'content-type': 'application/json; charset=utf-8',
-  'cache-control': 'no-store, max-age=0',
-  'x-content-type-options': 'nosniff',
+  ...SECURITY_HEADERS,
 } as const;
+
+function plainText(status: number, body: string, extraHeaders: Record<string, string> = {}) {
+  return new Response(body, {
+    status,
+    headers: {
+      'content-type': 'text/plain; charset=utf-8',
+      ...SECURITY_HEADERS,
+      ...extraHeaders,
+    },
+  });
+}
 
 function page(title: string, message: string, token = '', complete = false) {
   const button = token && !complete
@@ -51,19 +77,36 @@ async function hashToken(token: string) {
 
 async function findRecord(token: string, env: Env): Promise<UnsubscribeRecord | null> {
   if (!TOKEN_PATTERN.test(token)) return null;
-  const url = new URL('/rest/v1/newsletter_unsubscribe_tokens', env.SUPABASE_URL);
+  const baseUrl = new URL(env.SUPABASE_URL);
+  if (baseUrl.protocol !== 'https:' || !baseUrl.hostname.endsWith('.supabase.co') || baseUrl.username || baseUrl.password) {
+    throw new Error('Supabase endpoint configuration is invalid');
+  }
+  const url = new URL('/rest/v1/newsletter_unsubscribe_tokens', baseUrl);
   url.searchParams.set('token_hash', `eq.${await hashToken(token)}`);
   url.searchParams.set('select', 'email,audience_id,unsubscribed_at');
   url.searchParams.set('limit', '1');
   const response = await fetch(url, {
+    redirect: 'error',
+    signal: AbortSignal.timeout(8_000),
     headers: {
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+      accept: 'application/json',
     },
   });
   if (!response.ok) throw new Error(`Supabase lookup failed (${response.status})`);
-  const records = await response.json() as UnsubscribeRecord[];
-  return records[0] || null;
+  const records = await response.json() as unknown;
+  if (!Array.isArray(records)) throw new Error('Supabase returned an invalid lookup response');
+  const record = records[0] as Partial<UnsubscribeRecord> | undefined;
+  if (!record) return null;
+  if (
+    typeof record.email !== 'string' || record.email.length > 320 || !EMAIL_PATTERN.test(record.email) ||
+    typeof record.audience_id !== 'string' || !AUDIENCE_ID_PATTERN.test(record.audience_id) ||
+    (record.unsubscribed_at !== null && typeof record.unsubscribed_at !== 'string')
+  ) {
+    throw new Error('Supabase returned an invalid unsubscribe record');
+  }
+  return record as UnsubscribeRecord;
 }
 
 async function unsubscribe(record: UnsubscribeRecord, env: Env) {
@@ -73,6 +116,8 @@ async function unsubscribe(record: UnsubscribeRecord, env: Env) {
   );
   const resendResponse = await fetch(resendUrl, {
     method: 'PATCH',
+    redirect: 'error',
+    signal: AbortSignal.timeout(8_000),
     headers: {
       authorization: `Bearer ${env.RESEND_API_KEY}`,
       'content-type': 'application/json',
@@ -86,6 +131,8 @@ async function unsubscribe(record: UnsubscribeRecord, env: Env) {
   supabaseUrl.searchParams.set('unsubscribed_at', 'is.null');
   const dbResponse = await fetch(supabaseUrl, {
     method: 'PATCH',
+    redirect: 'error',
+    signal: AbortSignal.timeout(8_000),
     headers: {
       apikey: env.SUPABASE_SERVICE_ROLE_KEY,
       authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
@@ -101,15 +148,31 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     const match = url.pathname.match(/^\/mail\/([^/]+)\/?$/);
-    if (!match) return new Response('Not found', { status: 404, headers: { 'cache-control': 'no-store' } });
+    const clientIp = request.headers.get('cf-connecting-ip') || 'unknown';
+    const requestLimit = await env.REQUEST_LIMITER.limit({ key: clientIp });
+    if (!requestLimit.success) return plainText(429, 'Too many requests. Please try again shortly.', { 'retry-after': '60' });
+
+    if (!match) return plainText(404, 'Not found');
     if (request.method !== 'GET' && request.method !== 'POST') {
-      return new Response('Method not allowed', { status: 405, headers: { allow: 'GET, POST', 'cache-control': 'no-store' } });
+      return plainText(405, 'Method not allowed', { allow: 'GET, POST' });
     }
 
     // Issued keys are URL-safe base64, so decoding is unnecessary and malformed
     // percent escapes should simply fail validation instead of causing a 500.
     const token = match[1];
     if (!TOKEN_PATTERN.test(token)) return page('Link unavailable', 'This unsubscribe link is invalid or expired. You can close this page.');
+
+    if (request.method === 'POST') {
+      const origin = request.headers.get('origin');
+      const fetchSite = request.headers.get('sec-fetch-site');
+      const contentLength = Number(request.headers.get('content-length') || 0);
+      if ((origin && origin !== url.origin) || fetchSite === 'cross-site' || contentLength > 1_024) {
+        return plainText(403, 'Request rejected. Please open the unsubscribe link and try again.');
+      }
+
+      const unsubscribeLimit = await env.UNSUBSCRIBE_LIMITER.limit({ key: clientIp });
+      if (!unsubscribeLimit.success) return plainText(429, 'Too many unsubscribe attempts. Please try again shortly.', { 'retry-after': '60' });
+    }
 
     try {
       const record = await findRecord(token, env);
@@ -121,12 +184,9 @@ export default {
       if (record.unsubscribed_at) return page('You’re unsubscribed', 'You will no longer receive avrxt newsletter broadcasts.', '', true);
       return page('Leave the mailing list?', 'Confirm below and we’ll stop sending avrxt newsletter broadcasts to this address.', token);
     } catch (error) {
-      console.error('[NEWSLETTER_UNSUBSCRIBE_FAILED]', error);
+      console.error('[NEWSLETTER_UNSUBSCRIBE_FAILED]', error instanceof Error ? error.name : 'unknown');
       if (request.method === 'POST') return json(503, { error: 'EMAIL_PREFERENCE_UPDATE_FAILED' });
-      return new Response('We could not load your email preferences. Please try again later.', {
-        status: 503,
-        headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' },
-      });
+      return plainText(503, 'We could not load your email preferences. Please try again later.');
     }
   },
 } satisfies { fetch(request: Request, env: Env): Promise<Response> };
