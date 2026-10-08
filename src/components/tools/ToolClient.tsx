@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Check, Copy, ExternalLink, LoaderCircle, RefreshCw, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Building2, Check, Clock3, Copy, ExternalLink, Globe2, LoaderCircle, MapPin, MonitorSmartphone, Network, RefreshCw, ShieldCheck, Wifi } from 'lucide-react';
 import { getTool, type ToolDefinition, type ToolSlug } from '@/lib/tool-catalog';
 
 type JsonRecord = Record<string, unknown>;
@@ -54,8 +54,39 @@ function useToolRequest() {
 
 function WhatIsMyIp() {
   const request = useToolRequest();
+  const [copied, setCopied] = useState(false);
   useEffect(() => { void request.run('whatismyip', undefined, 'GET'); }, [request.run]);
-  return <><button className={buttonClass} onClick={() => request.run('whatismyip', undefined, 'GET')} disabled={request.loading}>{request.loading ? <LoaderCircle className="animate-spin" size={14} /> : <RefreshCw size={14} />} Refresh details</button><Result data={request.data} error={request.error} /></>;
+  const data = request.data as {
+    ip?: string; version?: string; protocol?: string; userAgent?: string; enriched?: boolean; source?: string;
+    location?: { city?: string | null; region?: string | null; postalCode?: string | null; country?: string | null; countryCode?: string | null; continent?: string | null; latitude?: number | null; longitude?: number | null };
+    network?: { isp?: string | null; organization?: string | null; asn?: string | null; domain?: string | null };
+    timezone?: { id?: string | null; abbreviation?: string | null; utcOffset?: string | null; currentTime?: string | null };
+  } | undefined;
+  const copyIp = async () => { if (!data?.ip) return; await navigator.clipboard.writeText(data.ip); setCopied(true); window.setTimeout(() => setCopied(false), 1600); };
+  const location = [data?.location?.city, data?.location?.region, data?.location?.country].filter(Boolean).join(', ') || 'Unavailable';
+  const coordinates = data?.location?.latitude != null && data.location.longitude != null ? `${data.location.latitude.toFixed(4)}, ${data.location.longitude.toFixed(4)}` : 'Unavailable';
+  const detailCards = [
+    { label: 'Location', value: location, meta: data?.location?.postalCode || data?.location?.countryCode || 'Regional data unavailable', icon: MapPin },
+    { label: 'Internet provider', value: data?.network?.isp || 'Unavailable', meta: data?.network?.organization || data?.network?.domain || 'Provider data unavailable', icon: Building2 },
+    { label: 'Autonomous system', value: data?.network?.asn || 'Unavailable', meta: data?.network?.domain || 'ASN routing identity', icon: Network },
+    { label: 'Timezone', value: data?.timezone?.id || 'Unavailable', meta: [data?.timezone?.abbreviation, data?.timezone?.utcOffset].filter(Boolean).join(' · ') || 'Timezone data unavailable', icon: Clock3 },
+    { label: 'Coordinates', value: coordinates, meta: data?.location?.continent || 'Approximate IP location', icon: Globe2 },
+    { label: 'Connection', value: `${data?.version || 'Unknown'} · ${(data?.protocol || 'https').toUpperCase()}`, meta: data?.source || 'Network request details', icon: Wifi },
+  ];
+  return <div aria-live="polite">
+    {request.loading && !data ? <div className="grid min-h-64 place-items-center border border-[#292929] bg-black"><div className="text-center"><LoaderCircle className="mx-auto animate-spin text-[#BCBCBC]" size={24} /><p className="mt-4 font-mono text-[10px] uppercase tracking-[.2em] text-[#666666]">Tracing network details</p></div></div> : request.error ? <Result error={request.error} /> : data && <>
+      <div className="relative overflow-hidden border border-[#292929] bg-black p-5 sm:p-8">
+        <div className="pointer-events-none absolute -right-20 -top-28 size-72 rounded-full bg-white/[.045] blur-3xl" />
+        <div className="relative flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0"><p className="mb-3 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.22em] text-[#858585]"><span className={`size-1.5 rounded-full ${data.enriched ? 'bg-emerald-400' : 'bg-[#858585]'}`} /> Public IP address</p><p className="break-all font-mono text-[clamp(1.75rem,7vw,4rem)] font-semibold leading-none tracking-[-.055em] text-white">{data.ip || 'Unavailable'}</p><p className="mt-4 max-w-xl text-xs leading-5 text-[#686868]">Your approximate public network identity. Location data is IP-based and may reflect your VPN or provider gateway.</p></div>
+          <button type="button" className={`${buttonClass} shrink-0 border border-[#292929] !bg-[#121212] !text-white hover:!bg-[#1F1F1F]`} onClick={copyIp} disabled={!data.ip}>{copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Copied' : 'Copy IP'}</button>
+        </div>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{detailCards.map(({ label, value, meta, icon: Icon }) => <article key={label} className="group min-h-40 border border-[#1F1F1F] bg-black p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-[#484848] hover:bg-[#0d0d0d]"><div className="mb-7 flex items-center justify-between"><p className="font-mono text-[9px] uppercase tracking-[.2em] text-[#666666]">{label}</p><Icon size={15} className="text-[#686868] transition-colors group-hover:text-white" /></div><p className="break-words text-lg font-medium tracking-[-.025em] text-[#F7F7F7]">{value}</p><p className="mt-2 break-words text-xs leading-5 text-[#686868]">{meta}</p></article>)}</div>
+      <div className="mt-3 flex items-start gap-3 border border-[#1F1F1F] bg-black p-4"><MonitorSmartphone size={15} className="mt-0.5 shrink-0 text-[#686868]" /><div className="min-w-0"><p className="font-mono text-[9px] uppercase tracking-[.2em] text-[#666666]">Browser signature</p><p className="mt-2 break-words text-xs leading-5 text-[#858585]">{data.userAgent || 'Unavailable'}</p></div></div>
+    </>}
+    <button className={`${buttonClass} mt-5`} onClick={() => request.run('whatismyip', undefined, 'GET')} disabled={request.loading}>{request.loading ? <LoaderCircle className="animate-spin" size={14} /> : <RefreshCw size={14} />} Refresh details</button>
+  </div>;
 }
 
 function PortCheck() {

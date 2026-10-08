@@ -71,11 +71,96 @@ async function fetchWithTimeout(url: string, init?: RequestInit, timeout = 6500)
   try { return await fetch(url, { ...init, signal: controller.signal }); } finally { clearTimeout(timer); }
 }
 
+type IpWhoResponse = {
+  success?: boolean;
+  message?: string;
+  ip?: string;
+  type?: string;
+  continent?: string;
+  continent_code?: string;
+  country?: string;
+  country_code?: string;
+  region?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  postal?: string;
+  calling_code?: string;
+  connection?: { asn?: number; org?: string; isp?: string; domain?: string };
+  timezone?: { id?: string; abbreviation?: string; utc?: string; current_time?: string };
+};
+
+async function ipDetails(ip: string) {
+  if (!isIP(ip) || !isPublicAddress(ip)) return null;
+  try {
+    const response = await fetchWithTimeout(`https://ipwho.is/${encodeURIComponent(ip)}`, {
+      headers: { Accept: 'application/json', 'User-Agent': 'avrxt.dev network tool' },
+      cache: 'no-store',
+    });
+    if (!response.ok) return null;
+    const value = await response.json() as IpWhoResponse;
+    if (value.success === false) return null;
+    return {
+      ip: value.ip || ip,
+      version: value.type || (isIP(ip) === 6 ? 'IPv6' : 'IPv4'),
+      location: {
+        city: value.city || null,
+        region: value.region || null,
+        postalCode: value.postal || null,
+        country: value.country || null,
+        countryCode: value.country_code || null,
+        continent: value.continent || null,
+        continentCode: value.continent_code || null,
+        latitude: value.latitude ?? null,
+        longitude: value.longitude ?? null,
+        callingCode: value.calling_code || null,
+      },
+      network: {
+        isp: value.connection?.isp || null,
+        organization: value.connection?.org || null,
+        asn: value.connection?.asn ? `AS${value.connection.asn}` : null,
+        domain: value.connection?.domain || null,
+      },
+      timezone: {
+        id: value.timezone?.id || null,
+        abbreviation: value.timezone?.abbreviation || null,
+        utcOffset: value.timezone?.utc || null,
+        currentTime: value.timezone?.current_time || null,
+      },
+    };
+  } catch { return null; }
+}
+
 export async function GET(request: NextRequest, context: RouteContext<'/api/tools/[tool]'>) {
   const { tool } = await context.params;
   try {
     if (isRateLimited(request.headers, `tool-${tool}`, 30, 60_000)) return json({ error: 'Rate limit reached. Try again in a minute.' }, 429);
-    if (tool === 'whatismyip') return json({ ip: clientIp(request), protocol: request.headers.get('x-forwarded-proto') || 'https', country: request.headers.get('cf-ipcountry') || 'not provided', userAgent: request.headers.get('user-agent')?.slice(0, 240) || 'not provided', note: 'Values are derived from request headers supplied by the hosting edge.' });
+    if (tool === 'whatismyip') {
+      const ip = clientIp(request);
+      const details = await ipDetails(ip);
+      return json({
+        ip: details?.ip || ip,
+        version: details?.version || (isIP(ip) === 6 ? 'IPv6' : isIP(ip) === 4 ? 'IPv4' : 'Unknown'),
+        protocol: request.headers.get('x-forwarded-proto') || 'https',
+        location: details?.location || {
+          city: null,
+          region: null,
+          postalCode: null,
+          country: null,
+          countryCode: request.headers.get('cf-ipcountry') || null,
+          continent: null,
+          continentCode: null,
+          latitude: null,
+          longitude: null,
+          callingCode: null,
+        },
+        network: details?.network || { isp: null, organization: null, asn: null, domain: null },
+        timezone: details?.timezone || { id: null, abbreviation: null, utcOffset: null, currentTime: null },
+        userAgent: request.headers.get('user-agent')?.slice(0, 240) || 'Unavailable',
+        enriched: Boolean(details),
+        source: details ? 'Request headers + ipwho.is' : 'Request headers',
+      });
+    }
     if (tool === 'quote') {
       const response = await fetchWithTimeout('https://dummyjson.com/quotes/random', { headers: { Accept: 'application/json' }, cache: 'no-store' });
       if (!response.ok) throw new Error('Quote provider unavailable.');
