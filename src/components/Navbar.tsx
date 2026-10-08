@@ -29,6 +29,7 @@ export default function Navbar() {
             { name: '/legal/terms', href: '/legal/terms', description: 'Terms of service' },
             { name: '/legal/refund', href: '/legal/refund', description: 'Refund policy' },
             { name: '/legal/security', href: '/legal/security', description: 'Security policy' },
+            { name: '/annon/ownership', href: '/annon/ownership', description: 'Ownership and independence notice' },
         ];
     }, []);
 
