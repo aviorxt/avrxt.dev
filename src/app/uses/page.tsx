@@ -1,6 +1,29 @@
 import Reveal from '@/components/Reveal';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import { ArrowUpRight, BookOpen, Bot, Boxes, Code2, Command, Layers3 } from 'lucide-react';
+import type { IconType } from 'react-icons';
+import { FaAws } from 'react-icons/fa';
+import { MdDns } from 'react-icons/md';
+import {
+    SiAlgolia,
+    SiAudible,
+    SiClaude,
+    SiCloudflare,
+    SiFigma,
+    SiGoogle,
+    SiHyper,
+    SiProton,
+    SiProtonmail,
+    SiRender,
+    SiResend,
+    SiSpotify,
+    SiSupabase,
+    SiThings,
+    SiVercel,
+    SiZoho,
+} from 'react-icons/si';
+import { TbBrandOpenai } from 'react-icons/tb';
+import { VscVscode } from 'react-icons/vsc';
 
 const sections = [
     {
@@ -184,6 +207,45 @@ export const metadata = buildPageMetadata({
 
 const sectionIcons = [Code2, Command, Layers3, Boxes, BookOpen, Bot];
 
+const productLogos: Record<string, IconType> = {
+    VSCode: VscVscode,
+    Hyper: SiHyper,
+    Figma: SiFigma,
+    Things: SiThings,
+    'Zoho Mail': SiZoho,
+    Spotify: SiSpotify,
+    'Proton Mail': SiProtonmail,
+    'Proton Pass': SiProton,
+    'Proton Authenticator': SiProton,
+    Algolia: SiAlgolia,
+    Cloudflare: SiCloudflare,
+    'AWS S3': FaAws,
+    'AWS EC2': FaAws,
+    'AWS Route 53': FaAws,
+    'AWS DynamoDB': FaAws,
+    'AWS Amplify': FaAws,
+    'AWS CloudFront': FaAws,
+    'Self-hosted DNS management (VPS)': MdDns,
+    'Self-hosted Supabase': SiSupabase,
+    Resend: SiResend,
+    Vercel: SiVercel,
+    'Render.com': SiRender,
+    Audible: SiAudible,
+    'OpenAI Codex': TbBrandOpenai,
+    'Google Antigravity': SiGoogle,
+    Claude: SiClaude,
+};
+
+function ProductMark({ name }: { name: string }) {
+    const Logo = productLogos[name];
+
+    return (
+        <span className="uses-logo grid size-10 shrink-0 place-items-center border border-[#292929] bg-black text-[#BCBCBC] transition-colors group-hover:border-[#484848] group-hover:text-white" aria-hidden="true">
+            {Logo ? <Logo size={18} /> : <span className="font-outfit text-sm font-semibold uppercase">{name.charAt(0)}</span>}
+        </span>
+    );
+}
+
 export default function UsesPage() {
     return (
         <main className="uses-page relative min-h-screen overflow-x-clip bg-[#050505] px-4 pb-24 pt-28 text-white sm:px-6 sm:pb-32 sm:pt-36">
@@ -217,10 +279,11 @@ export default function UsesPage() {
                                 </header>
                                 <div className="divide-y divide-[#1F1F1F]">
                                     {section.items.map((item, itemIndex) => (
-                                        <article key={`${section.title}-${item.name}`} className="uses-item group grid grid-cols-[2rem_1fr_auto] gap-3 p-5 transition-colors hover:bg-white/[.025] sm:gap-4 sm:px-6">
-                                            <span className="pt-0.5 font-mono text-[8px] tracking-[.16em] text-[#484848]">{String(itemIndex + 1).padStart(2, '0')}</span>
+                                        <article key={`${section.title}-${item.name}`} className="uses-item group grid grid-cols-[2.5rem_1fr_auto] gap-3 p-5 transition-colors hover:bg-white/[.025] sm:gap-4 sm:px-6">
+                                            <ProductMark name={item.name} />
                                             <div className="min-w-0">
-                                                {item.url ? <a href={item.url} target="_blank" rel="noreferrer" className="font-medium text-[#F7F7F7] transition-colors group-hover:text-white">{item.name}</a> : <p className="font-medium text-[#F7F7F7]">{item.name}</p>}
+                                                <p className="font-mono text-[7px] uppercase tracking-[.18em] text-[#484848]">Item / {String(itemIndex + 1).padStart(2, '0')}</p>
+                                                {item.url ? <a href={item.url} target="_blank" rel="noreferrer" className="mt-1 block font-medium text-[#F7F7F7] transition-colors group-hover:text-white">{item.name}</a> : <p className="mt-1 font-medium text-[#F7F7F7]">{item.name}</p>}
                                                 {item.description && <p className="mt-1.5 text-xs leading-6 text-[#858585] sm:text-sm">{item.description}</p>}
                                             </div>
                                             {item.url && <ArrowUpRight aria-hidden="true" size={13} className="mt-1 text-[#484848] transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />}
