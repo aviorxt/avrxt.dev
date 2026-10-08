@@ -55,15 +55,15 @@ function readPageContext(pathname: string): PageContext {
     ?.content.trim();
 
   return {
-    title: document.title.replace(/\s*[|·]\s*avrxt.*$/i, '').trim() || 'avrxt.dev',
-    description: description || 'A page on avrxt.dev.',
-    url: `https://avrxt.dev${pathname === '/' ? '' : pathname}`,
+    title: document.title.replace(/\s*[|·]\s*avrxt.*$/i, '').trim() || 'www.avrxt.dev',
+    description: description || 'A page on www.avrxt.dev.',
+    url: `https://www.avrxt.dev${pathname === '/' ? '' : pathname}`,
   };
 }
 
 function makePrompt(context: PageContext, question: string) {
   return [
-    'Help me understand this avrxt.dev page.',
+    'Help me understand this www.avrxt.dev page.',
     '',
     `Page title: ${context.title}`,
     `Page description: ${context.description}`,
@@ -81,9 +81,9 @@ export default function AskAi() {
   const [question, setQuestion] = useState(defaultQuestion);
   const [copied, setCopied] = useState(false);
   const [context, setContext] = useState<PageContext>({
-    title: 'avrxt.dev',
-    description: 'A page on avrxt.dev.',
-    url: 'https://avrxt.dev',
+    title: 'www.avrxt.dev',
+    description: 'A page on www.avrxt.dev.',
+    url: 'https://www.avrxt.dev',
   });
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -135,12 +135,12 @@ export default function AskAi() {
         aria-label="Ask AI about this page"
         aria-haspopup="dialog"
         aria-expanded={open}
-        className="group fixed bottom-5 right-4 z-[320] flex h-12 items-center gap-2 overflow-hidden rounded-full border border-white/15 bg-[#080808]/95 px-4 text-sm font-medium text-white shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl transition-colors hover:border-white/30 hover:bg-[#121212] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E5E5E5] sm:bottom-6 sm:right-6"
+        className="group fixed bottom-5 right-4 z-[320] flex h-11 items-center gap-1.5 overflow-hidden rounded-full border border-white/15 bg-[#080808]/95 px-3.5 text-xs font-medium text-white shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl transition-colors hover:border-white/30 hover:bg-[#121212] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E5E5E5] sm:bottom-6 sm:right-6"
         whileHover={{ y: -2 }}
         whileTap={{ scale: 0.97 }}
       >
         <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[0.08] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-        <Sparkles className="relative size-4 text-[#D0D0D0]" aria-hidden="true" />
+        <Sparkles className="relative size-3.5 text-[#D0D0D0]" aria-hidden="true" />
         <span className="relative">Ask AI</span>
         <span className="relative size-1.5 rounded-full bg-white shadow-[0_0_10px_2px_rgba(255,255,255,0.35)]" />
       </motion.button>
