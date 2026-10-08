@@ -74,7 +74,7 @@ export const defaultMeConfig: MeConfig = {
         handle: "@aviorxt",
         bio: "Independent developer and aircraft maintenance engineer based in India.",
         avatarUrl: "https://cdn.avxt.qzz.io/assets/IMG_20251108_224641_264.webp",
-        logoUrl: "https://cdn.avxt.qzz.io/assets/logo-02.png",
+        logoUrl: "/assets/logo/avrxt-pure-white.png",
         bannerUrl: "https://cdn.avxt.qzz.io/images/aviorxt_01.jpg",
         themeColor: "#ffffff",
         status: { text: 'Online', color: 'green' },

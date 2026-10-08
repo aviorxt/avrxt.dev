@@ -29,6 +29,7 @@ export default function Navbar() {
             { name: '/legal/terms', href: '/legal/terms', description: 'Terms of service' },
             { name: '/legal/refund', href: '/legal/refund', description: 'Refund policy' },
             { name: '/legal/security', href: '/legal/security', description: 'Security policy' },
+            { name: '/legal/assets', href: '/legal/assets', description: 'Official logos and brand rights' },
             { name: '/annon/ownership', href: '/annon/ownership', description: 'Ownership and independence notice' },
         ];
     }, []);
@@ -106,9 +107,9 @@ export default function Navbar() {
                     <Magnetic>
                         <Link href="/" className="px-4 py-2 transition-transform hover:scale-110 active:scale-95 flex items-center">
                             <img
-                                src="/logo.png"
+                                src="/assets/logo/avrxt-pure-white.png"
                                 alt="avrxt"
-                                className="h-[22px] w-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] translate-y-[2px]"
+                                className="h-[22px] w-auto translate-y-[2px]"
                             />
                         </Link>
                     </Magnetic>

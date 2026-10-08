@@ -33,6 +33,7 @@ const nextConfig: NextConfig = {
       { source: '/terms', destination: '/legal/terms', permanent: true },
       { source: '/security', destination: '/legal/security', permanent: true },
       { source: '/refund', destination: '/legal/refund', permanent: true },
+      { source: '/assests/logo/:path*', destination: '/assets/logo/:path*', permanent: true },
     ];
   },
   async headers() {

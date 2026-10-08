@@ -22,7 +22,7 @@ export function PolicyShell({ eyebrow, title, description, version, lastUpdated,
         <div className="space-y-4">{children}</div>
       </div>
 
-      <footer className="mt-10 border-t border-[#1F1F1F] pt-6"><p className="mb-4 font-mono text-[9px] uppercase tracking-[.18em] text-[#666666]">Related policies</p><div className="flex flex-wrap gap-2">{[['Privacy', '/legal/privacy'], ['Terms', '/legal/terms'], ['Refunds', '/legal/refund'], ['Security', '/legal/security']].map(([label, href]) => <Link key={href} href={href} className="inline-flex min-h-10 items-center gap-2 border border-[#292929] bg-black px-4 font-mono text-[9px] uppercase tracking-[.14em] text-[#A3A3A3] transition-all hover:-translate-y-0.5 hover:border-[#686868] hover:text-white">{label}<ArrowUpRight size={12} /></Link>)}</div></footer>
+      <footer className="mt-10 border-t border-[#1F1F1F] pt-6"><p className="mb-4 font-mono text-[9px] uppercase tracking-[.18em] text-[#666666]">Related policies</p><div className="flex flex-wrap gap-2">{[['Privacy', '/legal/privacy'], ['Terms', '/legal/terms'], ['Refunds', '/legal/refund'], ['Security', '/legal/security'], ['Brand assets', '/legal/assets']].map(([label, href]) => <Link key={href} href={href} className="inline-flex min-h-10 items-center gap-2 border border-[#292929] bg-black px-4 font-mono text-[9px] uppercase tracking-[.14em] text-[#A3A3A3] transition-all hover:-translate-y-0.5 hover:border-[#686868] hover:text-white">{label}<ArrowUpRight size={12} /></Link>)}</div></footer>
     </Reveal>
   </main>;
 }

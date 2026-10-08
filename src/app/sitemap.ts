@@ -66,6 +66,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { route: '/dc/terms', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/legal/refund', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/legal/security', priority: 0.3, changeFrequency: 'yearly' },
+        { route: '/legal/assets', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/annon/ownership', priority: 0.3, changeFrequency: 'yearly' },
     ];
 
