@@ -4,12 +4,13 @@ import {
   Braces,
   CircleHelp,
   Globe2,
+  Keyboard,
   Music2,
   Network,
   type LucideIcon,
 } from 'lucide-react';
 
-export type ToolSlug = 'whatismyip' | 'portcheck' | 'mailfy' | 'dns' | 'fontui' | 'spotmp3' | 'quote';
+export type ToolSlug = 'whatismyip' | 'portcheck' | 'mailfy' | 'dns' | 'fontui' | 'spotmp3' | 'quote' | 'keytest';
 
 export type ToolDefinition = {
   slug: ToolSlug;
@@ -28,6 +29,7 @@ export const tools: ToolDefinition[] = [
   { slug: 'fontui', title: 'Font UI', shortTitle: 'Fonts', description: 'Preview your text against 300+ open-source Google Fonts, loaded only when selected.', eyebrow: 'Type laboratory', icon: BookOpenText },
   { slug: 'spotmp3', title: 'Spotify preview', shortTitle: 'Spotify', description: 'Open a lawful Spotify embed from a track, album, artist, episode, show, or playlist link.', eyebrow: 'Official playback', icon: Music2 },
   { slug: 'quote', title: 'Random quote', shortTitle: 'Quote', description: 'Pull a fresh thought from an open quote source whenever you need a reset.', eyebrow: 'Creative signal', icon: CircleHelp },
+  { slug: 'keytest', title: 'Keyboard tester', shortTitle: 'Keys', description: 'Test every physical key against a responsive, realistic 3D keyboard model in your browser.', eyebrow: 'Input diagnostics', icon: Keyboard },
 ];
 
 export function getTool(slug: string) {

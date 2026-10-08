@@ -16,7 +16,7 @@ export default function ToolsPage() {
     <main className="mx-auto min-h-screen w-full max-w-6xl px-4 pb-24 pt-28 sm:px-6 sm:pt-36">
       <Reveal className="active">
         <header className="mb-10 max-w-3xl sm:mb-14">
-          <p className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.28em] text-[#858585]"><Wrench size={13} /> // Utility layer / 07</p>
+          <p className="mb-4 flex items-center gap-2 font-mono text-[10px] uppercase tracking-[.28em] text-[#858585]"><Wrench size={13} /> // Utility layer / {String(tools.length).padStart(2, '0')}</p>
           <h1 className="text-[clamp(3.4rem,12vw,8rem)] font-semibold uppercase leading-[.78] tracking-[-.075em] text-white">Useful.<br /><span className="text-[#686868]">Quietly.</span></h1>
           <p className="mt-8 max-w-xl text-sm leading-7 text-[#A3A3A3] sm:text-base">Focused utilities with no accounts, no ad-tech, and restrained data collection. Built to match the same monochrome system as the rest of avrxt.dev.</p>
         </header>

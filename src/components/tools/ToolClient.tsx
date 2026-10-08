@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Building2, Check, ChevronDown, CircleCheck, CircleX, Clock3, Copy, Database, ExternalLink, Globe2, Hash, LoaderCircle, MailCheck, MapPin, MonitorSmartphone, Network, Radio, RefreshCw, Search, Server, ShieldCheck, Wifi } from 'lucide-react';
 import { getTool, type ToolDefinition, type ToolSlug } from '@/lib/tool-catalog';
+import KeyboardTester from '@/components/tools/KeyboardTester';
 
 type JsonRecord = Record<string, unknown>;
 
@@ -177,7 +178,7 @@ function QuoteTool() {
   return <div><div className="relative min-h-72 overflow-hidden border border-[#292929] bg-black p-6 sm:p-10"><div className="pointer-events-none absolute -right-16 -top-28 font-serif text-[18rem] leading-none text-white/[.035]">“</div><div className="relative flex h-full min-h-52 flex-col justify-between">{request.loading ? <div className="grid min-h-52 place-items-center"><LoaderCircle className="animate-spin text-[#858585]" /></div> : <><div><p className="mb-6 font-mono text-[9px] uppercase tracking-[.24em] text-[#666666]">Daily perspective / live signal</p><blockquote className="max-w-4xl text-[clamp(1.7rem,5vw,3.5rem)] font-medium leading-[1.08] tracking-[-.04em] text-[#F7F7F7]">{quote?.quote ? `“${quote.quote}”` : 'No signal yet.'}</blockquote></div>{quote?.author && <p className="mt-8 border-t border-[#1F1F1F] pt-5 font-mono text-[10px] uppercase tracking-[.25em] text-[#858585]">— {quote.author}</p>}</>}</div></div><div className="mt-4 flex flex-wrap gap-3"><button className={buttonClass} onClick={() => request.run('quote', undefined, 'GET')} disabled={request.loading}><RefreshCw size={14} /> Another quote</button><button className={`${buttonClass} border border-[#292929] !bg-black !text-white`} onClick={copy} disabled={!quote?.quote}>{copied ? <Check size={14} /> : <Copy size={14} />} {copied ? 'Copied' : 'Copy'}</button><a className={`${buttonClass} border border-[#292929] !bg-black !text-white`} href="https://dummyjson.com/docs/quotes" target="_blank" rel="noreferrer">Source <ExternalLink size={13} /></a></div><Result error={request.error} /></div>;
 }
 
-const views: Record<ToolSlug, React.ComponentType> = { whatismyip: WhatIsMyIp, portcheck: PortCheck, mailfy: Mailfy, dns: DnsTool, fontui: FontUi, spotmp3: SpotifyPreview, quote: QuoteTool };
+const views: Record<ToolSlug, React.ComponentType> = { whatismyip: WhatIsMyIp, portcheck: PortCheck, mailfy: Mailfy, dns: DnsTool, fontui: FontUi, spotmp3: SpotifyPreview, quote: QuoteTool, keytest: KeyboardTester };
 
 export default function ToolClient({ slug }: { slug: ToolSlug }) {
   const tool = getTool(slug);

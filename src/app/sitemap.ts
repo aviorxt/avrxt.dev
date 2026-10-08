@@ -1,4 +1,5 @@
 import { MetadataRoute } from 'next';
+import { tools } from '@/lib/tool-catalog';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const baseUrl = 'https://avrxt.dev';
@@ -13,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         { route: '/portfolio',  priority: 0.9, changeFrequency: 'weekly'  },
         { route: '/contact',    priority: 0.8, changeFrequency: 'monthly' },
         { route: '/tools',      priority: 0.8, changeFrequency: 'monthly' },
-        ...['whatismyip', 'portcheck', 'mailfy', 'dns', 'fontui', 'spotmp3', 'quote'].map((tool) => ({ route: `/tools/${tool}`, priority: 0.7, changeFrequency: 'monthly' as const })),
+        ...tools.map(({ slug }) => ({ route: `/tools/${slug}`, priority: 0.7, changeFrequency: 'monthly' as const })),
         { route: '/gallery',    priority: 0.7, changeFrequency: 'weekly'  },
         { route: '/docs',       priority: 0.7, changeFrequency: 'monthly' },
         { route: '/docs/welcome',    priority: 0.7, changeFrequency: 'monthly' },
