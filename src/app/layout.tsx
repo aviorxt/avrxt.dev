@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Mono, Outfit, Instrument_Serif } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
@@ -94,6 +95,7 @@ export default function RootLayout({
         </main>
         <SiteChrome position="after" />
         <CookieBanner />
+        <Analytics />
       </body>
     </html>
   );
