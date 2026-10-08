@@ -177,7 +177,7 @@ export async function GET(request: Request) {
         redirect: 'manual',
         signal: controller.signal,
         headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; avrxt-link-preview/1.0; +https://avrxt.dev)',
+          'user-agent': 'Mozilla/5.0 (compatible; avrxt-link-preview/1.0; +https://www.avrxt.dev)',
           accept: 'text/html,application/xhtml+xml',
         },
         cache: 'no-store',

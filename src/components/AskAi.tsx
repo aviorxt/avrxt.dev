@@ -127,6 +127,8 @@ export default function AskAi() {
     copyPrompt();
   };
 
+  if (pathname === '/home') return null;
+
   return (
     <>
       <motion.button

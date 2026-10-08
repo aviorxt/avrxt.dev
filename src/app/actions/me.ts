@@ -55,8 +55,20 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
     }
     normalized.links = normalized.links
         .filter((link) => link && typeof link.name === 'string' && typeof link.url === 'string')
-        .map((link) => ({ ...link, url: safeUrl(link.url) }))
+        .map((link) => {
+            if (link.icon === 'Instagram' || link.name.toLowerCase() === 'instagram') {
+                return { ...link, name: 'Instagram', url: 'https://www.instagram.com/aviorxt/' };
+            }
+            if (link.icon === 'Github' || link.name.toLowerCase() === 'github') {
+                return { ...link, name: 'GitHub', url: 'https://github.com/aviorxt' };
+            }
+            return { ...link, url: safeUrl(link.url) };
+        })
         .filter((link) => Boolean(link.url));
+
+    if (!normalized.links.some((link) => link.icon === 'Instagram' || link.name.toLowerCase() === 'instagram')) {
+        normalized.links.unshift({ id: 'instagram-aviorxt', name: 'Instagram', url: 'https://www.instagram.com/aviorxt/', icon: 'Instagram', type: 'social' });
+    }
     normalized.gallery = normalized.gallery
         .filter((item) => item && typeof item.url === 'string')
         .map((item) => ({ ...item, url: safeUrl(item.url, true) }))

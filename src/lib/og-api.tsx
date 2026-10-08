@@ -11,7 +11,7 @@ function siteBaseUrl(): string {
   const base =
     process.env.NEXT_PUBLIC_SITE_URL ||
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '') ||
-    'https://avrxt.dev';
+    'https://www.avrxt.dev';
   return base.replace(/\/+$/, '');
 }
 
@@ -56,7 +56,7 @@ async function proxyPageScreenshot(path: string): Promise<Response | null> {
       redirect: 'follow',
       headers: {
         accept: 'image/*,*/*;q=0.8',
-        'user-agent': 'avrxt-og/1.0 (+https://avrxt.dev)',
+        'user-agent': 'avrxt-og/1.0 (+https://www.avrxt.dev)',
       },
       signal: timeoutSignal,
     });

@@ -1,5 +1,13 @@
 import Link from 'next/link';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { buildPageMetadata } from '@/lib/page-metadata';
+
+export const metadata = buildPageMetadata({
+    title: 'avrxt (aviorxt) — Independent Developer & Aircraft Maintenance Engineer',
+    description: 'Official website of avrxt, also known as aviorxt: an independent developer and aircraft maintenance engineer based in India.',
+    keywords: ['avrxt', 'aviorxt', 'independent developer', 'aircraft maintenance engineer', 'India'],
+    path: '/',
+});
 
 export default function HomePage() {
     return (
@@ -30,6 +38,7 @@ export default function HomePage() {
             <footer className="relative z-10 flex flex-col gap-4 border-t border-white/10 pt-5 font-mono text-[9px] uppercase tracking-[.16em] text-zinc-400 sm:flex-row sm:items-center sm:justify-between sm:text-[10px]">
                 <span>Designing in the quiet</span>
                 <nav aria-label="Quick links" className="flex flex-wrap gap-x-5 gap-y-2">
+                    <Link className="transition-colors hover:text-white" href="/about">About</Link>
                     <Link className="transition-colors hover:text-white" href="/docs">Notes</Link>
                     <Link className="transition-colors hover:text-white" href="/gallery">Gallery</Link>
                     <Link className="transition-colors hover:text-white" href="/tools">Tools</Link>

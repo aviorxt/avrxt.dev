@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import ToolClient from '@/components/tools/ToolClient';
 import { getTool, tools } from '@/lib/tool-catalog';
+import { buildPageMetadata } from '@/lib/page-metadata';
 
 export function generateStaticParams() {
   return tools.map(({ slug }) => ({ tool: slug }));
@@ -11,11 +12,12 @@ export async function generateMetadata({ params }: { params: Promise<{ tool: str
   const { tool: slug } = await params;
   const tool = getTool(slug);
   if (!tool) return {};
-  return {
-    title: `${tool.title} | avrxt tools`,
+  return buildPageMetadata({
+    title: `${tool.title} — Free Online Tool`,
     description: tool.description,
-    alternates: { canonical: `/tools/${tool.slug}` },
-  };
+    keywords: [tool.title, tool.shortTitle, tool.eyebrow, 'free online tool', 'avrxt tools', 'aviorxt'],
+    path: `/tools/${tool.slug}`,
+  });
 }
 
 export default async function ToolPage({ params }: { params: Promise<{ tool: string }> }) {

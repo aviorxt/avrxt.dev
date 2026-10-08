@@ -345,7 +345,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     };
 
     const triggerGoogleIndex = async (slug: string) => {
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://avrxt.dev';
+        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.avrxt.dev';
         const url = `${siteUrl}/docs/${slug}`;
         try {
             const res = await fetch('/api/search-console-index', {

@@ -10,7 +10,8 @@ type PageMetadataInput = {
 };
 
 const SITE_NAME = 'avrxt';
-const DEFAULT_OG_IMAGE_ALT = 'avrxt.dev preview image';
+const SITE_URL = 'https://www.avrxt.dev';
+const DEFAULT_OG_IMAGE_ALT = 'avrxt (aviorxt) — independent developer and aircraft maintenance engineer';
 
 function withSiteSuffix(title: string) {
   const normalized = title.trim();
@@ -31,6 +32,7 @@ export function buildPageMetadata({
 
   const normalizedPath = path?.trim();
   const effectivePath = normalizedPath && normalizedPath.startsWith('/') ? normalizedPath : undefined;
+  const canonicalUrl = effectivePath ? new URL(effectivePath, SITE_URL).toString() : undefined;
   const ogVersion =
     process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 12) ||
     process.env.VERCEL_DEPLOYMENT_ID ||
@@ -52,11 +54,30 @@ export function buildPageMetadata({
     title: fullTitle,
     description: normalizedDescription,
     keywords,
+    authors: [{ name: 'avrxt (aviorxt)', url: '/about' }],
+    creator: 'avrxt',
+    publisher: 'avrxt',
+    ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
+    robots: noIndex
+      ? { index: false, follow: false }
+      : {
+          index: true,
+          follow: true,
+          googleBot: {
+            index: true,
+            follow: true,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+            'max-video-preview': -1,
+          },
+        },
     openGraph: {
       title: fullTitle,
       description: normalizedDescription,
       type: 'website',
-      siteName: 'avrxt.dev',
+      siteName: 'AVRXT.DEV',
+      locale: 'en_IN',
+      ...(canonicalUrl ? { url: canonicalUrl } : {}),
       images: [openGraphImage],
     },
     twitter: {
@@ -73,10 +94,6 @@ export function buildPageMetadata({
       ],
     },
   };
-
-  if (noIndex) {
-    metadata.robots = { index: false, follow: false };
-  }
 
   return metadata;
 }

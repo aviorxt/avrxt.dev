@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
 import { ArrowUpRight, Braces, CheckCircle2, Cloud, KeyRound, ShieldCheck } from 'lucide-react';
+import { buildPageMetadata } from '@/lib/page-metadata';
 
-export const metadata: Metadata = {
-    title: 'API Documentation | AVRXT',
-    description: 'Reference documentation for the AVRXT API gateway.',
-};
+export const metadata: Metadata = buildPageMetadata({
+    title: 'API Documentation',
+    description: 'Reference documentation for the public AVRXT API gateway, endpoints, response formats, access, and error handling.',
+    keywords: ['AVRXT API', 'API documentation', 'developer API', 'REST API reference', 'aviorxt'],
+    path: '/system/api/doc',
+});
 
 const endpoints = [
     { method: 'GET', path: '/v1/health', summary: 'Check the website API health.' },

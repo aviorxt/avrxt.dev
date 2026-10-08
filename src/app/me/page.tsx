@@ -9,15 +9,13 @@ type PageProps = {
 };
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {
-    const resolved = await Promise.resolve(searchParams ?? {});
-    const share = typeof resolved.share === 'string' ? resolved.share : undefined;
-    const path = share ? `/me?share=${share}` : '/me';
+    await Promise.resolve(searchParams ?? {});
 
     return buildPageMetadata({
         title: "Profile & Link's",
-        description: "Profile & Link's for avrxt — socials, music, and resources in one place.",
-        keywords: ['avrxt', 'profile', 'links', "Profile & Link's", 'social links', 'music', 'resources'],
-        path,
+        description: "Official profile and links for avrxt, also known as aviorxt — an independent developer and aircraft maintenance engineer based in India.",
+        keywords: ['avrxt', 'aviorxt', 'profile', 'links', 'independent developer', 'aircraft maintenance engineer', 'India'],
+        path: '/me',
     });
 }
 

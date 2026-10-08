@@ -27,6 +27,11 @@ export async function getAdminDocs() {
 
 // Fetch published docs (Public view)
 export async function getPublishedDocs() {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        console.warn('Supabase is not configured, returning an empty public docs list.');
+        return [];
+    }
+
     const supabase = await createClient();
     const { data, error } = await supabase
         .from('documents')
@@ -43,6 +48,10 @@ export async function getPublishedDocs() {
 }
 
 export async function getDocBySlug(slug: string) {
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+        return null;
+    }
+
     const supabase = await createClient();
     const { data, error } = await supabase
         .from('documents')
