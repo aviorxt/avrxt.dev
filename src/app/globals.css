@@ -427,6 +427,47 @@ button:active, a:active {
 .contact-outline { color: #686868; }
 @supports (-webkit-text-stroke: 1px white) { .contact-outline { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.62); } }
 
+/* Keytest RGB engine */
+.keytest-rgb-wave {
+  animation: keytest-rgb-wave var(--key-speed, 3s) linear infinite;
+  animation-delay: var(--key-delay, 0s);
+}
+.keytest-rgb-aurora {
+  animation: keytest-rgb-aurora var(--key-speed, 3s) ease-in-out infinite alternate;
+  animation-delay: var(--key-delay, 0s);
+}
+.keytest-rgb-breathe {
+  animation: keytest-rgb-breathe var(--key-speed, 3s) ease-in-out infinite;
+  animation-delay: var(--key-delay, 0s);
+}
+.keytest-response-pulse { animation: keytest-key-pulse 420ms cubic-bezier(.2,.8,.2,1); }
+.keytest-response-ripple {
+  animation: keytest-key-ripple 520ms cubic-bezier(.2,.8,.2,1) both;
+  animation-delay: var(--key-delay, 0s);
+}
+.keytest-response-trail { filter: brightness(1.35) saturate(1.35); }
+@keyframes keytest-rgb-wave {
+  from { filter: hue-rotate(0deg) brightness(var(--key-brightness, .75)); }
+  to { filter: hue-rotate(360deg) brightness(var(--key-brightness, .75)); }
+}
+@keyframes keytest-rgb-aurora {
+  0% { filter: hue-rotate(-28deg) brightness(.62); }
+  100% { filter: hue-rotate(48deg) brightness(1.18); }
+}
+@keyframes keytest-rgb-breathe {
+  0%, 100% { filter: brightness(.42); }
+  50% { filter: brightness(1.28); }
+}
+@keyframes keytest-key-pulse {
+  0% { transform: translateY(4px) scale(.94); }
+  55% { transform: translateY(-2px) scale(1.05); filter: brightness(1.65); }
+  100% { transform: translateY(0) scale(1); }
+}
+@keyframes keytest-key-ripple {
+  0%, 100% { filter: brightness(1); }
+  45% { filter: brightness(2.1) saturate(1.5); box-shadow: 0 5px 0 #050505, 0 0 24px var(--key-rgb); }
+}
+
 @media (hover: none) {
   .hover-lift:hover, .me-weather-widget:hover, .card-3d:hover, .resend-card:hover { transform: none !important; }
 }
