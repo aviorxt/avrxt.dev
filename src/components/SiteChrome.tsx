@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
-import GlobalLinkPreview from '@/components/GlobalLinkPreview';
 
 const CHROMELESS_ROUTES = new Set([
     '/', '/home', '/me', '/me/admin', '/maintenance', '/link-error-404',
@@ -25,9 +24,6 @@ export default function SiteChrome({ position }: { position: 'before' | 'after' 
     }
 
     return (
-        <>
-            <GlobalLinkPreview />
-            <Footer />
-        </>
+        <Footer />
     );
 }
