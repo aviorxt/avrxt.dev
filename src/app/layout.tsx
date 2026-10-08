@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
+import AskAi from "@/components/AskAi";
 import { ogSize } from "@/lib/og-image";
 
 const inter = Inter({
@@ -95,6 +96,7 @@ export default function RootLayout({
         </main>
         <SiteChrome position="after" />
         <CookieBanner />
+        <AskAi />
         <Analytics />
       </body>
     </html>

@@ -53,6 +53,7 @@ export default function TermsPage() {
 
     <PolicySection id="services" number="07" title="Third-party services and links">
       <p>The site relies on or links to providers for hosting, analytics, DNS, identity, storage, email, fonts, media, music, network data, and quotes. Their availability, accuracy, policies, and acts are outside AVRXT’s direct control. Your use of a provider is also governed by that provider’s terms.</p>
+      <p>The Ask AI launcher prepares page context and your question for a third-party AI service that you choose. AVRXT does not operate those models, control their responses, or guarantee that an answer is accurate or complete. Review important answers independently, and do not put passwords, confidential material, or sensitive personal data in an AI prompt.</p>
       <p>Links do not imply endorsement, and AVRXT is not responsible for content or transactions on an external website.</p>
     </PolicySection>
 

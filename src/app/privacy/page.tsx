@@ -41,6 +41,7 @@ export default function PrivacyPage() {
         <><strong>Font UI:</strong> the chosen Google Font is requested from Google Fonts. Preview text remains in your browser.</>,
         <><strong>Spotify and quotes:</strong> Spotify links use Spotify’s official embed; random quotes are requested from DummyJSON.</>,
         <><strong>Keytest:</strong> key presses, history, RGB settings, and statistics remain in browser memory and are not sent to a tool API.</>,
+        <><strong>Ask AI:</strong> the page title, description, public URL, and your question are assembled into a prompt in your browser. Selecting a provider copies that prompt and opens its website; ChatGPT may also receive it through its prefilled web address.</>,
       ]} />
     </PolicySection>
 
@@ -57,7 +58,8 @@ export default function PrivacyPage() {
     </PolicySection>
 
     <PolicySection id="providers" number="06" title="Service providers and international processing">
-      <p>Providers are used only where needed to host the site or deliver requested features. They currently include Vercel, Cloudflare, Supabase, Resend, Gmail/Google, GitHub, Discord, Spotify, ipwho.is, RDAP operators, DummyJSON, and Google Fonts.</p>
+      <p>Providers are used only where needed to host the site or deliver requested features. They currently include Vercel, Cloudflare, Supabase, Resend, Gmail/Google, GitHub, Discord, Spotify, ipwho.is, RDAP operators, DummyJSON, and Google Fonts. The optional Ask AI launcher links to OpenAI ChatGPT, Google Gemini, Anthropic Claude, and xAI Grok.</p>
+      <p>Nothing is sent to an AI provider merely by opening the launcher. When you select a provider, its website opens and the prepared prompt is copied for you to paste; ChatGPT may receive the prompt in its prefilled URL. Anything you paste or submit is then processed under that provider’s privacy policy. Do not include secrets or sensitive personal information in a question.</p>
       <p>These providers may process information in countries where they or their subprocessors operate. Their privacy notices, retention periods, and legal safeguards apply to their processing. Links to third-party sites are not controlled by AVRXT.</p>
     </PolicySection>
 
