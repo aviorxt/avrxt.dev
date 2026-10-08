@@ -5,7 +5,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 
 const NAV_HIDDEN_ROUTES = new Set([
-    '/', '/home', '/me', '/me/admin', '/maintenance', '/link-error-404',
+    '/', '/me', '/me/admin', '/maintenance', '/link-error-404',
     '/400', '/401', '/403', '/404', '/408', '/429',
     '/500', '/502', '/503', '/504',
 ]);

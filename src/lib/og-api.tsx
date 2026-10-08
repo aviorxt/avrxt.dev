@@ -183,7 +183,7 @@ function topBar(path: string) {
               '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
           }}
         >
-          {clampText(path === '/' ? '/home' : path, 36)}
+          {clampText(path, 36)}
         </div>
       </div>
     </div>

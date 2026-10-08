@@ -25,6 +25,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
+      { source: '/home', destination: '/', permanent: true },
       { source: '/portfolio', destination: '/gallery', permanent: true },
       { source: '/hireme', destination: '/contact', permanent: true },
       { source: '/guestbook', destination: '/', permanent: true },
