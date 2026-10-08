@@ -11,7 +11,6 @@ type PageMetadataInput = {
 
 const SITE_NAME = 'avrxt';
 const SITE_URL = 'https://www.avrxt.dev';
-const DEFAULT_OG_IMAGE_ALT = 'avrxt (aviorxt) — independent developer and aircraft maintenance engineer';
 
 function withSiteSuffix(title: string) {
   const normalized = title.trim();
@@ -47,7 +46,7 @@ export function buildPageMetadata({
     url: imageUrl,
     width: ogSize.width,
     height: ogSize.height,
-    alt: DEFAULT_OG_IMAGE_ALT,
+    alt: `${fullTitle} — social preview`,
   } as const;
 
   const metadata: Metadata = {
@@ -89,7 +88,7 @@ export function buildPageMetadata({
           url: imageUrl,
           width: ogSize.width,
           height: ogSize.height,
-          alt: DEFAULT_OG_IMAGE_ALT,
+          alt: `${fullTitle} — social preview`,
         },
       ],
     },

@@ -15,6 +15,7 @@ const pageGroups = [
             { label: 'About', href: '/about' },
             { label: 'Profile', href: '/me' },
             { label: 'Gallery', href: '/gallery' },
+            { label: 'Signature', href: '/signature' },
             { label: 'Uses', href: '/uses' },
             { label: 'Contact', href: '/contact' },
         ],

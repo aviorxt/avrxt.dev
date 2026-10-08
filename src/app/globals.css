@@ -524,6 +524,51 @@ button:active, a:active {
   78%, 100% { transform: translateX(110%); }
 }
 
+/* Signature — animated vector ink */
+.signature-ambient {
+  background:
+    radial-gradient(circle at 76% 12%, rgba(255,255,255,.075), transparent 23rem),
+    linear-gradient(118deg, transparent 49%, rgba(255,255,255,.025) 50%, transparent 51%);
+  background-size: auto, 54px 54px;
+  mask-image: linear-gradient(to bottom, #000, transparent 92%);
+  -webkit-mask-image: linear-gradient(to bottom, #000, transparent 92%);
+}
+.signature-outline { color: #686868; }
+@supports (-webkit-text-stroke: 1px white) {
+  .signature-outline { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.58); }
+}
+.signature-stage { box-shadow: inset 0 1px 0 rgba(255,255,255,.035), 0 34px 90px rgba(0,0,0,.36); }
+.signature-stage-grid {
+  opacity: .34;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 42px 42px;
+  mask-image: radial-gradient(ellipse at center, #000 0 34%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 0 34%, transparent 78%);
+}
+.signature-halo { background: rgba(255,255,255,.055); filter: blur(58px); }
+.signature-stroke {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: signature-write var(--signature-duration) cubic-bezier(.3,.02,.25,1) var(--signature-delay) forwards;
+}
+.signature-nib { animation: signature-nib 5.35s linear both; }
+.signature-shadow { animation: signature-shadow 900ms ease 4.65s both; }
+@keyframes signature-write { to { stroke-dashoffset: 0; } }
+@keyframes signature-shadow { from { opacity: 0; } to { opacity: .08; } }
+@keyframes signature-nib {
+  0% { opacity: 0; transform: translate(0, 0) scale(.55); }
+  3% { opacity: 1; }
+  18% { transform: translate(150px, -86px) scale(1); }
+  35% { transform: translate(300px, -22px) scale(.8); }
+  53% { transform: translate(455px, -54px) scale(1); }
+  70% { transform: translate(620px, -76px) scale(.75); }
+  84% { transform: translate(760px, -22px) scale(1); }
+  97% { opacity: 1; transform: translate(842px, 8px) scale(.65); }
+  100% { opacity: 0; transform: translate(842px, 8px) scale(.4); }
+}
+
 .tool-card, .tool-panel, .contact-panel { box-shadow: inset 0 1px 0 rgba(255,255,255,.035); }
 .tool-card::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(125deg, transparent 20%, rgba(255,255,255,.045), transparent 70%); transform: translateX(-100%); transition: transform 650ms cubic-bezier(.2,.75,.25,1); }
 .tool-card:hover::before { transform: translateX(100%); }
@@ -589,6 +634,8 @@ button:active, a:active {
   .about-premium header { min-height: auto; }
   .about-orbit { animation-duration: 30s; }
   .about-principle:hover { padding-left: 0; }
+  .signature-stage-grid { background-size: 28px 28px; }
+  .signature-nib { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
