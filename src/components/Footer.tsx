@@ -103,9 +103,21 @@ export default function Footer() {
                 </div>
 
                 <div className="flex flex-col gap-6 border-t border-[#1F1F1F] pt-7 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="font-mono text-[9px] uppercase leading-5 tracking-[.14em] text-[#858585]">
-                        &copy; avrxt.dev 2024&ndash;{year}. All rights reserved.
-                    </p>
+                    <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+                        <p className="font-mono text-[9px] uppercase leading-5 tracking-[.14em] text-[#858585]">
+                            &copy; avrxt.dev 2024&ndash;{year}. All rights reserved.
+                        </p>
+                        <a
+                            href="https://www.instagram.com/aviorxt/"
+                            target="_blank"
+                            rel="noreferrer"
+                            aria-label="@aviorxt on Instagram"
+                            className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[.08em] text-[#A3A3A3] transition-colors hover:text-white"
+                        >
+                            <span aria-hidden="true">🩶</span>
+                            <span>@aviorxt</span>
+                        </a>
+                    </div>
                     <nav aria-label="Social links" className="flex items-center gap-2">
                         <a href="https://github.com/aviorxt" target="_blank" rel="noreferrer" aria-label="aviorxt on GitHub" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Github size={15} /></a>
                         <a href="https://www.instagram.com/aviorxt/" target="_blank" rel="noreferrer" aria-label="@aviorxt on Instagram" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Instagram size={15} /></a>
