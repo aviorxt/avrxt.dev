@@ -57,6 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { route: '/docs', priority: 0.7, changeFrequency: 'weekly' },
         ...documentEntries,
         { route: '/uses', priority: 0.6, changeFrequency: 'monthly' },
+        { route: '/muzix/chart', priority: 0.65, changeFrequency: 'daily' },
         { route: '/subscribe', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/system/api/doc', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/privacy', priority: 0.3, changeFrequency: 'yearly' },

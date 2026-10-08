@@ -19,6 +19,7 @@ export default function Navbar() {
             { name: '/me', href: '/me', description: "Profile and Link's" },
             { name: '/about', href: '/about', description: 'About avrxt, also known as aviorxt' },
             { name: '/uses', href: '/uses', description: 'Tools, apps, and gear' },
+            { name: '/muzix/chart', href: '/muzix/chart', description: 'Live Spotify listening chart' },
             { name: '/subscribe', href: '/subscribe', description: 'Newsletter Subscription' },
             { name: '/contact', href: '/contact', description: 'Contact @avrxt' },
             { name: '/gallery', href: '/gallery', description: 'Visual gallery' },

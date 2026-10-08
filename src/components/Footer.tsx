@@ -43,6 +43,7 @@ export default function Footer() {
                     <Link href="https://status.avrxt.dev" target="_blank" className="hover:text-white transition-colors">/status</Link>
                     <Link href="/about" className="hover:text-white transition-colors">/about</Link>
                     <Link href="/tools" className="hover:text-white transition-colors">/tools</Link>
+                    <Link href="/muzix/chart" className="hover:text-white transition-colors">/muzix</Link>
                     <Link href="/terms" className="hover:text-white transition-colors">/terms</Link>
                     <Link href="/privacy" className="hover:text-white transition-colors">/privacy</Link>
                     <Link href="/refund" className="hover:text-white transition-colors">/refund</Link>
