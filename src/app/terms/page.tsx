@@ -1,84 +1,76 @@
 import Link from 'next/link';
-import Reveal from '@/components/Reveal';
+import { PolicyCallout, PolicyList, PolicySection, PolicyShell } from '@/components/legal/PolicyShell';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
-    title: 'Terms of Use',
-    description: 'Terms for using avrxt.dev, its public content, account features, and APIs.',
-    keywords: ['terms of use', 'avrxt terms', 'website use', 'API terms'],
-    path: '/terms',
+  title: 'Terms of Use',
+  description: 'Terms for using avrxt.dev, its public tools, forms, account features, integrations, content, and APIs.',
+  keywords: ['terms of use', 'avrxt terms', 'acceptable use', 'developer tools', 'API terms'],
+  path: '/terms',
 });
 
-const lastUpdated = '8 October 2026';
-const supportEmail = 'support@avrxt.dev';
+const nav = [
+  { id: 'agreement', label: 'Agreement and scope' }, { id: 'tools', label: 'Public tools' }, { id: 'acceptable', label: 'Acceptable use' }, { id: 'accounts', label: 'Accounts' }, { id: 'submissions', label: 'Your submissions' }, { id: 'ownership', label: 'Ownership' }, { id: 'services', label: 'Third parties' }, { id: 'paid', label: 'Paid work' }, { id: 'liability', label: 'Disclaimers' }, { id: 'changes', label: 'Changes and contact' },
+];
 
-function TermsSection({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
-    return (
-        <section className="legal-section scroll-mt-24 border border-white/10 p-5 sm:p-7">
-            <h2 className="mb-3 border-l-2 border-white/30 pl-3 font-mono text-xs font-bold uppercase tracking-[.16em] text-white sm:text-sm sm:tracking-[.22em]">
-                <span className="mr-2 text-zinc-500">{number}</span>{title}
-            </h2>
-            <div className="space-y-3 text-sm leading-7 text-zinc-400 [overflow-wrap:anywhere]">{children}</div>
-        </section>
-    );
-}
+export default function TermsPage() {
+  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v3.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}>
+    <PolicySection id="agreement" number="01" title="Agreement and scope">
+      <p>By accessing or using avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the site. These terms cover public pages, forms, tools, APIs, account features, and integrations operated through this website.</p>
+      <p>The site may change, experience downtime, or discontinue a feature. No promise is made that every feature will remain available, error-free, or compatible with every device.</p>
+    </PolicySection>
 
-export default function Terms() {
-    return (
-        <main className="mx-auto w-full max-w-4xl px-4 pb-20 pt-28 sm:px-6 sm:pb-28 sm:pt-36">
-            <Reveal className="active">
-                <header className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
-                    <p className="mb-3 font-mono text-[10px] uppercase tracking-[.25em] text-zinc-500 sm:tracking-[.4em]">// Website / Terms</p>
-                    <h1 className="mb-5 text-[clamp(2.4rem,9vw,4.5rem)] font-black leading-[.95] tracking-[-.06em] text-white">Terms of Use</h1>
-                    <p className="max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
-                        These terms cover your use of avrxt.dev, including its public pages, forms, diagnostic tools, and APIs.
-                    </p>
-                    <p className="mt-5 font-mono text-[11px] text-zinc-600">Last updated: {lastUpdated}</p>
-                </header>
+    <PolicySection id="tools" number="02" title="Public tools and result accuracy">
+      <p>IP, DNS, RDAP, port, email-domain, font, Spotify, quote, and keyboard tools are provided for convenience and general information. Outputs may be incomplete, delayed, approximate, provider-dependent, or affected by VPNs, proxies, DNS caching, network filtering, browser restrictions, and third-party outages.</p>
+      <PolicyList items={[
+        'Do not rely on a tool result as the only basis for a legal, medical, financial, safety-critical, or production-security decision.',
+        'Mailfy verifies syntax and domain mail routing; it does not confirm that a mailbox exists or belongs to a person.',
+        'IP geolocation is approximate and may identify a provider gateway rather than a physical location.',
+        'The keyboard tester runs in the browser, but operating-system and browser shortcuts may be intercepted before the page receives them.',
+      ]} />
+    </PolicySection>
 
-                <div className="space-y-4 sm:space-y-5">
-                    <TermsSection number="01" title="Using the site">
-                        <p>By accessing or using avrxt.dev, you agree to these terms and the applicable laws where you use the site. If you do not agree, do not use the site. These terms apply to the public website and its interactive features; separate terms may apply to third-party services.</p>
-                        <p>The site and its features may change, be unavailable, or be discontinued. We do not promise uninterrupted operation or a particular response time.</p>
-                    </TermsSection>
+    <PolicySection id="acceptable" number="03" title="Acceptable use and testing authorization">
+      <p>You must not use the site to violate law, invade privacy, infringe intellectual property, distribute malware, send spam, overload infrastructure, evade access controls, scrape protected data, or interfere with another person’s use.</p>
+      <p>Use the port checker only against a public system you own or are expressly authorized to test. Do not attempt to bypass private-address protections, rate limits, request limits, or other safeguards. Automated access must remain reasonable and must stop if it affects service stability.</p>
+      <p>The Spotify feature uses the official player. It does not grant permission to download, extract, convert, circumvent protection, or redistribute audio.</p>
+    </PolicySection>
 
-                    <TermsSection number="02" title="Accounts and connected services">
-                        <p>Some features require sign-in through GitHub or Discord. Use an account you control, provide accurate information to the provider, and do not attempt to bypass access checks. The providers' own terms apply to your use of their services.</p>
-                        <p>You are responsible for activity performed through your account and for keeping your sign-in methods secure. Contact us if you believe an account or session has been misused.</p>
-                    </TermsSection>
+    <PolicySection id="accounts" number="04" title="Accounts and connected services">
+      <p>Some features may require GitHub or Discord sign-in or a connection to Spotify. Use only accounts you control, follow each provider’s terms, and do not bypass authorization or role checks.</p>
+      <p>You are responsible for securing your provider account and device. Notify AVRXT if you reasonably believe a session or connected feature has been misused. Access may be restricted to protect the site or investigate abuse.</p>
+    </PolicySection>
 
-                    <TermsSection number="03" title="Submissions and communications">
-                        <p>You retain any rights you have in content you submit through the contact form. You authorize AVRXT to process that content only as reasonably needed to respond, provide requested services, protect the site, and meet legal obligations.</p>
-                        <p>Only submit content you have the right to share. Do not send passwords, payment-card information, unlawful material, threats, spam, malware, or content that infringes another person&apos;s rights.</p>
-                    </TermsSection>
+    <PolicySection id="submissions" number="05" title="Contact messages and other submissions">
+      <p>You retain rights you already have in content you submit. You give AVRXT permission to process that content as reasonably needed to respond, provide requested services, operate the feature, protect the site, and meet legal obligations.</p>
+      <p>Submit only content you have the right to share. Do not submit secrets, passwords, one-time codes, full card data, unlawful content, threats, malware, or another person’s confidential information without authorization.</p>
+    </PolicySection>
 
-                    <TermsSection number="04" title="Acceptable use and APIs">
-                        <p>Do not use the site to break the law, interfere with another person's use, probe or bypass security without authorization, overload services, distribute malware, or send spam. Automated access must respect published limits and must not degrade the service or collect personal information unlawfully.</p>
-                        <p>APIs and integrations may have rate limits, change without notice, or depend on third-party providers. Do not treat their output as guaranteed, complete, or suitable for safety-critical decisions.</p>
-                        <p>Use the port checker only against public systems you own or are expressly authorized to test. DNS, RDAP, IP, email-domain, and quote results are informational and may be incomplete or stale. The Spotify feature uses the official player and does not grant a right to download, extract, convert, or redistribute audio. Do not use any tool to infringe copyright, evade access controls, or violate a provider&apos;s terms.</p>
-                    </TermsSection>
+    <PolicySection id="ownership" number="06" title="Site content, brand, and open source">
+      <p>The avrxt name, site design, original writing, photographs, video, and other original materials remain protected by applicable intellectual-property law. Third-party names, media, fonts, embeds, and software remain owned by their respective rights holders.</p>
+      <p>Source code published in the avrxt-in-1 repository is governed by the license included with that repository. A source-code license does not automatically grant rights to the AVRXT brand, private credentials, personal media, or third-party assets.</p>
+    </PolicySection>
 
-                    <TermsSection number="05" title="Ownership and open-source software">
-                        <p>Names, logos, photographs, video, writing, and third-party materials remain owned by their respective rights holders. These terms do not grant permission to use them beyond what law allows.</p>
-                        <p>Where source code is published in the avrxt-in-1 repository, that code is licensed under the license included in that repository. The repository license does not automatically cover this site's brand, media, or third-party assets.</p>
-                    </TermsSection>
+    <PolicySection id="services" number="07" title="Third-party services and links">
+      <p>The site relies on or links to providers for hosting, analytics, DNS, identity, storage, email, fonts, media, music, network data, and quotes. Their availability, accuracy, policies, and acts are outside AVRXT’s direct control. Your use of a provider is also governed by that provider’s terms.</p>
+      <p>Links do not imply endorsement, and AVRXT is not responsible for content or transactions on an external website.</p>
+    </PolicySection>
 
-                    <TermsSection number="06" title="Third-party services and links">
-                        <p>The site may link to or rely on services operated by others, including hosting, storage, authentication, email, music, and social platforms. We do not control their availability, content, or policies. Your use of those services is governed by their own terms and privacy notices.</p>
-                    </TermsSection>
+    <PolicySection id="paid" number="08" title="Paid project work and refunds">
+      <p>Public tool access does not create a consulting relationship. Paid work begins only when the parties agree to a proposal, invoice, statement of work, or another clear arrangement. That document may define scope, milestones, revisions, ownership, warranties, payment timing, and cancellation terms.</p>
+      <p>The <Link href="/refund">Refund Policy</Link> applies to eligible direct payments unless project-specific written terms say otherwise.</p>
+    </PolicySection>
 
-                    <TermsSection number="07" title="Disclaimers and liability">
-                        <p>The site is provided on an “as available” basis. To the extent permitted by applicable law, AVRXT disclaims implied warranties and is not responsible for indirect or consequential loss, loss of data, or interruptions caused by third-party services or events outside reasonable control.</p>
-                        <p>Nothing in these terms excludes or limits liability that cannot legally be excluded or limited. Where liability may be limited, it is limited only to the extent permitted by applicable law.</p>
-                    </TermsSection>
+    <PolicySection id="liability" number="09" title="Disclaimers and limits">
+      <p>The site is provided on an “as available” basis. To the extent permitted by law, AVRXT disclaims implied warranties and is not responsible for indirect, incidental, special, or consequential loss arising from tool output, downtime, data loss, third-party conduct, or use outside the documented purpose.</p>
+      <p>Nothing here excludes liability or a legal remedy that cannot be excluded. If a limitation is not enforceable where you live, it applies only to the maximum extent allowed there.</p>
+      <PolicyCallout title="Use professional judgment">You remain responsible for validating results, maintaining backups, securing credentials, and obtaining permission before testing a system.</PolicyCallout>
+    </PolicySection>
 
-                    <TermsSection number="08" title="Changes, law, and contact">
-                        <p>We may update these terms by publishing a revised version here. The updated date indicates when the current text was posted. Continued use after an update means you accept the revised terms to the extent permitted by law.</p>
-                        <p>These terms are governed by the laws of India, subject to any mandatory consumer or other legal protections that apply to you. Disputes may be brought before a court with jurisdiction under applicable law.</p>
-                        <p>Questions about these terms: <a className="break-all text-zinc-200 underline decoration-white/20 underline-offset-4 hover:decoration-white" href={`mailto:${supportEmail}`}>{supportEmail}</a>. See also our <Link className="text-zinc-200 underline decoration-white/20 underline-offset-4 hover:decoration-white" href="/privacy">Privacy Policy</Link> and <Link className="text-zinc-200 underline decoration-white/20 underline-offset-4 hover:decoration-white" href="/refund">Refund Policy</Link>.</p>
-                    </TermsSection>
-                </div>
-            </Reveal>
-        </main>
-    );
+    <PolicySection id="changes" number="10" title="Changes, governing law, and contact">
+      <p>These terms may be updated by publishing a revised version here. Continued use after an update constitutes acceptance to the extent permitted by law. Material paid-project rights are not retroactively changed where a separate written agreement controls.</p>
+      <p>These terms are governed by the laws of India, subject to mandatory consumer or other protections that apply to you. A dispute may be brought before a court that has jurisdiction under applicable law.</p>
+      <p>Questions can be sent to <a href="mailto:support@avrxt.dev">support@avrxt.dev</a>. Information about data handling appears in the <Link href="/privacy">Privacy Policy</Link>, and vulnerability reports belong on the <Link href="/security">Security page</Link>.</p>
+    </PolicySection>
+  </PolicyShell>;
 }

@@ -1,55 +1,60 @@
-import Reveal from '@/components/Reveal';
+import { PolicyCallout, PolicyList, PolicySection, PolicyShell } from '@/components/legal/PolicyShell';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
-    title: 'Refund Policy',
-    description:
-        'Our transparent Refund Policy for digital services, cloud solutions, and contributions. Understand your rights and our processing timelines.',
-    keywords: ['refund policy', 'cancellation policy', 'avrxt refunds', 'digital service refund', 'payment processing', 'customer trust'],
-    path: '/refund',
+  title: 'Refund Policy',
+  description: 'How cancellations, duplicate payments, digital deliverables, project deposits, and approved refunds are handled by AVRXT.',
+  keywords: ['refund policy', 'cancellation', 'project deposit', 'digital services', 'duplicate payment'],
+  path: '/refund',
 });
 
-export default function Refund() {
-    const lastUpdated = "January 15, 2026";
-    const supportEmail = "support@avrxt.dev";
+const nav = [
+  { id: 'scope', label: 'Scope' }, { id: 'before-work', label: 'Before work starts' }, { id: 'after-work', label: 'After work starts' }, { id: 'eligible', label: 'Eligible cases' }, { id: 'request', label: 'Request process' }, { id: 'timing', label: 'Timing and rights' },
+];
 
-    return (
-        <main className="mx-auto max-w-3xl px-4 pb-20 pt-28 sm:px-6 sm:pb-32 sm:pt-40">
-            <Reveal className="active">
-                <p className="text-[10px] uppercase tracking-[0.4em] text-zinc-500 mb-4 font-mono">{"// Refund Policy v1.1"}</p>
-                <h1 className="text-4xl md:text-5xl font-black tracking-tighter mb-12 text-white">Refund Policy_</h1>
+export default function RefundPage() {
+  return <PolicyShell eyebrow="Commercial policy" title="Refund policy" description="A practical guide to cancellations and refunds for paid work arranged directly with AVRXT. The public website and browser tools are free and do not create a payment obligation." version="v2.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Public tools', value: 'Free to use' }, { label: 'Approved refunds', value: 'Original payment method' }, { label: 'Project work', value: 'Written scope controls' }]}>
+    <PolicySection id="scope" number="01" title="What this policy covers">
+      <p>This policy applies only when you make a payment directly to AVRXT for a project, consultation, digital deliverable, or another service. It does not apply to free website tools, third-party purchases, or payments made to another provider.</p>
+      <p>A proposal, statement of work, invoice, or signed agreement may contain project-specific cancellation or refund terms. If those terms conflict with this page, the written project terms control for that engagement.</p>
+      <PolicyCallout title="No checkout on the public tools">Using IP, DNS, mail, font, Spotify, quote, port, or keyboard tools does not itself purchase a service.</PolicyCallout>
+    </PolicySection>
 
-                <div className="space-y-12">
-                    <p className="italic text-zinc-500">Last updated: {lastUpdated}</p>
+    <PolicySection id="before-work" number="02" title="Cancellation before work starts">
+      <p>If you cancel before work begins and before AVRXT commits non-recoverable third-party costs, the amount paid is generally eligible for refund. Any payment-gateway fee or external cost that cannot be recovered may be deducted only where permitted by law and disclosed with the refund calculation.</p>
+      <p>“Work begins” may include discovery, technical auditing, reserved consulting time, architecture, research, design exploration, environment setup, or development—not only delivery of final files.</p>
+    </PolicySection>
 
-                    <section className="legal-section">
-                        <h2 className="text-white font-mono text-lg font-bold uppercase tracking-widest border-l-2 border-zinc-800 pl-4 mb-4">01. Service Delivery & Deposits</h2>
-                        <p className="text-zinc-400 leading-relaxed text-sm">
-                            Due to the specialized nature of our engineering services (API Dev, Bot Dev, UI Redesign), the effort allocated begins immediately upon booking. The initial <span className="text-white font-semibold underline decoration-zinc-800">50% deposit for custom projects is non-refundable</span> once the project technical audit has been completed.
-                        </p>
-                    </section>
+    <PolicySection id="after-work" number="03" title="Deposits, milestones, and delivered work">
+      <PolicyList items={[
+        <><strong>Deposits:</strong> once work begins, the portion covering completed work, reserved time, and committed costs is normally non-refundable.</>,
+        <><strong>Milestones:</strong> an accepted or delivered milestone is normally non-refundable unless the written project agreement says otherwise.</>,
+        <><strong>Digital deliverables:</strong> source code, designs, reports, credentials, or other digital files cannot be returned after delivery; verified defects will be handled under the agreed revision or warranty terms.</>,
+        <><strong>Client delay:</strong> inactivity, missing content, unavailable access, or a change of mind does not automatically make completed work refundable.</>,
+      ]} />
+      <p>If a project is cancelled after work begins, AVRXT may provide a written breakdown of completed work and determine whether any unused balance remains refundable.</p>
+    </PolicySection>
 
-                    <section className="legal-section">
-                        <h2 className="text-white font-mono text-lg font-bold uppercase tracking-widest border-l-2 border-zinc-800 pl-4 mb-4">02. Refund Eligibility Criteria</h2>
-                        <p className="text-zinc-400 leading-relaxed text-sm">
-                            Refunds are eligible only under the following conditions:
-                            <br /><br />
-                            • <span className="text-white">Cancellation within 12 hours:</span> Full refund minus 5% gateway processing fees.
-                            <br />
-                            • <span className="text-white">Failure to Deliver:</span> If we fail to meet the documented core project requirements within the SLA-defined 30-day grace period.
-                            <br />
-                            • <span className="text-white">Double Payments:</span> Any accidental duplicate transactions are refunded 100%.
-                        </p>
-                    </section>
+    <PolicySection id="eligible" number="04" title="When a refund may be approved">
+      <PolicyList items={[
+        'A duplicate or clearly incorrect payment.',
+        'A payment received after both parties confirmed cancellation and before work started.',
+        'Failure by AVRXT to provide the paid service after a reasonable opportunity to correct the issue.',
+        'An unused project balance that the applicable proposal or statement of work expressly makes refundable.',
+        'A refund required by mandatory consumer law that applies to the transaction.',
+      ]} />
+      <p>Refunds are not normally issued for subjective preference changes, incompatibility not disclosed before work, third-party outages, misuse of a deliverable, or requirements added after the agreed scope.</p>
+    </PolicySection>
 
-                    <section className="legal-section">
-                        <h2 className="text-white font-mono text-lg font-bold uppercase tracking-widest border-l-2 border-zinc-800 pl-4 mb-4">03. Execution & Timelines</h2>
-                        <p className="text-zinc-400 leading-relaxed text-sm">
-                            Approved refunds are initiated within <span className="text-white font-semibold">48 hours</span> and may take <span className="text-white font-semibold">5-10 bank working days</span> to reflect in your original payment source. To initiate a refund request, provide your Transaction ID and Project Reference to: <span className="text-white font-bold underline decoration-zinc-800">{supportEmail}</span>.
-                        </p>
-                    </section>
-                </div>
-            </Reveal>
-        </main>
-    );
+    <PolicySection id="request" number="05" title="How to request a refund">
+      <p>Email <a href="mailto:support@avrxt.dev">support@avrxt.dev</a> with your name, invoice or transaction reference, project reference, payment date, amount, and a short explanation. Do not send full card numbers, passwords, one-time codes, or bank credentials.</p>
+      <p>AVRXT may request reasonable evidence needed to locate the payment or assess whether the delivered work matched the written scope. Submit a request promptly after discovering the issue; project-specific deadlines may appear in your agreement.</p>
+    </PolicySection>
+
+    <PolicySection id="timing" number="06" title="Review, payment timing, and legal rights">
+      <p>Requests are reviewed individually. If approved, a refund is initiated to the original payment method unless another lawful method is agreed. Banks and payment providers control the final posting time, currency conversion, and any provider-side reversal delay.</p>
+      <p>Contact AVRXT before starting a payment dispute so there is an opportunity to investigate duplicate billing or delivery concerns. This request does not waive any chargeback or consumer rights you have under applicable law.</p>
+      <PolicyCallout title="Mandatory rights preserved">Nothing in this policy removes a refund, cancellation, warranty, or remedy that cannot legally be excluded.</PolicyCallout>
+    </PolicySection>
+  </PolicyShell>;
 }

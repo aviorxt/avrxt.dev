@@ -1,91 +1,79 @@
 import Link from 'next/link';
-import Reveal from '@/components/Reveal';
+import { PolicyCallout, PolicyList, PolicySection, PolicyShell } from '@/components/legal/PolicyShell';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
-    title: 'Privacy Policy',
-    description: 'How avrxt.dev handles information submitted through the website, account sign-in, and newsletter.',
-    keywords: ['privacy policy', 'avrxt privacy', 'personal data', 'data requests'],
-    path: '/privacy',
+  title: 'Privacy Policy',
+  description: 'How avrxt.dev handles contact details, account information, tool requests, analytics, cookies, and privacy requests.',
+  keywords: ['privacy policy', 'avrxt privacy', 'cookies', 'Vercel Analytics', 'personal data', 'data request'],
+  path: '/privacy',
 });
 
-const lastUpdated = '8 October 2026';
-const supportEmail = 'support@avrxt.dev';
+const nav = [
+  { id: 'scope', label: 'Scope and contact' }, { id: 'collect', label: 'Information handled' }, { id: 'tools', label: 'Tool processing' }, { id: 'analytics', label: 'Analytics and logs' }, { id: 'cookies', label: 'Cookies and storage' }, { id: 'providers', label: 'Service providers' }, { id: 'retention', label: 'Use and retention' }, { id: 'rights', label: 'Your choices' }, { id: 'security', label: 'Security and changes' },
+];
 
-function PolicySection({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
-    return (
-        <section className="legal-section scroll-mt-24 border border-white/10 p-5 sm:p-7">
-            <h2 className="mb-3 border-l-2 border-white/30 pl-3 font-mono text-xs font-bold uppercase tracking-[.16em] text-white sm:text-sm sm:tracking-[.22em]">
-                <span className="mr-2 text-zinc-500">{number}</span>{title}
-            </h2>
-            <div className="space-y-3 text-sm leading-7 text-zinc-400 [overflow-wrap:anywhere]">{children}</div>
-        </section>
-    );
-}
+export default function PrivacyPage() {
+  return <PolicyShell eyebrow="Data use" title="Privacy policy" description="A transparent account of the information this website receives, where requested features send it, and the choices available to you." version="v3.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Advertising', value: 'No ad network' }, { label: 'Web analytics', value: 'Cookieless and aggregated' }, { label: 'Privacy requests', value: 'support@avrxt.dev' }]}>
+    <PolicySection id="scope" number="01" title="Scope, operator, and contact">
+      <p>This policy covers avrxt.dev, its public forms and tools, website authentication, newsletter features, and connected profile services operated by AVRXT. Separate policies may apply to a Discord application, a client project, or a third-party website.</p>
+      <p>Questions or requests about information handled through this site can be sent to <a href="mailto:support@avrxt.dev">support@avrxt.dev</a>. This notice describes the current product; it is not a blanket certification under every privacy law.</p>
+    </PolicySection>
 
-export default function Privacy() {
-    return (
-        <main className="mx-auto w-full max-w-4xl px-4 pb-20 pt-28 sm:px-6 sm:pb-28 sm:pt-36">
-            <Reveal className="active">
-                <header className="mb-10 border-b border-white/10 pb-8 sm:mb-12 sm:pb-10">
-                    <p className="mb-3 font-mono text-[10px] uppercase tracking-[.25em] text-zinc-500 sm:tracking-[.4em]">// Privacy / Data Use</p>
-                    <h1 className="mb-5 text-[clamp(2.4rem,9vw,4.5rem)] font-black leading-[.95] tracking-[-.06em] text-white">Privacy Policy</h1>
-                    <p className="max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
-                        This page explains what information the avrxt.dev website receives, why it is used, and how to make a privacy request.
-                    </p>
-                    <p className="mt-5 font-mono text-[11px] text-zinc-600">Last updated: {lastUpdated}</p>
-                </header>
+    <PolicySection id="collect" number="02" title="Information the site handles">
+      <PolicyList items={[
+        <><strong>Contact:</strong> name, email address, and message are validated and relayed through Gmail so AVRXT can respond.</>,
+        <><strong>Newsletter:</strong> email address, subscription status, audience reference, and a hash of the unsubscribe token are handled through Resend and Supabase.</>,
+        <><strong>Sign-in:</strong> identity details returned by GitHub or Discord, OAuth state, session information, and access roles are used to establish and protect your session.</>,
+        <><strong>Technical requests:</strong> IP address, user agent, requested route, timestamps, and similar request details may be processed by hosting, security, authentication, and delivery providers.</>,
+        <><strong>Connected features:</strong> profile integrations may process data returned by Spotify, Discord/Lanyard, YouTube, or weather services when those features are enabled.</>,
+      ]} />
+      <p>Do not submit passwords, full payment-card details, government identifiers, health information, or other sensitive information through ordinary contact fields.</p>
+    </PolicySection>
 
-                <div className="space-y-4 sm:space-y-5">
-                    <PolicySection number="01" title="Who operates this site">
-                        <p>avrxt.dev is operated by AVRXT. For questions or requests about information handled through this website, email <a className="break-all text-zinc-200 underline decoration-white/20 underline-offset-4 hover:decoration-white" href={`mailto:${supportEmail}`}>{supportEmail}</a>.</p>
-                        <p>This notice describes the website as currently built. It is not a certification that the site complies with every privacy law. Applicable requirements depend on where you are and which services you use.</p>
-                    </PolicySection>
+    <PolicySection id="tools" number="03" title="How the public tools process requests">
+      <p>Tool inputs are used to produce the result you request. The application does not intentionally create a user profile from tool history, although hosting and upstream providers may keep ordinary security or operational logs.</p>
+      <PolicyList items={[
+        <><strong>IP lookup:</strong> the request IP and browser details are returned to you; public network information is enriched through ipwho.is.</>,
+        <><strong>DNS and registration:</strong> domains and record types are sent to Cloudflare DNS-over-HTTPS and, when requested, RDAP services.</>,
+        <><strong>Port checker:</strong> the public hostname or IP and TCP port are resolved and tested from the server. The target host will receive the connection attempt.</>,
+        <><strong>Mailfy:</strong> the submitted address is checked for syntax and its domain is queried for MX records; the mailbox is not contacted or proven to exist.</>,
+        <><strong>Font UI:</strong> the chosen Google Font is requested from Google Fonts. Preview text remains in your browser.</>,
+        <><strong>Spotify and quotes:</strong> Spotify links use Spotify’s official embed; random quotes are requested from DummyJSON.</>,
+        <><strong>Keytest:</strong> key presses, history, RGB settings, and statistics remain in browser memory and are not sent to a tool API.</>,
+      ]} />
+    </PolicySection>
 
-                    <PolicySection number="02" title="Information you choose to provide">
-                        <ul className="list-disc space-y-2 pl-5 marker:text-zinc-600">
-                            <li><strong className="text-zinc-200">Contact inquiries:</strong> your name, email address, and message. The form sends these details to the site operator by email so they can respond.</li>
-                            <li><strong className="text-zinc-200">Newsletter:</strong> your email address and subscription status are managed through Resend. Supabase stores your email, audience identifier, and a hash of the custom unsubscribe token so the link can be verified without storing the raw token.</li>
-                            <li><strong className="text-zinc-200">Sign-in:</strong> when you choose GitHub or Discord sign-in, the identity details those providers return are used to establish your session and apply access rules. Sign-in uses essential HTTP-only cookies.</li>
-                            <li><strong className="text-zinc-200">Tools:</strong> tool inputs such as a public hostname, port, domain, email domain, or Spotify URL are processed to return the result you request. The email diagnostic does not contact a mailbox. The port checker rejects private and reserved network targets.</li>
-                        </ul>
-                        <p>Please do not submit passwords, payment card details, government identifiers, health information, or other sensitive information in public fields or ordinary contact messages.</p>
-                    </PolicySection>
+    <PolicySection id="analytics" number="04" title="Web analytics and infrastructure logs">
+      <p>The site uses Vercel Web Analytics to measure page views and understand aggregate traffic. According to <a href="https://vercel.com/docs/analytics/privacy-policy" target="_blank" rel="noreferrer">Vercel’s Analytics privacy documentation</a>, Web Analytics does not use third-party cookies, records anonymous data points, and uses a request-derived visitor hash that is discarded after 24 hours.</p>
+      <p>Analytics data may include timestamp, route or URL, referrer, filtered query information, approximate geolocation, device type, operating system, and browser. It is not intended to identify a visitor or reconstruct browsing across unrelated sites. No custom analytics event currently asks for contact-form content, email addresses, or keytest input.</p>
+      <p>Vercel, Cloudflare, and other infrastructure providers may separately process IP addresses, request headers, errors, and security logs to deliver the site, prevent abuse, and diagnose failures under their own terms.</p>
+    </PolicySection>
 
-                    <PolicySection number="03" title="Information processed when you browse">
-                        <p>Our hosting, edge, storage, authentication, and security providers may process technical request data such as IP address, browser and device details, requested URL, and request time to deliver the site, prevent abuse, and diagnose failures. Rate-limit checks may use a platform-provided network address in short-lived server memory.</p>
-                        <p>The application code does not include an advertising tracker or a behavioral analytics script. Hosting and security providers may still create their own operational logs under their policies.</p>
-                    </PolicySection>
+    <PolicySection id="cookies" number="05" title="Cookies and local browser storage">
+      <p>Essential HTTP-only cookies may be used for sign-in sessions and OAuth security state. The cookie banner saves <strong>avrxt_cookie_choice</strong> in local storage so it does not appear on every visit. The current “Accept” and “Essential only” buttons record that preference; this build does not install an advertising cookie.</p>
+      <p>Vercel Web Analytics is cookieless and is not controlled by the cookie preference. Third-party embeds or connected services may use their own storage after you open or activate those features. Blocking cookies or local storage may prevent sign-in or preference persistence.</p>
+      <PolicyCallout title="Browser controls">You can remove local storage and cookies through your browser. Clearing the stored choice causes the banner to appear again.</PolicyCallout>
+    </PolicySection>
 
-                    <PolicySection number="04" title="Features and third-party services">
-                        <p>The site uses service providers to run requested features. These currently include Vercel for web hosting, Cloudflare for edge services, media delivery, and the newsletter unsubscribe Worker, Supabase for application data, Resend for newsletter delivery, and Gmail for contact and project inquiry delivery. Authentication can involve GitHub, Discord, and the OpenAuth service.</p>
-                        <p>Optional profile features may request data from Spotify, Discord/Lanyard, YouTube, and Open-Meteo for music, presence, embeds, or weather. These requests may reveal technical connection information to the service involved. Third-party sites and services have their own privacy terms and controls.</p>
-                    </PolicySection>
+    <PolicySection id="providers" number="06" title="Service providers and international processing">
+      <p>Providers are used only where needed to host the site or deliver requested features. They currently include Vercel, Cloudflare, Supabase, Resend, Gmail/Google, GitHub, Discord, Spotify, ipwho.is, RDAP operators, DummyJSON, and Google Fonts.</p>
+      <p>These providers may process information in countries where they or their subprocessors operate. Their privacy notices, retention periods, and legal safeguards apply to their processing. Links to third-party sites are not controlled by AVRXT.</p>
+    </PolicySection>
 
-                    <div id="cookies" className="scroll-mt-28">
-                    <PolicySection number="05" title="Cookies and similar storage">
-                        <p>Essential cookies are used for sign-in sessions and OAuth security state. Local browser storage records your cookie-banner choice so the notice does not reappear on every visit. These mechanisms support features you request and are not used by this application for ad targeting.</p>
-                        <p>Spotify embeds and Google Fonts previews connect to those providers only when you use the relevant tool. Their services may receive ordinary connection details such as your IP address and browser information. If you block cookies or storage, sign-in and connected features may not work.</p>
-                    </PolicySection>
-                    </div>
+    <PolicySection id="retention" number="07" title="Purposes, disclosure, and retention">
+      <p>Information is used to deliver requested features, respond to inquiries, maintain subscriptions, establish sessions, operate integrations, prevent abuse, measure aggregate traffic, and meet legal obligations. AVRXT does not sell personal information or provide it to an advertising network for targeted advertising.</p>
+      <p>Information is kept only as long as needed for the feature, support, security, opt-out record, project relationship, or legal obligation. Contact messages may remain in the receiving mailbox; newsletter services may keep subscription or suppression records; infrastructure providers keep logs under their own schedules. The application does not promise one universal deletion period for every provider.</p>
+    </PolicySection>
 
-                    <PolicySection number="06" title="Use, sharing, and retention">
-                        <p>Information is used to respond to inquiries, provide account and requested tool features, send requested newsletter emails, operate profile integrations, and protect the site. We do not sell personal information or share it with advertising networks for targeted advertising.</p>
-                        <p>Information is kept for as long as needed for the relevant feature, support, security, or legal obligations. Inquiry emails may remain in the recipient's mailbox; newsletter providers may retain subscription or suppression records so that opt-outs are respected. Infrastructure providers may retain their own logs under their terms. The codebase does not define a universal 30-day deletion period.</p>
-                        <p>Providers may process information in the countries where their systems operate. Their safeguards and retention practices are governed by their terms and applicable law.</p>
-                    </PolicySection>
+    <PolicySection id="rights" number="08" title="Your choices and privacy requests">
+      <p>You can unsubscribe using the link in a newsletter. You may email AVRXT to request access to, correction of, or deletion of information you submitted. Enough information may be requested to verify the request and locate the relevant record.</p>
+      <p>Some records may be retained where needed to honor an opt-out, protect the service, resolve a dispute, or comply with law. Depending on where you live, additional objection, restriction, portability, complaint, or consent-withdrawal rights may apply.</p>
+    </PolicySection>
 
-                    <PolicySection number="07" title="Your choices and requests">
-                        <p>You can unsubscribe using the link in a newsletter. You can also email us to request access to, correction of, or deletion of information you submitted. We may ask for enough information to verify the request and may retain limited records where required to honor an opt-out, protect the site, or meet a legal obligation.</p>
-                        <p>Where data-protection laws apply, additional rights and response requirements may be available. India's Digital Personal Data Protection Act and Rules have phased commencement; this notice does not claim a blanket compliance status. See the <a className="text-zinc-200 underline decoration-white/20 underline-offset-4 hover:decoration-white" href="https://www.meity.gov.in/documents/act-and-policies/digital-personal-data-protection-rules-2025-gDOxUjMtQWa?pageTitle=Digital-Personal-Data-Protection-Rules-2025" target="_blank" rel="noreferrer">official DPDP Rules publication</a> for the current text.</p>
-                    </PolicySection>
-
-                    <PolicySection number="08" title="Security and policy changes">
-                        <p>We use access controls and technical safeguards appropriate to the services we operate, but no internet transmission or storage system can be guaranteed completely secure. If this policy changes, the updated version and date will appear here.</p>
-                        <p>See also our <Link className="text-zinc-200 underline decoration-white/20 underline-offset-4 hover:decoration-white" href="/terms">Terms of Use</Link>.</p>
-                    </PolicySection>
-                </div>
-            </Reveal>
-        </main>
-    );
+    <PolicySection id="security" number="09" title="Security, children, and policy changes">
+      <p>Technical and organizational safeguards are used in proportion to the site’s features, but no transmission or storage system can be guaranteed completely secure. Please report suspected vulnerabilities through the <Link href="/security">Security page</Link>.</p>
+      <p>The public site is not designed to knowingly collect information from children below the minimum age required by applicable law. This policy may be updated as features or providers change; the date above identifies the current version.</p>
+    </PolicySection>
+  </PolicyShell>;
 }
