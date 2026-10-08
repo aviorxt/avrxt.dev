@@ -37,17 +37,6 @@ export default function HomePage() {
                 </div>
             </section>
 
-            <footer className="relative z-10 flex flex-col gap-4 border-t border-white/10 pt-5 font-mono text-[9px] uppercase tracking-[.16em] text-zinc-400 sm:flex-row sm:items-center sm:justify-between sm:text-[10px]">
-                <span>Designing in the quiet</span>
-                <nav aria-label="Quick links" className="flex flex-wrap gap-x-5 gap-y-2">
-                    <Link className="transition-colors hover:text-white" href="/about">About</Link>
-                    <Link className="transition-colors hover:text-white" href="/docs">Notes</Link>
-                    <Link className="transition-colors hover:text-white" href="/gallery">Gallery</Link>
-                    <Link className="transition-colors hover:text-white" href="/tools">Tools</Link>
-                    <Link className="transition-colors hover:text-white" href="/contact">Contact</Link>
-                </nav>
-                <Link href="/me" className="hidden transition-colors hover:text-white sm:inline">© avrxt</Link>
-            </footer>
         </main>
     );
 }
