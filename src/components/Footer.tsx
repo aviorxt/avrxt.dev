@@ -114,6 +114,7 @@ export default function Footer() {
                             aria-label="@aviorxt on Instagram"
                             className="inline-flex items-center gap-1.5 font-mono text-[10px] tracking-[.08em] text-[#A3A3A3] transition-colors hover:text-white"
                         >
+                            <span>with</span>
                             <span aria-hidden="true">🩶</span>
                             <span>@aviorxt</span>
                         </a>
