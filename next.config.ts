@@ -1,8 +1,10 @@
 import type { NextConfig } from "next";
 
 const isVercelPreview = process.env.VERCEL_ENV === 'preview';
+const isDevelopment = process.env.NODE_ENV === 'development';
 const previewScriptSources = isVercelPreview ? ' https://vercel.live' : '';
 const previewFrameSources = isVercelPreview ? ' https://vercel.live' : '';
+const developmentScriptSources = isDevelopment ? " 'unsafe-eval'" : '';
 
 const contentSecurityPolicy = [
   "default-src 'self'",
@@ -10,7 +12,7 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "frame-ancestors 'self'",
   "form-action 'self'",
-  `script-src 'self' 'unsafe-inline'${previewScriptSources}`,
+  `script-src 'self' 'unsafe-inline'${developmentScriptSources}${previewScriptSources}`,
   `script-src-elem 'self' 'unsafe-inline'${previewScriptSources}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",

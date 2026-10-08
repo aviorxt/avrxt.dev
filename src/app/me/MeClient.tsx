@@ -692,9 +692,6 @@ export default function MeClient({ config }: { config: MeConfig }) {
         }
     };
 
-    // Hydration guard for everything that depends on isMounted
-    if (!isMounted) return null;
-
     const rawHandle = (config.profile.handle || '').trim();
     const headingName = rawHandle.startsWith('@') ? rawHandle.slice(1) : rawHandle;
 

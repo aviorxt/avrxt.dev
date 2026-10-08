@@ -106,7 +106,7 @@ export const defaultMeConfig: MeConfig = {
     resources: [
         { id: 'r1', title: 'Visual Gallery', url: '/gallery', type: 'gallery' },
         { id: 'r2', title: 'Documentation Portal', url: '/docs', type: 'doc' },
-        { id: 'r3', title: 'Rethinking Email Infrastructure', url: '/docs/avrxt-resend-2025', type: 'post', previewUrl: 'https://www.avrxt.dev/assets/screenshot-zoom-analytics.webp', meta: 'avrxt-resend-2025' }
+        { id: 'r3', title: 'Browse Technical Writing', url: '/docs', type: 'doc' }
     ],
     widgets: {
         quotesEnabled: true,

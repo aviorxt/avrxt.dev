@@ -83,7 +83,7 @@ export default function MuzixChartClient() {
     return Math.min(100, ((data.nowPlaying.progressMs + elapsed) / data.nowPlaying.durationMs) * 100);
   }, [clock, data]);
 
-  if (loading && !data) return <main className="grid min-h-screen place-items-center bg-[#050505]"><div className="text-center"><LoaderCircle className="mx-auto size-6 animate-spin text-[#858585]" /><p className="mt-4 font-mono text-[8px] uppercase tracking-[.25em] text-[#666666]">Tuning Spotify signal</p></div></main>;
+  if (loading && !data) return <main className="grid min-h-screen place-items-center bg-[#050505] px-4 text-white"><div className="text-center"><LoaderCircle className="mx-auto size-6 animate-spin text-[#858585]" /><h1 className="mt-5 font-outfit text-4xl font-semibold tracking-[-.05em] sm:text-6xl">Muzix chart</h1><p className="mt-4 font-mono text-[8px] uppercase tracking-[.25em] text-[#666666]">Tuning Spotify signal</p></div></main>;
   if (!data?.connected) return <main className="min-h-screen bg-[#050505]"><EmptyState error={error} /></main>;
 
   const now = data.nowPlaying;

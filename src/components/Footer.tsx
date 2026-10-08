@@ -63,7 +63,7 @@ export default function Footer() {
                         <Link href="/" className="font-outfit text-3xl font-semibold uppercase tracking-[-.055em] text-white">AVRXT<span className="text-[#666666]">.DEV</span></Link>
                         <p className="mt-3 max-w-md text-sm leading-6 text-[#858585]">Independent development, technical notes, practical tools, music signals, and digital systems built from India.</p>
                     </div>
-                    <div className="footer-status-blend flex w-fit justify-start sm:justify-end"><StatusBadge /></div>
+                    <div className="footer-status-blend flex w-full max-w-[18rem] justify-start sm:w-fit sm:justify-end"><StatusBadge /></div>
                 </div>
 
                 <div className="grid gap-10 py-10 sm:grid-cols-2 lg:grid-cols-[.8fr_.9fr_1.4fr_1fr] lg:gap-8">
