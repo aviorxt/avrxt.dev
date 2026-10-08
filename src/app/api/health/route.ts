@@ -213,7 +213,6 @@ export async function GET() {
 
   const checks = await Promise.all([
     Promise.resolve(skippedCheck('api/contact', 'Google Sheets/Gmail deep check skipped by policy')),
-    Promise.resolve(skippedCheck('api/hireme', 'Google Sheets deep check skipped by policy')),
     checkSpotifyConfig('api/spotify/auth+callback'),
     checkSupabase('api/spotify/now-playing'),
     checkResendAndDns('api/subscribe'),

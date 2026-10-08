@@ -41,6 +41,7 @@ export default function Footer() {
 
                 <div className="flex justify-center md:justify-end gap-x-6 gap-y-2 text-zinc-500 text-[10px] font-mono uppercase tracking-widest order-3 flex-wrap">
                     <Link href="https://status.avrxt.dev" target="_blank" className="hover:text-white transition-colors">/status</Link>
+                    <Link href="/tools" className="hover:text-white transition-colors">/tools</Link>
                     <Link href="/terms" className="hover:text-white transition-colors">/terms</Link>
                     <Link href="/privacy" className="hover:text-white transition-colors">/privacy</Link>
                     <Link href="/refund" className="hover:text-white transition-colors">/refund</Link>

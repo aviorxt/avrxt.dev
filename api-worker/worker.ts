@@ -15,7 +15,6 @@ const ALLOWED_ORIGINS = new Set([
 
 const PUBLIC_PROXY_ROUTES: Record<string, string> = {
   '/v1/contact': '/api/contact',
-  '/v1/hire': '/api/hireme',
   '/v1/subscribe': '/api/subscribe',
   '/v1/status': '/api/status',
   '/v1/health': '/api/health',

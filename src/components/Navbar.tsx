@@ -21,10 +21,9 @@ export default function Navbar() {
             { name: '/uses', href: '/uses', description: 'Tools, apps, and gear' },
             { name: '/subscribe', href: '/subscribe', description: 'Newsletter Subscription' },
             { name: '/contact', href: '/contact', description: 'Contact @avrxt' },
-            { name: '/guestbook', href: '/guestbook', description: 'Leave a footprint' },
             { name: '/gallery', href: '/gallery', description: 'Visual gallery' },
             { name: '/docs', href: '/docs', description: 'Docs and resources' },
-            { name: '/hireme', href: '/hireme', description: 'Work with avrxt' },
+            { name: '/tools', href: '/tools', description: 'Focused web utilities' },
             { name: '/privacy', href: '/privacy', description: 'Privacy policy' },
             { name: '/terms', href: '/terms', description: 'Terms of service' },
             { name: '/refund', href: '/refund', description: 'Refund policy' },
@@ -50,6 +49,7 @@ export default function Navbar() {
         { name: 'About', href: '/#about' },
         { name: 'Works', href: '/portfolio' },
         { name: 'Docs', href: '/docs' },
+        { name: 'Tools', href: '/tools' },
     ];
 
     const handleToggleMenu = () => {

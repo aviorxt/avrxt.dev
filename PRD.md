@@ -21,10 +21,10 @@ To provide a sovereign, high-fidelity digital identity that acts as both a profe
 ---
 
 ## 3. Target Audience
-1.  **Professional Consultants**: Needing automated lead capture (`/hireme`) and technical documentation (`/docs`).
+1.  **Professional Consultants**: Needing a focused contact channel and technical documentation (`/docs`).
 2.  **High-End Creators**: Requiring a premium aesthetic that matches their brand's sophistication.
 3.  **Infrastructure Engineers**: Users who value hardened security (TLS 1.3, CSP) and self-hosted control.
-4.  **Community Leaders**: Wanting verified interaction points (`/guestbook`) with their audience.
+4.  **Technical Users**: Wanting useful, privacy-conscious web diagnostics in one interface.
 
 ---
 
@@ -34,10 +34,10 @@ To provide a sovereign, high-fidelity digital identity that acts as both a profe
 - **Landing Page (`/`)**: High-impact hero section with glassmorphic depth and micro-animations.
 - **Profile Node (`/me`)**: The "Digital Folio" featuring 3D recently played cards and live status.
 - **Technical Library (`/docs`)**: A full-scale, markdown-driven documentation system for sharing technical logs or guides.
-- **Interaction Hub (`/guestbook`)**: Verified messaging system using GitHub OAuth to prevent spam.
+- **Utility Hub (`/tools`)**: Guarded network, domain, email, typography, Spotify, and quote tools.
 
 ### 4.2 Intelligence Suite
-- **Lead Intake Engine (`/hireme`)**: Advanced budget and timeline estimator for service inquiries.
+- **Contact Channel (`/contact`)**: Secure, rate-limited project and general inquiries.
 - **Cloud Engineering Node (`/cloud`)**: Specialized tier-based infrastructure services (Discord Bots, Website Redesign).
 - **Newsletter Terminal**: Integrated email capture at the edge.
 
@@ -84,7 +84,7 @@ To provide a sovereign, high-fidelity digital identity that acts as both a profe
 ## 7. Product Roadmap (Beta to Production)
 
 ### Phase 1: Infrastructure Hardening (Current / Beta)
-- [x] Multi-node routing (`/me`, `/docs`, `/hireme`)
+- [x] Multi-node routing (`/me`, `/docs`, `/tools`, `/contact`)
 - [x] Music Sync Engine V2 (Dual-Buffer)
 - [x] GitHub OAuth Interaction Layer
 - [x] Automated SEO (Sitemap/Robots)

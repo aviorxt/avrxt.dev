@@ -10,7 +10,6 @@ const endpoints = [
     { method: 'GET', path: '/v1/health', summary: 'Check the website API health.' },
     { method: 'GET', path: '/v1/status', summary: 'Read the current public system status.' },
     { method: 'POST', path: '/v1/contact', summary: 'Submit the public contact form.' },
-    { method: 'POST', path: '/v1/hire', summary: 'Submit a project or hiring enquiry.' },
     { method: 'POST', path: '/v1/subscribe', summary: 'Subscribe an email address to updates.' },
     { method: 'GET', path: '/v1/link-preview?url={url}', summary: 'Return metadata for a public URL.' },
     { method: 'GET', path: '/v1/og', summary: 'Generate Open Graph output using query parameters.' },

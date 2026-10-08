@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Space_Mono, Outfit, Instrument_Serif } from "next/font/google";
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
+import CookieBanner from "@/components/CookieBanner";
 import { ogSize } from "@/lib/og-image";
 
 const inter = Inter({
@@ -92,6 +93,7 @@ export default function RootLayout({
           {children}
         </main>
         <SiteChrome position="after" />
+        <CookieBanner />
       </body>
     </html>
   );

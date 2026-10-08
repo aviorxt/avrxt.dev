@@ -30,7 +30,6 @@ function normalizePath(input: string | null): string {
 
 function shouldScreenshot(path: string): boolean {
   if (path === '/me' || path.startsWith('/me?')) return true;
-  if (path === '/guestbook' || path.startsWith('/guestbook?')) return true;
   return false;
 }
 
@@ -395,83 +394,6 @@ function meOg(config: MeConfig) {
   );
 }
 
-type GuestbookRow = {
-  user_name: string | null;
-  message: string | null;
-  created_at: string | null;
-};
-
-async function guestbookOg() {
-  const messages = (await fetchGuestbookMessages()).slice(0, 4).map((m) => ({
-    name: clampText(m.user_name || 'Anonymous', 18),
-    message: clampText(m.message || '', 120),
-  }));
-
-  return frame(
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <div style={{ fontSize: 46, fontWeight: 900, letterSpacing: -1 }}>Guestbook</div>
-        <div
-          style={{
-            fontSize: 16,
-            opacity: 0.7,
-            fontFamily:
-              '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            letterSpacing: 1,
-          }}
-        >
-          Latest transmissions
-        </div>
-      </div>
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {messages.length ? (
-          messages.map((m, i) => (
-            <div
-              key={`${m.name}-${i}`}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 8,
-                padding: '14px 16px',
-                borderRadius: 20,
-                border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(0,0,0,0.22)',
-              }}
-            >
-              <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                <div
-                  style={{
-                    width: 10,
-                    height: 10,
-                    borderRadius: 999,
-                    background: 'rgba(16,185,129,0.90)',
-                    opacity: 0.75,
-                  }}
-                />
-                <div
-                  style={{
-                    fontSize: 14,
-                    fontWeight: 800,
-                    fontFamily:
-                      '"Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-                    letterSpacing: 1,
-                  }}
-                >
-                  {m.name}
-                </div>
-              </div>
-              <div style={{ fontSize: 16, opacity: 0.82, lineHeight: 1.25 }}>{m.message}</div>
-            </div>
-          ))
-        ) : (
-          <div style={{ fontSize: 16, opacity: 0.6 }}>No messages yet</div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 type DocumentRow = {
   title: string | null;
   description: string | null;
@@ -541,19 +463,6 @@ async function fetchMeConfig(): Promise<MeConfig> {
   return data.data as MeConfig;
 }
 
-async function fetchGuestbookMessages(): Promise<GuestbookRow[]> {
-  const client = supabase();
-  if (!client) return [];
-
-  const { data } = await client
-    .from('guestbook')
-    .select('user_name,message,created_at')
-    .order('created_at', { ascending: false })
-    .limit(4);
-
-  return (data || []) as GuestbookRow[];
-}
-
 async function fetchDocBySlug(slug: string): Promise<DocumentRow | null> {
   const client = supabase();
   if (!client) return null;
@@ -582,8 +491,6 @@ export async function renderDynamicOgImage(requestUrl: string) {
   if (path === '/me' || path.startsWith('/me?')) {
     const config = await fetchMeConfig();
     body = meOg(config);
-  } else if (path === '/guestbook' || path.startsWith('/guestbook?')) {
-    body = await guestbookOg();
   } else if (path === '/docs' || path.startsWith('/docs/')) {
     body = await docsOg(path);
   } else {

@@ -9,7 +9,7 @@ export const metadata = buildPageMetadata({
     path: '/privacy',
 });
 
-const lastUpdated = '7 October 2026';
+const lastUpdated = '8 October 2026';
 const supportEmail = 'support@avrxt.dev';
 
 function PolicySection({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
@@ -44,10 +44,10 @@ export default function Privacy() {
 
                     <PolicySection number="02" title="Information you choose to provide">
                         <ul className="list-disc space-y-2 pl-5 marker:text-zinc-600">
-                            <li><strong className="text-zinc-200">Contact and project inquiries:</strong> your name, email address, project selections, budget or timeline details, and message. The form sends these details to the site operator by email so they can respond.</li>
+                            <li><strong className="text-zinc-200">Contact inquiries:</strong> your name, email address, and message. The form sends these details to the site operator by email so they can respond.</li>
                             <li><strong className="text-zinc-200">Newsletter:</strong> your email address and subscription status are managed through Resend. Supabase stores your email, audience identifier, and a hash of the custom unsubscribe token so the link can be verified without storing the raw token.</li>
-                            <li><strong className="text-zinc-200">Guestbook:</strong> if you sign in and post, the message, account identifier, display name, and avatar URL may be stored in Supabase and shown publicly. Guestbook text may be checked by an abuse-moderation service.</li>
                             <li><strong className="text-zinc-200">Sign-in:</strong> when you choose GitHub or Discord sign-in, the identity details those providers return are used to establish your session and apply access rules. Sign-in uses essential HTTP-only cookies.</li>
+                            <li><strong className="text-zinc-200">Tools:</strong> tool inputs such as a public hostname, port, domain, email domain, or Spotify URL are processed to return the result you request. The email diagnostic does not contact a mailbox. The port checker rejects private and reserved network targets.</li>
                         </ul>
                         <p>Please do not submit passwords, payment card details, government identifiers, health information, or other sensitive information in public fields or ordinary contact messages.</p>
                     </PolicySection>
@@ -62,12 +62,15 @@ export default function Privacy() {
                         <p>Optional profile features may request data from Spotify, Discord/Lanyard, YouTube, and Open-Meteo for music, presence, embeds, or weather. These requests may reveal technical connection information to the service involved. Third-party sites and services have their own privacy terms and controls.</p>
                     </PolicySection>
 
+                    <div id="cookies" className="scroll-mt-28">
                     <PolicySection number="05" title="Cookies and similar storage">
-                        <p>Essential cookies are used for sign-in sessions and OAuth security state. They support features you request and are not used by this application for ad targeting. If you block cookies, sign-in and connected-account features may not work.</p>
+                        <p>Essential cookies are used for sign-in sessions and OAuth security state. Local browser storage records your cookie-banner choice so the notice does not reappear on every visit. These mechanisms support features you request and are not used by this application for ad targeting.</p>
+                        <p>Spotify embeds and Google Fonts previews connect to those providers only when you use the relevant tool. Their services may receive ordinary connection details such as your IP address and browser information. If you block cookies or storage, sign-in and connected features may not work.</p>
                     </PolicySection>
+                    </div>
 
                     <PolicySection number="06" title="Use, sharing, and retention">
-                        <p>Information is used to respond to inquiries, provide account and guestbook features, send requested newsletter emails, operate profile integrations, and protect the site. We do not sell personal information or share it with advertising networks for targeted advertising.</p>
+                        <p>Information is used to respond to inquiries, provide account and requested tool features, send requested newsletter emails, operate profile integrations, and protect the site. We do not sell personal information or share it with advertising networks for targeted advertising.</p>
                         <p>Information is kept for as long as needed for the relevant feature, support, security, or legal obligations. Inquiry emails may remain in the recipient's mailbox; newsletter providers may retain subscription or suppression records so that opt-outs are respected. Infrastructure providers may retain their own logs under their terms. The codebase does not define a universal 30-day deletion period.</p>
                         <p>Providers may process information in the countries where their systems operate. Their safeguards and retention practices are governed by their terms and applicable law.</p>
                     </PolicySection>

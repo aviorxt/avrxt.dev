@@ -9,7 +9,7 @@ export const metadata = buildPageMetadata({
     path: '/terms',
 });
 
-const lastUpdated = '7 October 2026';
+const lastUpdated = '8 October 2026';
 const supportEmail = 'support@avrxt.dev';
 
 function TermsSection({ number, title, children }: { number: string; title: string; children: React.ReactNode }) {
@@ -31,7 +31,7 @@ export default function Terms() {
                     <p className="mb-3 font-mono text-[10px] uppercase tracking-[.25em] text-zinc-500 sm:tracking-[.4em]">// Website / Terms</p>
                     <h1 className="mb-5 text-[clamp(2.4rem,9vw,4.5rem)] font-black leading-[.95] tracking-[-.06em] text-white">Terms of Use</h1>
                     <p className="max-w-2xl text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
-                        These terms cover your use of avrxt.dev, including its public pages, forms, community features, and APIs.
+                        These terms cover your use of avrxt.dev, including its public pages, forms, diagnostic tools, and APIs.
                     </p>
                     <p className="mt-5 font-mono text-[11px] text-zinc-600">Last updated: {lastUpdated}</p>
                 </header>
@@ -47,14 +47,15 @@ export default function Terms() {
                         <p>You are responsible for activity performed through your account and for keeping your sign-in methods secure. Contact us if you believe an account or session has been misused.</p>
                     </TermsSection>
 
-                    <TermsSection number="03" title="Guestbook and submitted content">
-                        <p>You retain any rights you have in content you submit. When you post to a public feature such as the guestbook, you give AVRXT a non-exclusive, worldwide, royalty-free permission to host, display, format, moderate, and remove that content as needed to operate the feature. Public posts may be visible to anyone and may be copied by other visitors.</p>
-                        <p>Only submit content you have the right to share. Do not post private information, unlawful material, threats, harassment, spam, malware, or content that infringes another person's rights. We may edit or remove content and restrict access when reasonably needed to protect users, the site, or the service.</p>
+                    <TermsSection number="03" title="Submissions and communications">
+                        <p>You retain any rights you have in content you submit through the contact form. You authorize AVRXT to process that content only as reasonably needed to respond, provide requested services, protect the site, and meet legal obligations.</p>
+                        <p>Only submit content you have the right to share. Do not send passwords, payment-card information, unlawful material, threats, spam, malware, or content that infringes another person&apos;s rights.</p>
                     </TermsSection>
 
                     <TermsSection number="04" title="Acceptable use and APIs">
                         <p>Do not use the site to break the law, interfere with another person's use, probe or bypass security without authorization, overload services, distribute malware, or send spam. Automated access must respect published limits and must not degrade the service or collect personal information unlawfully.</p>
                         <p>APIs and integrations may have rate limits, change without notice, or depend on third-party providers. Do not treat their output as guaranteed, complete, or suitable for safety-critical decisions.</p>
+                        <p>Use the port checker only against public systems you own or are expressly authorized to test. DNS, RDAP, IP, email-domain, and quote results are informational and may be incomplete or stale. The Spotify feature uses the official player and does not grant a right to download, extract, convert, or redistribute audio. Do not use any tool to infringe copyright, evade access controls, or violate a provider&apos;s terms.</p>
                     </TermsSection>
 
                     <TermsSection number="05" title="Ownership and open-source software">

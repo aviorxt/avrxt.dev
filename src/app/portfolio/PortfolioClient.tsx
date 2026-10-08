@@ -336,8 +336,8 @@ export default function PortfolioClient() {
                         </p>
                         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center">
                             <Magnetic>
-                                <Link href="/hireme" className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-black transition-all hover:bg-zinc-200 sm:w-auto sm:rounded-2xl sm:px-12 sm:py-5 sm:tracking-[0.2em]">
-                                    Initiate Hire <ArrowRight className="w-4 h-4" />
+                                <Link href="/contact" className="inline-flex min-h-12 w-full items-center justify-center gap-3 rounded-xl bg-white px-6 py-4 text-xs font-black uppercase tracking-[0.16em] text-black transition-all hover:bg-zinc-200 sm:w-auto sm:rounded-2xl sm:px-12 sm:py-5 sm:tracking-[0.2em]">
+                                    Start a Project <ArrowRight className="w-4 h-4" />
                                 </Link>
                             </Magnetic>
                             <Magnetic>

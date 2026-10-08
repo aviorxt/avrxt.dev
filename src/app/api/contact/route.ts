@@ -25,6 +25,11 @@ function getAllowedOrigin(request: NextRequest): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const origin = request.headers.get('origin');
+    const allowedOrigin = getAllowedOrigin(request);
+    if (origin && origin !== allowedOrigin && origin !== request.nextUrl.origin) {
+      return NextResponse.json({ error: 'Cross-site requests are not allowed.' }, { status: 403 });
+    }
     if (isRateLimited(request.headers, 'contact', 5, 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }

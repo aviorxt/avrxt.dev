@@ -32,6 +32,7 @@ export default function HomePage() {
                 <nav aria-label="Quick links" className="flex flex-wrap gap-x-5 gap-y-2">
                     <Link className="transition-colors hover:text-white" href="/docs">Notes</Link>
                     <Link className="transition-colors hover:text-white" href="/gallery">Gallery</Link>
+                    <Link className="transition-colors hover:text-white" href="/tools">Tools</Link>
                     <Link className="transition-colors hover:text-white" href="/contact">Contact</Link>
                 </nav>
                 <Link href="/me" className="hidden transition-colors hover:text-white sm:inline">© avrxt</Link>
