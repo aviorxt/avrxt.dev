@@ -98,7 +98,7 @@ export const defaultMeConfig: MeConfig = {
     },
     links: [
         { id: '1', name: 'Instagram', url: 'https://instagram.com/avr.me', icon: 'Instagram', type: 'social' },
-        { id: '2', name: 'GitHub', url: 'https://github.com/avrxt', icon: 'Github', type: 'social' },
+        { id: '2', name: 'GitHub', url: 'https://github.com/aviorxt', icon: 'Github', type: 'social' },
         { id: '3', name: 'Discord', url: 'https://discord.com/users/1269352892146384957', icon: 'Discord', type: 'social' },
         { id: '4', name: 'Email', url: 'mailto:hey@avrxt.dev', icon: 'Mail', type: 'social' }
     ],

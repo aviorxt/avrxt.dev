@@ -478,7 +478,7 @@ button:active, a:active {
   .card-3d, .link-card { will-change: auto; }
   .card-3d { transform-style: flat; }
   .me-v7 > .relative.z-20 { animation-duration: 500ms; }
-  .portfolio-glow, .docs-glow { animation: none !important; filter: blur(54px); opacity: .45; }
+  .docs-glow { animation: none !important; filter: blur(54px); opacity: .45; }
 }
 
 @media (prefers-reduced-motion: reduce) {

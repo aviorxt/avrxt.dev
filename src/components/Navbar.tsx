@@ -17,7 +17,6 @@ export default function Navbar() {
         return [
             { name: '/', href: '/', description: 'Home and overview' },
             { name: '/me', href: '/me', description: "Profile and Link's" },
-            { name: '/portfolio', href: '/portfolio', description: 'Showcase of work' },
             { name: '/uses', href: '/uses', description: 'Tools, apps, and gear' },
             { name: '/subscribe', href: '/subscribe', description: 'Newsletter Subscription' },
             { name: '/contact', href: '/contact', description: 'Contact @avrxt' },
@@ -47,7 +46,7 @@ export default function Navbar() {
     const navLinks = [
         { name: 'Home', href: '/' },
         { name: 'About', href: '/#about' },
-        { name: 'Works', href: '/portfolio' },
+        { name: 'Gallery', href: '/gallery' },
         { name: 'Docs', href: '/docs' },
         { name: 'Tools', href: '/tools' },
     ];

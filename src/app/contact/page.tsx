@@ -33,7 +33,7 @@ export default function Contact() {
           <p className="mt-8 max-w-md text-sm leading-7 text-[#A3A3A3]">Share the problem, the context, and what a useful outcome looks like. Clear briefs get clearer answers.</p>
           <div className="mt-9 space-y-3 border-t border-[#1F1F1F] pt-6 font-mono text-[10px] uppercase tracking-[.16em] text-[#858585]">
             <a href="mailto:support@avrxt.dev" className="group flex min-h-11 items-center justify-between border-b border-[#1F1F1F] pb-3 hover:text-white"><span className="flex items-center gap-3"><Mail size={14} /> support@avrxt.dev</span><ArrowUpRight size={13} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></a>
-            <Link href="https://github.com/avrxt" target="_blank" className="group flex min-h-11 items-center justify-between border-b border-[#1F1F1F] pb-3 hover:text-white"><span className="flex items-center gap-3"><Github size={14} /> GitHub</span><ArrowUpRight size={13} /></Link>
+            <Link href="https://github.com/aviorxt" target="_blank" className="group flex min-h-11 items-center justify-between border-b border-[#1F1F1F] pb-3 hover:text-white"><span className="flex items-center gap-3"><Github size={14} /> GitHub</span><ArrowUpRight size={13} /></Link>
             <Link href="https://instagram.com/avr.me" target="_blank" className="group flex min-h-11 items-center justify-between border-b border-[#1F1F1F] pb-3 hover:text-white"><span className="flex items-center gap-3"><Instagram size={14} /> Instagram</span><ArrowUpRight size={13} /></Link>
           </div>
         </section>

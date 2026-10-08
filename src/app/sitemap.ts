@@ -11,7 +11,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }[] = [
         { route: '',            priority: 1.0, changeFrequency: 'weekly'  },
         { route: '/me',         priority: 0.9, changeFrequency: 'monthly' },
-        { route: '/portfolio',  priority: 0.9, changeFrequency: 'weekly'  },
         { route: '/contact',    priority: 0.8, changeFrequency: 'monthly' },
         { route: '/tools',      priority: 0.8, changeFrequency: 'monthly' },
         ...tools.map(({ slug }) => ({ route: `/tools/${slug}`, priority: 0.7, changeFrequency: 'monthly' as const })),

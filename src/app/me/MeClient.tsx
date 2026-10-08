@@ -831,7 +831,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
             <div className="relative z-20 w-full max-w-2xl flex-1 px-5 sm:px-8 flex flex-col items-center [perspective:1000px]">
                 <nav aria-label="Profile navigation" className="mb-8 flex w-full items-center justify-between border-b border-white/10 pb-4 font-mono text-[9px] uppercase tracking-[.2em] text-zinc-600">
                     <Link href="/" className="transition-colors hover:text-white">AVRXT <span className="text-zinc-800">/ HOME</span></Link>
-                    <Link href="/portfolio" className="transition-colors hover:text-white">Selected work ↗</Link>
+                    <Link href="/gallery" className="transition-colors hover:text-white">Gallery ↗</Link>
                 </nav>
                 {/* Profile Header */}
                 <Reveal className="me-profile-header w-full border-l border-white/20 py-7 pl-5 text-left mb-10 sm:py-10 sm:pl-8" direction="down" delay={0.1}>
