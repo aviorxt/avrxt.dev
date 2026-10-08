@@ -42,7 +42,7 @@ npm audit
 
 ## Security
 
-See `/security` for the disclosure policy. The app sets baseline browser security headers, validates same-origin contact submissions, limits JSON body size, escapes email content, and keeps secrets in server-only environment variables.
+See `/legal/security` for the disclosure policy. The app sets baseline browser security headers, validates same-origin contact submissions, limits JSON body size, escapes email content, and keeps secrets in server-only environment variables.
 
 ## License
 

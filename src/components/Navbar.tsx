@@ -25,10 +25,10 @@ export default function Navbar() {
             { name: '/gallery', href: '/gallery', description: 'Visual gallery' },
             { name: '/docs', href: '/docs', description: 'Docs and resources' },
             { name: '/tools', href: '/tools', description: 'Focused web utilities' },
-            { name: '/privacy', href: '/privacy', description: 'Privacy policy' },
-            { name: '/terms', href: '/terms', description: 'Terms of service' },
-            { name: '/refund', href: '/refund', description: 'Refund policy' },
-            { name: '/security', href: '/security', description: 'Security policy' },
+            { name: '/legal/privacy', href: '/legal/privacy', description: 'Privacy policy' },
+            { name: '/legal/terms', href: '/legal/terms', description: 'Terms of service' },
+            { name: '/legal/refund', href: '/legal/refund', description: 'Refund policy' },
+            { name: '/legal/security', href: '/legal/security', description: 'Security policy' },
         ];
     }, []);
 

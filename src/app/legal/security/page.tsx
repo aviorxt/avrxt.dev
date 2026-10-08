@@ -3,9 +3,9 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
   title: 'Security',
-  description: 'Security controls, safe testing boundaries, and the responsible vulnerability disclosure process for avrxt.dev.',
-  keywords: ['avrxt security', 'responsible disclosure', 'security headers', 'vulnerability report', 'website security'],
-  path: '/security',
+  description: 'Security controls for avrxt.dev tools, OAuth integrations, newsletter and contact endpoints, plus safe testing boundaries and responsible disclosure.',
+  keywords: ['avrxt security', 'responsible disclosure', 'OAuth security', 'API rate limiting', 'security headers', 'vulnerability report', 'website security'],
+  path: '/legal/security',
 });
 
 const nav = [
@@ -13,16 +13,16 @@ const nav = [
 ];
 
 export default function SecurityPage() {
-  return <PolicyShell eyebrow="Trust center" title="Security" description="How avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v3.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Public tools', value: 'Guarded and rate-limited' }]}>
+  return <PolicyShell eyebrow="Trust center" title="Security" description="How www.avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v4.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Public endpoints', value: 'Validated + rate-limited' }]}>
     <PolicySection id="approach" number="01" title="Security approach">
-      <p>Security is treated as an ongoing engineering process rather than a guarantee or certification. Controls are selected for the site’s actual risk: public forms and utilities, administrator-only features, OAuth connections, email delivery, and third-party infrastructure.</p>
+      <p>Security is treated as an ongoing engineering process rather than a guarantee or certification. Controls are selected for the site’s actual risk: public forms and utilities, newsletter delivery, administrator-only features, GitHub, Discord and Spotify OAuth connections, public music data, and third-party infrastructure.</p>
       <p>No internet service is completely secure. This page describes controls visible in the current application and avoids claiming a specific audit result, cipher suite, recovery target, or compliance certification that has not been independently verified.</p>
     </PolicySection>
 
     <PolicySection id="web" number="02" title="Web and browser safeguards">
       <PolicyList items={[
         <><strong>Encrypted transport:</strong> the deployed site is served over HTTPS and sends a long-lived HSTS policy.</>,
-        <><strong>Content controls:</strong> Content Security Policy limits scripts, frames, fonts, media, and other resources to approved sources; the Vercel toolbar origin is allowed only on preview deployments.</>,
+        <><strong>Content controls:</strong> Content Security Policy limits scripts, frames, fonts, media, connections, and other resources to approved sources; the Vercel toolbar origin is allowed only on preview deployments.</>,
         <><strong>Browser isolation:</strong> frame, content-type, referrer, permissions, opener, and cross-domain policy headers reduce common browser attack paths.</>,
         <><strong>Safer rendering:</strong> user-supplied contact content is validated, length-limited, and HTML-escaped before it is relayed.</>,
       ]} />
@@ -30,22 +30,24 @@ export default function SecurityPage() {
     </PolicySection>
 
     <PolicySection id="data" number="03" title="Data, identity, and privileged access">
-      <p>Secrets are expected to remain in server-side environment configuration and are not intentionally exposed to client JavaScript. Authentication uses provider-backed OAuth flows, security-state checks, HTTP-only cookies where applicable, and server-side authorization for restricted routes.</p>
-      <p>Operational data is handled through providers such as Vercel, Cloudflare, Supabase, Resend, Gmail, GitHub, Discord, and Spotify. Those systems maintain their own infrastructure controls. Access should be limited to what is required to operate and support the site.</p>
+      <p>Secrets, email credentials, OAuth client secrets, and Spotify access or refresh tokens are expected to remain in server-side environment configuration and are not intentionally exposed to client JavaScript. Authentication uses provider-backed OAuth flows, security-state checks, HTTP-only cookies where applicable, and server-side authorization for restricted routes.</p>
+      <p>Public Muzix responses contain selected listening information rather than credentials. Operational data is handled through providers such as Vercel, Cloudflare, Supabase, Resend, Gmail, GitHub, Discord, and Spotify. Those systems maintain their own infrastructure controls. Access should be limited to what is required to operate and support the site.</p>
     </PolicySection>
 
     <PolicySection id="tools" number="04" title="Abuse resistance in public tools">
       <PolicyList items={[
-        'Public API requests are rate-limited and JSON request bodies have explicit size limits.',
+        'Public API requests use route-specific validation, rate limits where applicable, and explicit JSON body-size limits.',
         'Contact submissions enforce same-origin checks, validation, length limits, and email-address syntax checks.',
-        'The port checker requires an authorization acknowledgement, resolves the target server-side, and blocks private, local, reserved, and mixed-address targets.',
+        'Newsletter submissions validate address format, limit attempts, reject known disposable or prohibited addresses, and issue a tokenized unsubscribe link.',
+        'The TCP port checker requires an authorization acknowledgement, resolves the target server-side, and blocks private, local, reserved, and mixed-address targets.',
         'DNS and external lookups use bounded timeouts so an unavailable provider does not hold a request indefinitely.',
         'The keyboard tester processes keystrokes only inside the focused browser component and does not send key history to an API.',
+        'Ask AI builds its prompt in the browser and opens a provider only after a user action; no provider is contacted merely by displaying the launcher.',
       ]} />
     </PolicySection>
 
     <PolicySection id="report" number="05" title="Report a suspected vulnerability">
-      <p>Send a private report to <a href="mailto:support@avrxt.dev?subject=Security%20report">support@avrxt.dev</a> with “Security report” in the subject. Include the affected URL or feature, a concise description, reproducible steps, expected impact, and any safe proof-of-concept material.</p>
+      <p>Send a private report to <a href="mailto:support@avrxt.dev?subject=Security%20report">support@avrxt.dev</a> with “Security report” in the subject. Include the affected www.avrxt.dev URL or feature, a concise description, reproducible steps, expected impact, and any safe proof-of-concept material.</p>
       <p>Do not include personal data copied from another user, active credentials, destructive payloads, or a public disclosure link. If sensitive evidence is necessary, first ask for a safer transfer method.</p>
     </PolicySection>
 

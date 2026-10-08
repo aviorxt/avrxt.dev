@@ -31,7 +31,7 @@ export default function CookieBanner() {
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => choose('accepted')} className="min-h-10 bg-white px-4 font-mono text-[9px] font-bold uppercase tracking-[.16em] text-black">Accept</button>
             <button type="button" onClick={() => choose('essential')} className="min-h-10 border border-[#292929] bg-black px-4 font-mono text-[9px] uppercase tracking-[.16em] text-[#D0D0D0]">Essential only</button>
-            <Link href="/privacy#cookies" className="ml-auto min-h-10 py-3 font-mono text-[9px] uppercase tracking-[.16em] text-[#858585] underline decoration-[#484848] underline-offset-4 hover:text-white">Privacy details</Link>
+            <Link href="/legal/privacy#cookies" className="ml-auto min-h-10 py-3 font-mono text-[9px] uppercase tracking-[.16em] text-[#858585] underline decoration-[#484848] underline-offset-4 hover:text-white">Privacy details</Link>
           </div>
         </div>
       </div>

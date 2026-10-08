@@ -33,10 +33,10 @@ const pageGroups = [
     {
         title: 'Policies',
         links: [
-            { label: 'Privacy', href: '/privacy' },
-            { label: 'Terms', href: '/terms' },
-            { label: 'Refunds', href: '/refund' },
-            { label: 'Security', href: '/security' },
+            { label: 'Privacy', href: '/legal/privacy' },
+            { label: 'Terms', href: '/legal/terms' },
+            { label: 'Refunds', href: '/legal/refund' },
+            { label: 'Security', href: '/legal/security' },
             { label: 'Discord privacy', href: '/dc/privacy' },
             { label: 'Discord terms', href: '/dc/terms' },
         ],

@@ -60,12 +60,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { route: '/muzix/chart', priority: 0.65, changeFrequency: 'daily' },
         { route: '/subscribe', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/system/api/doc', priority: 0.5, changeFrequency: 'monthly' },
-        { route: '/privacy', priority: 0.3, changeFrequency: 'yearly' },
-        { route: '/terms', priority: 0.3, changeFrequency: 'yearly' },
+        { route: '/legal/privacy', priority: 0.3, changeFrequency: 'yearly' },
+        { route: '/legal/terms', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/dc/privacy', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/dc/terms', priority: 0.3, changeFrequency: 'yearly' },
-        { route: '/refund', priority: 0.3, changeFrequency: 'yearly' },
-        { route: '/security', priority: 0.3, changeFrequency: 'yearly' },
+        { route: '/legal/refund', priority: 0.3, changeFrequency: 'yearly' },
+        { route: '/legal/security', priority: 0.3, changeFrequency: 'yearly' },
     ];
 
     return staticPages.map(({ route, priority, changeFrequency, lastModified }) => ({
