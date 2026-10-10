@@ -41,7 +41,7 @@ export default function Subscribe() {
     };
 
     return (
-        <main className="max-w-4xl mx-auto px-6 pt-48 pb-32">
+        <main className="mx-auto max-w-4xl px-4 pb-20 pt-32 sm:px-6 sm:pb-32 sm:pt-48">
             <Reveal className="text-center mb-16 active">
                 <p className="text-xs uppercase tracking-[0.4em] text-zinc-500 mb-6 font-mono">{"// Transmission_List_v1"}</p>
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 gradient-heading">

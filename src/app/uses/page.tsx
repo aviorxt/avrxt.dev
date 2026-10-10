@@ -1,5 +1,29 @@
 import Reveal from '@/components/Reveal';
 import { buildPageMetadata } from '@/lib/page-metadata';
+import { ArrowUpRight, BookOpen, Bot, Boxes, Code2, Command, Layers3 } from 'lucide-react';
+import type { IconType } from 'react-icons';
+import { FaAws } from 'react-icons/fa';
+import { MdDns } from 'react-icons/md';
+import {
+    SiAlgolia,
+    SiAudible,
+    SiClaude,
+    SiCloudflare,
+    SiFigma,
+    SiGoogle,
+    SiHyper,
+    SiProton,
+    SiProtonmail,
+    SiRender,
+    SiResend,
+    SiSpotify,
+    SiSupabase,
+    SiThings,
+    SiVercel,
+    SiZoho,
+} from 'react-icons/si';
+import { TbBrandOpenai } from 'react-icons/tb';
+import { VscVscode } from 'react-icons/vsc';
 
 const sections = [
     {
@@ -175,64 +199,106 @@ const sections = [
 ];
 
 export const metadata = buildPageMetadata({
-    title: 'Uses',
-    description: "Tools, apps, and gear that power avrxt's daily workflow.",
+    title: 'Uses — avrxt’s Software, Services and Workflow',
+    description: "The software, services, AI tools, and infrastructure behind avrxt's development workflow.",
+    keywords: ['avrxt uses', 'developer tools', 'software stack', 'AI tools', 'web development workflow', 'cloud infrastructure'],
     path: '/uses',
 });
 
+const sectionIcons = [Code2, Command, Layers3, Boxes, BookOpen, Bot];
+
+const productLogos: Record<string, IconType> = {
+    VSCode: VscVscode,
+    Hyper: SiHyper,
+    Figma: SiFigma,
+    Things: SiThings,
+    'Zoho Mail': SiZoho,
+    Spotify: SiSpotify,
+    'Proton Mail': SiProtonmail,
+    'Proton Pass': SiProton,
+    'Proton Authenticator': SiProton,
+    Algolia: SiAlgolia,
+    Cloudflare: SiCloudflare,
+    'AWS S3': FaAws,
+    'AWS EC2': FaAws,
+    'AWS Route 53': FaAws,
+    'AWS DynamoDB': FaAws,
+    'AWS Amplify': FaAws,
+    'AWS CloudFront': FaAws,
+    'Self-hosted DNS management (VPS)': MdDns,
+    'Self-hosted Supabase': SiSupabase,
+    Resend: SiResend,
+    Vercel: SiVercel,
+    'Render.com': SiRender,
+    Audible: SiAudible,
+    'OpenAI Codex': TbBrandOpenai,
+    'Google Antigravity': SiGoogle,
+    Claude: SiClaude,
+};
+
+function ProductMark({ name }: { name: string }) {
+    const Logo = productLogos[name];
+
+    return (
+        <span className="uses-logo grid size-10 shrink-0 place-items-center border border-[#292929] bg-black text-[#BCBCBC] transition-colors group-hover:border-[#484848] group-hover:text-white" aria-hidden="true">
+            {Logo ? <Logo size={18} /> : <span className="font-outfit text-sm font-semibold uppercase">{name.charAt(0)}</span>}
+        </span>
+    );
+}
+
 export default function UsesPage() {
     return (
-        <main className="max-w-6xl mx-auto px-6 pt-32 pb-32">
-            <Reveal className="mb-16">
-                <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-[10px] font-mono uppercase tracking-[0.4em] text-zinc-400">
-                    Uses
-                    <span className="h-1 w-1 rounded-full bg-emerald-400"></span>
-                    Workflow Stack
-                </div>
-                <h1 className="mt-6 text-4xl sm:text-6xl md:text-7xl font-black tracking-tight bg-gradient-to-r from-emerald-300 via-cyan-200 to-amber-200 text-transparent bg-clip-text">
-                    Tools. Apps. Gear.
-                </h1>
-                <p className="mt-6 max-w-2xl text-lg text-zinc-400 leading-relaxed">
-                    I often get messages asking about specific pieces of software or hardware I use.
-                    This is not a static page, it&#39;s a living document with everything that I&#39;m using nowadays.
-                </p>
-            </Reveal>
+        <main className="uses-page relative min-h-screen overflow-x-clip bg-[#050505] px-4 pb-24 pt-28 text-white sm:px-6 sm:pb-32 sm:pt-36">
+            <div className="uses-ambient pointer-events-none absolute inset-x-0 top-0 h-[44rem]" />
+            <div className="relative mx-auto max-w-6xl">
+                <Reveal className="border-b border-[#1F1F1F] pb-14 sm:pb-20">
+                    <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-[9px] uppercase tracking-[.22em] text-[#858585]">
+                        <span className="inline-flex items-center gap-2"><span className="size-1.5 rounded-full bg-white shadow-[0_0_10px_rgba(255,255,255,.5)]" /> Workflow inventory</span>
+                        <span>Continuously updated / {sections.length} categories</span>
+                    </div>
+                    <div className="mt-9 grid gap-8 lg:grid-cols-[1.25fr_.75fr] lg:items-end">
+                        <div>
+                            <p className="font-mono text-[9px] uppercase tracking-[.3em] text-[#686868]">/uses — system manifest</p>
+                            <h1 className="mt-5 font-outfit text-[clamp(4rem,12vw,9rem)] font-semibold uppercase leading-[.76] tracking-[-.08em]">Tools for{' '}<br /><span className="uses-outline">the work.</span></h1>
+                        </div>
+                        <p className="max-w-xl border-l border-[#333333] pl-5 text-sm leading-7 text-[#A3A3A3] sm:text-base sm:leading-8">A living inventory of the software, services, and infrastructure in my day-to-day workflow. Each choice earns its place by making the work faster, clearer, or more dependable.</p>
+                    </div>
+                    <nav aria-label="Uses categories" className="mt-10 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {sections.map((section, index) => <a key={section.title} href={`#uses-${index + 1}`} className="shrink-0 border border-[#292929] bg-[#080808] px-3 py-2 font-mono text-[8px] uppercase tracking-[.16em] text-[#A3A3A3] transition-colors hover:border-[#686868] hover:text-white">{String(index + 1).padStart(2, '0')} / {section.title}</a>)}
+                    </nav>
+                </Reveal>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {sections.map((section, sectionIndex) => (
-                    <Reveal key={section.title} className="resend-card rounded-3xl p-8">
-                        <div className="flex items-center justify-between">
-                            <h2 className="text-2xl font-bold tracking-tight text-white">{section.title}</h2>
-                            <span className="text-xs font-mono text-zinc-500">{String(sectionIndex + 1).padStart(2, '0')}</span>
-                        </div>
-                        <div className="mt-6 space-y-5">
-                            {section.items.map((item, itemIndex) => (
-                                <div key={`${section.title}-${item.name}`} className="flex gap-4">
-                                    <div className="pt-1 text-[10px] font-mono text-zinc-600">
-                                        {String(itemIndex + 1).padStart(2, '0')}
-                                    </div>
-                                    <div>
-                                        {item.url ? (
-                                            <a
-                                                href={item.url}
-                                                target="_blank"
-                                                rel="noreferrer"
-                                                className="text-sm font-semibold text-white transition-colors hover:text-emerald-200"
-                                            >
-                                                {item.name}
-                                            </a>
-                                        ) : (
-                                            <p className="text-sm font-semibold text-white">{item.name}</p>
-                                        )}
-                                        {item.description && (
-                                            <p className="mt-1 text-sm text-zinc-500 leading-relaxed">{item.description}</p>
-                                        )}
-                                    </div>
+                <div className="mt-12 grid gap-4 lg:grid-cols-2">
+                    {sections.map((section, sectionIndex) => {
+                        const Icon = sectionIcons[sectionIndex];
+                        return (
+                            <Reveal key={section.title} id={`uses-${sectionIndex + 1}`} delay={Math.min(sectionIndex * 0.05, 0.2)} className={`uses-panel scroll-mt-28 border border-[#1F1F1F] bg-[#080808] ${sectionIndex === 3 ? 'lg:row-span-2' : ''}`}>
+                                <header className="flex items-center justify-between border-b border-[#1F1F1F] p-5 sm:p-6">
+                                    <div className="flex items-center gap-4"><span className="grid size-10 place-items-center border border-[#292929] bg-black text-[#D0D0D0]"><Icon size={17} /></span><div><p className="font-mono text-[8px] uppercase tracking-[.2em] text-[#666666]">Category / {String(sectionIndex + 1).padStart(2, '0')}</p><h2 className="mt-1 text-xl font-semibold tracking-tight text-white">{section.title}</h2></div></div>
+                                    <span className="font-mono text-[9px] text-[#666666]">{String(section.items.length).padStart(2, '0')} items</span>
+                                </header>
+                                <div className="divide-y divide-[#1F1F1F]">
+                                    {section.items.map((item, itemIndex) => (
+                                        <article key={`${section.title}-${item.name}`} className="uses-item group grid grid-cols-[2.5rem_1fr_auto] gap-3 p-5 transition-colors hover:bg-white/[.025] sm:gap-4 sm:px-6">
+                                            <ProductMark name={item.name} />
+                                            <div className="min-w-0">
+                                                <p className="font-mono text-[7px] uppercase tracking-[.18em] text-[#484848]">Item / {String(itemIndex + 1).padStart(2, '0')}</p>
+                                                {item.url ? <a href={item.url} target="_blank" rel="noreferrer" className="mt-1 block font-medium text-[#F7F7F7] transition-colors group-hover:text-white">{item.name}</a> : <p className="mt-1 font-medium text-[#F7F7F7]">{item.name}</p>}
+                                                {item.description && <p className="mt-1.5 text-xs leading-6 text-[#858585] sm:text-sm">{item.description}</p>}
+                                            </div>
+                                            {item.url && <ArrowUpRight aria-hidden="true" size={13} className="mt-1 text-[#484848] transition-all group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />}
+                                        </article>
+                                    ))}
                                 </div>
-                            ))}
-                        </div>
-                    </Reveal>
-                ))}
+                            </Reveal>
+                        );
+                    })}
+                </div>
+
+                <div className="mt-4 flex flex-col gap-6 border border-[#1F1F1F] bg-black p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+                    <div><p className="font-mono text-[8px] uppercase tracking-[.2em] text-[#666666]">End of manifest</p><p className="mt-2 max-w-xl text-sm leading-6 text-[#A3A3A3]">The stack changes when a better tool earns the switch. This page reflects the current working setup, not permanent endorsements.</p></div>
+                    <a href="https://www.instagram.com/aviorxt/" target="_blank" rel="noreferrer" className="group inline-flex min-h-11 w-fit shrink-0 items-center gap-3 border border-[#292929] px-4 font-mono text-[8px] uppercase tracking-[.16em] text-[#D0D0D0] transition-colors hover:border-[#666666] hover:text-white">Follow @aviorxt <ArrowUpRight size={13} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" /></a>
+                </div>
             </div>
         </main>
     );

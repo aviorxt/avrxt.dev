@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { LRUCache } from 'lru-cache';
 import { Resend } from 'resend';
+import { readJsonLimited, RequestBodyError } from '@/lib/read-json-limited';
+import { ensureUnsubscribeProperty, issueUnsubscribeLink, removeUnsubscribeLink, makeUnsubscribeUrl } from '@/lib/newsletter-broadcast';
 
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
 
@@ -31,8 +33,6 @@ const rateLimit = new LRUCache<string, number>({
   ttl: 1000 * 60 * 60 * 24,
 });
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 function getAllowedOrigin(request: NextRequest): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   const origin = request.headers.get('origin');
@@ -41,14 +41,11 @@ function getAllowedOrigin(request: NextRequest): string {
 }
 
 function getClientIp(headerList: Headers): string {
-  const xForwardedFor = headerList.get('x-forwarded-for');
-  if (xForwardedFor) {
-    const first = xForwardedFor.split(',')[0]?.trim();
-    if (first) return first;
-  }
-
   const cf = headerList.get('cf-connecting-ip');
   if (cf) return cf;
+
+  const realIp = headerList.get('x-real-ip');
+  if (realIp) return realIp;
 
   return 'anonymous';
 }
@@ -60,7 +57,8 @@ async function isFakeEmail(email: string): Promise<boolean> {
   if (DISPOSABLE_DOMAINS.has(domain)) return true;
 
   try {
-    const response = await fetch(`https://api.mailcheck.ai/email/${email}`);
+    const response = await fetch(`https://api.mailcheck.ai/email/${encodeURIComponent(email)}`, { signal: AbortSignal.timeout(5000) });
+    if (!response.ok) throw new Error(`Mail validation returned ${response.status}`);
     const data = (await response.json()) as { status?: number; disposable?: boolean; mx?: boolean };
 
     if (data.status === 200 && (data.disposable || !data.mx)) {
@@ -80,7 +78,12 @@ async function isFakeEmail(email: string): Promise<boolean> {
 
 export async function POST(request: NextRequest) {
   try {
-    const { email } = (await request.json()) as { email?: string };
+    const body = await readJsonLimited(request, 4096);
+    if (!body || typeof body !== 'object' || Array.isArray(body)) {
+      return NextResponse.json({ error: 'INVALID_REQUEST_BODY' }, { status: 400 });
+    }
+    const payload = body as { email?: unknown };
+    const email = typeof payload.email === 'string' ? payload.email : '';
     const headerList = await headers();
     const ip = getClientIp(headerList);
 
@@ -91,8 +94,8 @@ export async function POST(request: NextRequest) {
     rateLimit.set(ip, attempts + 1);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const sanitizedEmail = email?.toLowerCase().trim();
-    if (!sanitizedEmail || !emailRegex.test(sanitizedEmail)) {
+    const sanitizedEmail = email.toLowerCase().trim();
+    if (!sanitizedEmail || sanitizedEmail.length > 254 || !emailRegex.test(sanitizedEmail)) {
       return NextResponse.json({ error: 'INVALID_EMAIL_FORMAT' }, { status: 400 });
     }
 
@@ -120,36 +123,38 @@ export async function POST(request: NextRequest) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    await sleep(1000);
-
-    const { data: contacts, error: listError } = await resend.contacts.list({ audienceId: AUDIENCE_ID });
-
-    if (listError) {
-      console.error('RESEND_LIST_ERROR:', listError);
-      throw new Error(listError.message);
+    const { data: existingContact, error: contactLookupError } = await resend.contacts.get({ email: sanitizedEmail, audienceId: AUDIENCE_ID });
+    if (contactLookupError && !/not found|does not exist/i.test(contactLookupError.message)) {
+      throw new Error(contactLookupError.message);
     }
-
-    const isAlreadySubscribed = contacts?.data?.some((contact) => contact.email.toLowerCase() === sanitizedEmail);
-    if (isAlreadySubscribed) {
+    if (existingContact && !existingContact.unsubscribed) {
       return NextResponse.json({ error: 'YOU ARE ALREADY SUBSCRIBED' }, { status: 409 });
     }
 
-    await sleep(2000);
-
-    const { error: createError } = await resend.contacts.create({
-      email: sanitizedEmail,
-      unsubscribed: false,
-      audienceId: AUDIENCE_ID,
-    });
+    await ensureUnsubscribeProperty(resend);
+    const unsubscribeLink = await issueUnsubscribeLink(sanitizedEmail, AUDIENCE_ID);
+    const contactResult = existingContact
+      ? await resend.contacts.update({
+          email: sanitizedEmail,
+          audienceId: AUDIENCE_ID,
+          unsubscribed: false,
+          properties: { UNSUBSCRIBE_URL: unsubscribeLink.url },
+        })
+      : await resend.contacts.create({
+          email: sanitizedEmail,
+          unsubscribed: false,
+          audienceId: AUDIENCE_ID,
+          properties: { UNSUBSCRIBE_URL: unsubscribeLink.url },
+        });
+    const createError = contactResult.error;
 
     if (createError) {
+      await removeUnsubscribeLink(unsubscribeLink.token);
       if (createError.message.toLowerCase().includes('already exists')) {
         return NextResponse.json({ error: 'YOU ARE ALREADY SUBSCRIBED' }, { status: 409 });
       }
       throw new Error(createError.message);
     }
-
-    await sleep(2000);
 
     const { error: emailError } = await resend.emails.send({
       from: 'avrxt.dev <Notify@AvrXt.dev>',
@@ -164,6 +169,7 @@ export async function POST(request: NextRequest) {
           <div style="border-top: 1px solid #1a1a1a; padding-top: 24px; margin-top: 24px;">
             <p style="font-size: 14px; color: #666; margin-bottom: 4px;">Best regards @avrxt</p>
             <a href="https://www.avrxt.dev" style="color: #fff; text-decoration: none; font-size: 12px; font-weight: 700;">www.avrxt.dev</a>
+            <p style="font-size: 12px; color: #777; margin-top: 20px;"><a href="${makeUnsubscribeUrl(unsubscribeLink.token)}" style="color: #aaa;">Unsubscribe from avrxt emails</a></p>
           </div>
         </div>
       `,
@@ -176,6 +182,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ message: 'SUCCESSFULLY_SUBSCRIBED' });
   } catch (error) {
+    if (error instanceof RequestBodyError) return NextResponse.json({ error: error.message }, { status: error.status });
     console.error('CRITICAL_SUBSCRIBE_ERROR:', error);
     return NextResponse.json({ error: 'INTERNAL_SYSTEM_FAILURE' }, { status: 500 });
   }

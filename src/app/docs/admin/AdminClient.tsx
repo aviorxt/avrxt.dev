@@ -62,9 +62,9 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         setUploading(true);
         setError('');
         try {
-            const res = await getPresignedR2UrlAction(file.name, file.type);
-            if ('error' in res && res.error) throw new Error(res.error);
-            const { uploadUrl, publicUrl } = res as { uploadUrl: string; publicUrl: string; key: string; success: boolean };
+            const res = await getPresignedR2UrlAction(file.name, file.type, file.size);
+            if ('error' in res) throw new Error(res.error);
+            const { uploadUrl, publicUrl } = res;
             // Upload directly to R2
             const uploadResponse = await fetch(uploadUrl, {
                 method: 'PUT',
@@ -80,6 +80,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
             setError(err.message);
         } finally {
             setUploading(false);
+            if (fileRef.current) fileRef.current.value = '';
         }
     };
 
@@ -112,7 +113,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
                         </>
                     ) : (
                         <>
-                            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleFileUpload} />
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleFileUpload} />
                             <button onClick={() => fileRef.current?.click()}
                                 disabled={uploading}
                                 className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-bold font-mono uppercase transition-all flex items-center justify-center gap-2 border border-white/10">
@@ -242,7 +243,6 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>('all');
     const [isPending, setIsPending] = useState(false);
     const [modal, setModal] = useState<null | 'image' | 'link' | 'embed'>(null);
-    const [indexMsg, setIndexMsg] = useState('');
     const [authors] = useState(['avrxt', 'guest', 'team']);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -329,10 +329,6 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                         setSelectedDoc(result.data as DocArticle);
                     }
                 }
-                // Auto-index if published and new doc
-                if (isNew && selectedDoc.published && selectedDoc.slug) {
-                    triggerGoogleIndex(selectedDoc.slug);
-                }
                 setTimeout(() => setSaveStatus(''), 3000);
             }
         } catch {
@@ -341,23 +337,6 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
         } finally {
             setIsPending(false);
         }
-    };
-
-    const triggerGoogleIndex = async (slug: string) => {
-        const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://avrxt.dev';
-        const url = `${siteUrl}/docs/${slug}`;
-        try {
-            const res = await fetch('/api/search-console-index', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url }),
-            });
-            const data = await res.json();
-            if (data.success) {
-                setIndexMsg(`🔍 Submitted to Google: ${url}`);
-                setTimeout(() => setIndexMsg(''), 5000);
-            }
-        } catch { }
     };
 
     const handleDelete = async (id: string) => {
@@ -453,7 +432,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                         <button
                             onClick={handleSave}
                             disabled={isPending || !selectedDoc}
-                            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold font-mono transition-all shadow-[0_0_15px_rgba(59,130,246,0.25)]">
+                            className="flex items-center gap-1.5 px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-xs font-bold font-mono transition-all shadow-[0_0_15px_rgba(255,255,255,0.14)]">
                             {isPending ? <Loader2 size={12} className="animate-spin" /> : <Save size={12} />}
                             {isPending ? 'SAVING...' : 'SAVE'}
                         </button>
@@ -464,13 +443,6 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                     </div>
                 </div>
             </header>
-
-            {/* ── Google Index Toast ────────────────────────────────────────── */}
-            {indexMsg && (
-                <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 bg-emerald-900/80 border border-emerald-500/30 rounded-2xl backdrop-blur-xl text-emerald-400 text-sm font-mono shadow-2xl">
-                    {indexMsg}
-                </div>
-            )}
 
             {/* ── Body ──────────────────────────────────────────────────────── */}
             <div className="max-w-[1900px] mx-auto p-4 flex flex-col lg:flex-row gap-4 min-h-[calc(100vh-56px)]">
@@ -500,7 +472,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
 
                     {/* New Doc Button */}
                     <button onClick={handleNewDoc}
-                        className="w-full p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(59,130,246,0.15)]">
+                        className="w-full p-3 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.12)]">
                         <Plus size={16} /> New Document
                     </button>
 
@@ -512,7 +484,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                 className={cn(
                                     'w-full p-3 rounded-xl text-left transition-all border group',
                                     selectedDoc?.id === doc.id
-                                        ? 'bg-blue-600/15 border-blue-500/40 shadow-[0_0_15px_rgba(59,130,246,0.08)]'
+                                        ? 'bg-blue-600/15 border-blue-500/40 shadow-[0_0_15px_rgba(255,255,255,0.06)]'
                                         : 'bg-zinc-900/40 border-white/5 hover:bg-zinc-800/60 hover:border-white/10'
                                 )}>
                                 <div className="flex items-start justify-between mb-1.5">
@@ -638,12 +610,6 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                                     <Trash2 size={10} /> Delete
                                                 </button>
                                             )}
-                                            {selectedDoc.slug && selectedDoc.published && (
-                                                <button onClick={() => triggerGoogleIndex(selectedDoc.slug!)}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600/10 hover:bg-green-600/20 text-green-500 rounded-lg text-[10px] font-mono uppercase transition-all border border-green-500/20">
-                                                    <Globe size={10} /> Index
-                                                </button>
-                                            )}
                                             {selectedDoc.slug && (
                                                 <Link href={`/docs/${selectedDoc.slug}`} target="_blank"
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg text-[10px] font-mono uppercase transition-all">
@@ -753,7 +719,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                     outline: none;
                     transition: border-color 0.2s;
                 }
-                .editor-input:focus { border-color: rgba(59,130,246,0.5); }
+                .editor-input:focus { border-color: rgba(255,255,255,0.5); }
                 /* Scrollbar */
                 .scrollbar-hide::-webkit-scrollbar { display: none; }
                 .scrollbar-hide { -ms-overflow-style:none;scrollbar-width:none; }
@@ -764,11 +730,11 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                 .prose h2 { font-size: 1.5em; }
                 .prose h3 { font-size: 1.25em; }
                 .prose p { margin: 0.75em 0; line-height: 1.75; }
-                .prose a { color: #60a5fa; text-decoration: underline; }
+                .prose a { color: #d4d4d8; text-decoration: underline; }
                 .prose code { background: rgba(255,255,255,0.08); border-radius: 4px; padding: 2px 6px; font-size: 0.85em; font-family: var(--font-mono, monospace); color: #e2e8f0; }
                 .prose pre { background: rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 1.25rem; overflow-x: auto; margin: 1.25em 0; }
                 .prose pre code { background: none; padding: 0; font-size: 0.875em; }
-                .prose blockquote { border-left: 3px solid #3b82f6; padding-left: 1rem; color: #a1a1aa; margin: 1em 0; }
+                .prose blockquote { border-left: 3px solid #737373; padding-left: 1rem; color: #a1a1aa; margin: 1em 0; }
                 .prose ul, .prose ol { padding-left: 1.5rem; margin: 0.75em 0; }
                 .prose li { margin: 0.3em 0; }
                 .prose hr { border-color: rgba(255,255,255,0.1); margin: 2em 0; }

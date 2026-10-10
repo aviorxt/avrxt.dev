@@ -2,7 +2,7 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
   title: 'Login',
-  description: 'Authenticate with GitHub or Discord to access guestbook and admin experiences.',
+  description: 'Authenticate with Discord to access protected administrator experiences.',
   keywords: ['login', 'auth', 'github', 'discord', 'avrxt'],
   noIndex: true,
   path: '/auth/login',

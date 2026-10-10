@@ -17,19 +17,20 @@ export default function Navbar() {
         return [
             { name: '/', href: '/', description: 'Home and overview' },
             { name: '/me', href: '/me', description: "Profile and Link's" },
-            { name: '/portfolio', href: '/portfolio', description: 'Showcase of work' },
+            { name: '/about', href: '/about', description: 'About avrxt, also known as aviorxt' },
             { name: '/uses', href: '/uses', description: 'Tools, apps, and gear' },
+            { name: '/muzix/chart', href: '/muzix/chart', description: 'Live Spotify listening chart' },
             { name: '/subscribe', href: '/subscribe', description: 'Newsletter Subscription' },
             { name: '/contact', href: '/contact', description: 'Contact @avrxt' },
-            { name: '/guestbook', href: '/guestbook', description: 'Leave a footprint' },
             { name: '/gallery', href: '/gallery', description: 'Visual gallery' },
             { name: '/docs', href: '/docs', description: 'Docs and resources' },
-            { name: '/hireme', href: '/hireme', description: 'Work with avrxt' },
-            { name: '/cupcake', href: '/cupcake', description: 'Support the work' },
-            { name: '/privacy', href: '/privacy', description: 'Privacy policy' },
-            { name: '/terms', href: '/terms', description: 'Terms of service' },
-            { name: '/refund', href: '/refund', description: 'Refund policy' },
-            { name: '/security', href: '/security', description: 'Security policy' },
+            { name: '/tools', href: '/tools', description: 'Focused web utilities' },
+            { name: '/legal/privacy', href: '/legal/privacy', description: 'Privacy policy' },
+            { name: '/legal/terms', href: '/legal/terms', description: 'Terms of service' },
+            { name: '/legal/refund', href: '/legal/refund', description: 'Refund policy' },
+            { name: '/legal/security', href: '/legal/security', description: 'Security policy' },
+            { name: '/legal/assets', href: '/legal/assets', description: 'Official logos and brand rights' },
+            { name: '/annon/ownership', href: '/annon/ownership', description: 'Ownership and independence notice' },
         ];
     }, []);
 
@@ -48,10 +49,10 @@ export default function Navbar() {
 
     const navLinks = [
         { name: 'Home', href: '/' },
-        { name: 'About', href: '/#about' },
-        { name: 'Works', href: '/portfolio' },
+        { name: 'About', href: '/about' },
+        { name: 'Gallery', href: '/gallery' },
         { name: 'Docs', href: '/docs' },
-        { name: 'Support', href: '/cupcake' },
+        { name: 'Tools', href: '/tools' },
     ];
 
     const handleToggleMenu = () => {
@@ -63,6 +64,13 @@ export default function Navbar() {
         setIsSearchOpen((prev) => !prev);
         setIsOpen(false);
     };
+
+    useEffect(() => {
+        if (!isOpen && !isSearchOpen) return;
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        return () => { document.body.style.overflow = previousOverflow; };
+    }, [isOpen, isSearchOpen]);
 
     // Keyboard listeners
     useEffect(() => {
@@ -90,7 +98,7 @@ export default function Navbar() {
         <>
             <header
                 className={cn(
-                    "absolute top-6 left-0 right-0 flex justify-center px-6 pointer-events-none transition-all duration-500",
+                    "absolute left-0 right-0 top-[max(1rem,env(safe-area-inset-top))] flex justify-center px-3 sm:top-6 sm:px-6 pointer-events-none transition-all duration-500",
                     (isOpen || isSearchOpen) ? "z-[300]" : "z-[100]"
                 )}
             >
@@ -99,9 +107,9 @@ export default function Navbar() {
                     <Magnetic>
                         <Link href="/" className="px-4 py-2 transition-transform hover:scale-110 active:scale-95 flex items-center">
                             <img
-                                src="/logo.png"
+                                src="/assets/logo/avrxt-pure-white.png"
                                 alt="avrxt"
-                                className="h-[22px] w-auto drop-shadow-[0_0_8px_rgba(255,255,255,0.3)] translate-y-[2px]"
+                                className="h-[22px] w-auto translate-y-[2px]"
                             />
                         </Link>
                     </Magnetic>
@@ -144,16 +152,22 @@ export default function Navbar() {
                     <div className="flex sm:hidden items-center gap-1">
                         <Magnetic>
                             <button
+                                type="button"
                                 onClick={handleToggleSearch}
-                                className="p-2 text-zinc-400 hover:text-white transition-colors"
+                                aria-label="Open site search"
+                                className="flex min-h-11 min-w-11 items-center justify-center p-2 text-zinc-400 transition-colors hover:text-white"
                             >
                                 <Search className="w-4 h-4" />
                             </button>
                         </Magnetic>
                         <Magnetic>
                             <button
+                                type="button"
                                 onClick={handleToggleMenu}
-                                className="p-2.5 bg-white/5 hover:bg-cyan-300/10 active:scale-95 transition-all flex items-center gap-2 group border-l border-white/10"
+                                aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
+                                aria-expanded={isOpen}
+                                aria-controls="mobile-site-menu"
+                                className="flex min-h-11 min-w-11 items-center justify-center gap-2 border-l border-white/10 bg-white/5 p-2.5 transition-all hover:bg-white/10 active:scale-95 group"
                             >
                                 {isOpen && (
                                     <span className="text-[8px] font-mono text-cyan-300 uppercase tracking-widest animate-pulse">
@@ -168,9 +182,9 @@ export default function Navbar() {
             </header>
 
             {isSearchOpen && (
-                <div className="fixed inset-0 z-[250] flex items-start justify-center pt-[10vh] sm:pt-[15vh] px-4 sm:px-6">
+                <div className="fixed inset-0 z-[250] flex items-start justify-center px-3 pt-[max(2rem,env(safe-area-inset-top))] sm:px-6 sm:pt-[15vh]">
                     <div className="absolute inset-0 bg-black/90 backdrop-blur-xl cursor-pointer" onClick={() => setIsSearchOpen(false)} />
-                    <div className="v7-search relative w-full max-w-2xl bg-[#080808] border border-cyan-300/20 shadow-[0_0_100px_rgba(0,0,0,1)] overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                    <div className="v7-search relative max-h-[calc(100dvh-3rem)] w-full max-w-2xl overflow-hidden border border-white/20 bg-[#080808] shadow-[0_0_100px_rgba(0,0,0,1)] animate-fade-in">
                         <div className="p-4 sm:p-6 flex items-center gap-4 border-b border-white/5 bg-white/[0.01]">
                             <Search className="w-5 h-5 text-zinc-600" />
                             <input
@@ -184,12 +198,12 @@ export default function Navbar() {
                                 <div className="hidden sm:flex items-center gap-1.5 border border-white/10 bg-black/40 px-2 py-1 rounded text-[9px] font-mono text-zinc-600">
                                     <span>ESC</span>
                                 </div>
-                                <button onClick={() => setIsSearchOpen(false)} className="text-zinc-600 hover:text-white transition-colors p-1">
+                            <button type="button" aria-label="Close site search" onClick={() => setIsSearchOpen(false)} className="flex min-h-11 min-w-11 items-center justify-center p-2 text-zinc-400 transition-colors hover:text-white">
                                     <X className="w-4 h-4" />
                                 </button>
                             </div>
                         </div>
-                        <div className="max-h-[60vh] overflow-y-auto p-2 sm:p-4 space-y-1 custom-scrollbar">
+                        <div className="max-h-[min(60vh,32rem)] overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-1 custom-scrollbar">
                             {filteredSearchItems.map((item) => (
                                 <Link
                                     key={item.href}
@@ -225,7 +239,7 @@ export default function Navbar() {
 
             {/* Mobile Menu */}
             {isOpen && (
-                <div className="fixed inset-0 z-[200] bg-[#050505] flex flex-col pt-32 px-10 animate-in fade-in duration-500 overflow-hidden">
+                <nav id="mobile-site-menu" aria-label="Mobile site navigation" className="fixed inset-0 z-[200] flex min-h-[100dvh] flex-col overflow-y-auto overscroll-contain bg-[#050505] px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(6rem,calc(env(safe-area-inset-top)+4.5rem))] animate-fade-in sm:px-10">
                     <div className="absolute inset-0 opacity-[0.02] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] bg-[size:32px_32px]"></div>
                     <div className="absolute top-0 right-0 w-full h-[50vh] bg-gradient-to-b from-cyan-400/[0.06] via-blue-500/[0.03] to-transparent pointer-events-none" />
 
@@ -239,7 +253,7 @@ export default function Navbar() {
                                 key={link.href}
                                 href={link.href}
                                 onClick={() => setIsOpen(false)}
-                                className="group block text-5xl sm:text-6xl font-black tracking-tighter text-zinc-900 hover:text-white transition-all transform hover:translate-x-4 active:scale-95 origin-left"
+                                className="group block min-h-12 w-fit max-w-full py-1 text-[clamp(2.75rem,13vw,4rem)] font-black leading-none tracking-tighter text-zinc-500 transition-all hover:translate-x-2 hover:text-white active:scale-[.98] origin-left"
                                 style={{ transitionDelay: `${i * 50}ms` }}
                             >
                                 <span className="inline-block group-hover:italic group-hover:tracking-normal transition-all duration-300">
@@ -250,22 +264,22 @@ export default function Navbar() {
                         <Link
                             href="/me"
                             onClick={() => setIsOpen(false)}
-                            className="group block text-5xl sm:text-6xl font-black tracking-tighter text-cyan-300/20 hover:text-cyan-300 transition-all transform hover:translate-x-4 active:scale-95 origin-left"
+                            className="group block min-h-12 w-fit max-w-full py-1 text-[clamp(2.75rem,13vw,4rem)] font-black leading-none tracking-tighter text-zinc-500 transition-all hover:translate-x-2 hover:text-white active:scale-[.98] origin-left"
                         >
                             /me
                         </Link>
                     </div>
 
-                    <div className="relative z-10 mt-auto pb-12 sm:pb-20">
+                    <div className="relative z-10 mt-auto pt-10 pb-4 sm:pb-8">
                         <Link
                             href="/contact"
                             onClick={() => setIsOpen(false)}
-                            className="block w-full bg-white text-black text-center py-6 rounded-2xl font-black uppercase tracking-widest text-xs active:scale-95 transition-all shadow-[0_30px_60px_rgba(255,255,255,0.05)] border border-white"
+                            className="block min-h-12 w-full border border-white bg-white px-5 py-4 text-center text-xs font-black uppercase tracking-widest text-black shadow-[0_30px_60px_rgba(255,255,255,0.05)] transition-all active:scale-[.98] sm:py-6"
                         >
                             Initiate_Contact_
                         </Link>
                     </div>
-                </div>
+                </nav>
             )}
         </>
     );

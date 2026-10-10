@@ -71,12 +71,12 @@ export const defaultMeConfig: MeConfig = {
         maintenanceEnabled: false,
     },
     profile: {
-        handle: "@avrxt",
-        bio: "It's Just ?",
+        handle: "@aviorxt",
+        bio: "Independent developer and aircraft maintenance engineer based in India.",
         avatarUrl: "https://cdn.avxt.qzz.io/assets/IMG_20251108_224641_264.webp",
-        logoUrl: "https://cdn.avxt.qzz.io/assets/logo-02.png",
+        logoUrl: "/assets/logo/avrxt-pure-white.png",
         bannerUrl: "https://cdn.avxt.qzz.io/images/aviorxt_01.jpg",
-        themeColor: "#10b981",
+        themeColor: "#ffffff",
         status: { text: 'Online', color: 'green' },
         presence: {
             mode: 'manual',
@@ -97,8 +97,8 @@ export const defaultMeConfig: MeConfig = {
         spotifyAmbientEnabled: false
     },
     links: [
-        { id: '1', name: 'Instagram', url: 'https://instagram.com/avr.me', icon: 'Instagram', type: 'social' },
-        { id: '2', name: 'GitHub', url: 'https://github.com/avrxt', icon: 'Github', type: 'social' },
+        { id: '1', name: 'Instagram', url: 'https://www.instagram.com/aviorxt/', icon: 'Instagram', type: 'social' },
+        { id: '2', name: 'GitHub', url: 'https://github.com/aviorxt', icon: 'Github', type: 'social' },
         { id: '3', name: 'Discord', url: 'https://discord.com/users/1269352892146384957', icon: 'Discord', type: 'social' },
         { id: '4', name: 'Email', url: 'mailto:hey@avrxt.dev', icon: 'Mail', type: 'social' }
     ],
@@ -106,7 +106,7 @@ export const defaultMeConfig: MeConfig = {
     resources: [
         { id: 'r1', title: 'Visual Gallery', url: '/gallery', type: 'gallery' },
         { id: 'r2', title: 'Documentation Portal', url: '/docs', type: 'doc' },
-        { id: 'r3', title: 'Rethinking Email Infrastructure', url: '/docs/avrxt-resend-2025', type: 'post', previewUrl: 'https://avrxt.dev/assets/screenshot-zoom-analytics.webp', meta: 'avrxt-resend-2025' }
+        { id: 'r3', title: 'Browse Technical Writing', url: '/docs', type: 'doc' }
     ],
     widgets: {
         quotesEnabled: true,

@@ -50,6 +50,13 @@ const LOCAL_QUOTES = [
 
 const pickQuote = () => LOCAL_QUOTES[Math.floor(Math.random() * LOCAL_QUOTES.length)];
 
+type WeatherSnapshot = {
+    temperature_2m: number;
+    relative_humidity_2m: number;
+    wind_speed_10m: number;
+    time?: string;
+};
+
 
 const ensureYouTubeIframeApi = () => {
     if (typeof window === 'undefined') return Promise.resolve();
@@ -95,7 +102,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const [isMuted, setIsMuted] = useState(false);
     const [isImmersive, setIsImmersive] = useState(false);
     const [progress, setProgress] = useState(0);
-    const [weather, setWeather] = useState<any>(null);
+    const [weather, setWeather] = useState<WeatherSnapshot | null>(null);
+    const [weatherState, setWeatherState] = useState<'loading' | 'ready' | 'unavailable'>('loading');
     const [quote, setQuote] = useState<any>(null);
     const [spotifyData, setSpotifyData] = useState<any>(null);
     const [spotifyLast, setSpotifyLast] = useState<any>(null);
@@ -116,6 +124,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const [ytReady, setYtReady] = useState(false);
     const spotifyProgressBarRef = useRef<HTMLDivElement>(null);
     const spotifyProgressLastStateUpdateRef = useRef<number>(0);
+    const galleryVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+    const [playingGalleryVideo, setPlayingGalleryVideo] = useState<string | null>(null);
 
     useEffect(() => {
         setIsMounted(true);
@@ -125,16 +135,47 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
     // Weather: only fetch when enabled
     useEffect(() => {
-        if (!weatherEnabled) return;
+        if (!weatherEnabled) {
+            setWeatherState('unavailable');
+            return;
+        }
+        const controller = new AbortController();
+        let isActive = true;
+        const query = '?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m';
+        const endpoints = [...new Set([
+            apiUrl(`/v1/geo/forecast${query}`, edgeUrl(`/v1/fnc/geo/forecast${query}`)),
+            edgeUrl(`/v1/fnc/geo/forecast${query}`),
+        ])];
         const fetchWeather = async () => {
-            try {
-                const res = await fetch(apiUrl('/v1/geo/forecast?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m', edgeUrl('/v1/fnc/geo/forecast?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m')), { cache: 'no-store' });
-                const data = await res.json();
-                setWeather(data.current);
-            } catch (e) { console.error(e); }
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(endpoint, { cache: 'no-store', signal: controller.signal });
+                    if (!response.ok) continue;
+                    const data = await response.json();
+                    const current = data?.current;
+                    if (!current || ![current.temperature_2m, current.relative_humidity_2m, current.wind_speed_10m].every((value: unknown) => typeof value === 'number' && Number.isFinite(value))) continue;
+                    if (!isActive) return;
+                    setWeather({
+                        temperature_2m: current.temperature_2m,
+                        relative_humidity_2m: current.relative_humidity_2m,
+                        wind_speed_10m: current.wind_speed_10m,
+                        time: typeof current.time === 'string' ? current.time : undefined,
+                    });
+                    setWeatherState('ready');
+                    return;
+                } catch {
+                    if (!isActive || controller.signal.aborted) return;
+                }
+            }
+            if (isActive) setWeatherState('unavailable');
         };
         fetchWeather();
-        // Weather doesn't need aggressive polling (limits-friendly).
+        const refreshId = window.setInterval(fetchWeather, 10 * 60 * 1000);
+        return () => {
+            isActive = false;
+            controller.abort();
+            window.clearInterval(refreshId);
+        };
     }, [weatherEnabled]);
 
     // Discord Presence: only fetch when auto mode + id present, poll every 60s
@@ -651,9 +692,6 @@ export default function MeClient({ config }: { config: MeConfig }) {
         }
     };
 
-    // Hydration guard for everything that depends on isMounted
-    if (!isMounted) return null;
-
     const rawHandle = (config.profile.handle || '').trim();
     const headingName = rawHandle.startsWith('@') ? rawHandle.slice(1) : rawHandle;
 
@@ -744,7 +782,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
     return (
         <main className={cn(
-            "me-v7 min-h-[100dvh] bg-[#050505] text-white relative flex flex-col items-center select-none overflow-x-hidden px-1 pt-12 pb-12 sm:pt-16",
+            "me-v7 min-h-[100svh] bg-[#050505] text-white relative flex flex-col items-center overflow-x-hidden px-1 pt-12 pb-12 sm:pt-16 selection:bg-white/20",
             isImmersive && "immersive-mode"
         )}>
             {/* Background Decor */}
@@ -753,20 +791,20 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 isImmersive ? "blur-xl scale-110" : ""
             )}>
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[size:56px_56px]"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(34,211,238,0.08),transparent_28%),radial-gradient(circle_at_85%_80%,rgba(139,92,246,0.08),transparent_32%),#050505]"></div>
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_15%_10%,rgba(255,255,255,0.055),transparent_28%),radial-gradient(circle_at_85%_80%,rgba(255,255,255,0.035),transparent_32%),#050505]"></div>
 
                 {/* Spotify Ambient (cover-based) */}
                 {showSpotifyAmbient && (
                     <div className="absolute inset-0 pointer-events-none transition-opacity duration-700">
                         <div
-                            className="absolute inset-0 opacity-35 blur-3xl scale-125 saturate-150"
+                            className="absolute inset-0 opacity-25 blur-3xl scale-125 saturate-0"
                             style={{
                                 backgroundImage: `url(${spotifyData.albumImageUrl})`,
                                 backgroundSize: 'cover',
                                 backgroundPosition: 'center',
                             }}
                         />
-                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(16,185,129,0.18),transparent_55%),radial-gradient(circle_at_75%_85%,rgba(59,130,246,0.14),transparent_60%)] mix-blend-screen opacity-80" />
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_25%_15%,rgba(255,255,255,0.10),transparent_55%),radial-gradient(circle_at_75%_85%,rgba(255,255,255,0.06),transparent_60%)] mix-blend-screen opacity-80" />
                         <div className="absolute inset-0 bg-black/55" />
                     </div>
                 )}
@@ -785,10 +823,13 @@ export default function MeClient({ config }: { config: MeConfig }) {
                     isImmersive ? "opacity-20 animate-pulse" : "opacity-0"
                 )} />
 
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.08] mix-blend-overlay pointer-events-none"></div>
             </div>
 
-            <div className="relative z-20 w-full max-w-2xl px-5 sm:px-8 flex flex-col items-center [perspective:1000px]">
+            <div className="relative z-20 w-full max-w-2xl flex-1 px-5 sm:px-8 flex flex-col items-center [perspective:1000px]">
+                <nav aria-label="Profile navigation" className="mb-8 flex w-full items-center justify-between border-b border-white/10 pb-4 font-mono text-[9px] uppercase tracking-[.2em] text-zinc-600">
+                    <Link href="/" className="transition-colors hover:text-white">AVRXT <span className="text-zinc-800">/ HOME</span></Link>
+                    <Link href="/gallery" className="transition-colors hover:text-white">Gallery ↗</Link>
+                </nav>
                 {/* Profile Header */}
                 <Reveal className="me-profile-header w-full border-l border-white/20 py-7 pl-5 text-left mb-10 sm:py-10 sm:pl-8" direction="down" delay={0.1}>
                     <div className="mb-6 relative inline-block">
@@ -796,6 +837,10 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         <img
                             src={config.profile.avatarUrl}
                             alt={config.profile.handle}
+                            width={96}
+                            height={96}
+                            fetchPriority="high"
+                            decoding="async"
                             className="w-24 h-24 rounded-none border border-white/20 relative z-10 shadow-2xl hover:scale-105 transition-transform duration-500"
                         />
                         <div className={cn(
@@ -812,12 +857,18 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         </p>
                     )}
                     {weatherEnabled && (
-                        <div className="flex items-center justify-center gap-4 text-[9px] font-mono text-zinc-600 bg-white/5 py-1.5 px-4 rounded-full border border-white/5 backdrop-blur">
-                        <span className="flex items-center gap-1.5"><Cloud size={10} /> {weather?.temperature_2m || '??'}°C</span>
-                        <span className="opacity-20">|</span>
-                        <span className="flex items-center gap-1.5"><Droplets size={10} /> {weather?.relative_humidity_2m || '??'}%</span>
-                        <span className="opacity-20">|</span>
-                        <span className="flex items-center gap-1.5"><Wind size={10} /> {weather?.wind_speed_10m || '??'}km/h</span>
+                        <div
+                            className="me-weather-widget motion-safe:animate-fade-in flex max-w-full flex-wrap items-center justify-center gap-x-4 gap-y-1 rounded-full border border-white/10 bg-white/[0.035] px-4 py-2 font-mono text-[9px] text-zinc-400 backdrop-blur-xl"
+                            role="status"
+                            aria-live="polite"
+                            title={weather?.time ? `Current conditions · ${weather.time} UTC` : weatherState === 'unavailable' ? 'Live weather is temporarily unavailable' : 'Current weather for Chennai'}
+                        >
+                            <span className="flex items-center gap-1.5"><Cloud size={11} aria-hidden="true" />{weather ? `${weather.temperature_2m.toFixed(1)}°C` : '--°C'}</span>
+                            <span className="hidden text-white/15 sm:inline" aria-hidden="true">|</span>
+                            <span className="flex items-center gap-1.5"><Droplets size={11} aria-hidden="true" />{weather ? `${weather.relative_humidity_2m}%` : '--%'}</span>
+                            <span className="hidden text-white/15 sm:inline" aria-hidden="true">|</span>
+                            <span className="flex items-center gap-1.5"><Wind size={11} aria-hidden="true" />{weather ? `${weather.wind_speed_10m} km/h` : '-- km/h'}</span>
+                            {weatherState === 'unavailable' && <span className="w-full text-center text-[8px] tracking-widest text-zinc-600 sm:w-auto">LIVE DATA OFFLINE</span>}
                         </div>
                     )}
                     <div className="mt-4 inline-flex items-center gap-2 px-3 py-1 bg-white/[0.03] border border-white/10">
@@ -1004,7 +1055,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                     <div className="mt-3 relative h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                                         <div
                                             ref={spotifyProgressBarRef}
-                                            className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"
+                                            className="absolute top-0 left-0 h-full bg-emerald-500 shadow-[0_0_10px_rgba(255,255,255,0.22)]"
                                             style={{ width: `${spotifyData?.isPlaying ? spotifyProgress : progress}%` }}
                                         />
                                         <input
@@ -1062,20 +1113,28 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         <div className="grid grid-cols-2 gap-3">
                             {config.gallery.map((item) => (
                                 <Reveal key={item.id} direction="up" delay={0.4}>
-                                    <div className="group relative aspect-square rounded-xl overflow-hidden border border-white/10 bg-zinc-900/50">
+                                    <div className="group relative aspect-square select-none overflow-hidden rounded-xl border border-white/10 bg-zinc-900/50 transition-[border-color,transform,box-shadow] duration-500 hover:border-white/25 hover:shadow-[0_16px_60px_rgba(255,255,255,0.06)]" onContextMenu={event => event.preventDefault()}>
                                         {item.type === 'video' ? (
                                             <video
+                                                ref={element => { galleryVideoRefs.current[item.id] = element; }}
                                                 src={item.url}
+                                                aria-label={item.caption || 'Gallery video'}
                                                 className="w-full h-full object-cover"
-                                                controls={false}
                                                 muted
                                                 loop
                                                 playsInline
-                                                onMouseOver={e => e.currentTarget.play()}
-                                                onMouseOut={e => e.currentTarget.pause()}
+                                                preload="none"
+                                                controls={false}
+                                                controlsList="nodownload noremoteplayback"
+                                                disablePictureInPicture
+                                                disableRemotePlayback
+                                                draggable={false}
+                                                onContextMenu={event => event.preventDefault()}
+                                                onPlay={() => setPlayingGalleryVideo(item.id)}
+                                                onPause={() => setPlayingGalleryVideo(active => active === item.id ? null : active)}
                                             />
                                         ) : (
-                                            <img src={item.url} alt={item.caption || 'Gallery Image'} className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
+                                            <img src={item.url} alt={item.caption || 'Gallery Image'} loading="lazy" decoding="async" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
                                         )}
                                         {item.caption && (
                                             <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
@@ -1083,9 +1142,28 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                             </div>
                                         )}
                                         {item.type === 'video' && (
-                                            <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-black/50 backdrop-blur flex items-center justify-center border border-white/20 select-none pointer-events-none">
-                                                <Play size={6} className="fill-white text-white ml-0.5" />
-                                            </div>
+                                            <button
+                                                type="button"
+                                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-xl transition duration-300 hover:scale-110 hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                                aria-label={playingGalleryVideo === item.id ? 'Pause gallery video' : 'Play gallery video'}
+                                                aria-pressed={playingGalleryVideo === item.id}
+                                                title={playingGalleryVideo === item.id ? 'Pause video' : 'Play video'}
+                                                onContextMenu={event => event.preventDefault()}
+                                                onClick={async () => {
+                                                    const video = galleryVideoRefs.current[item.id];
+                                                    if (!video) return;
+                                                    if (video.paused) {
+                                                        Object.entries(galleryVideoRefs.current).forEach(([id, otherVideo]) => {
+                                                            if (id !== item.id) otherVideo?.pause();
+                                                        });
+                                                        try { await video.play(); } catch { setPlayingGalleryVideo(null); }
+                                                    } else {
+                                                        video.pause();
+                                                    }
+                                                }}
+                                            >
+                                                {playingGalleryVideo === item.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                                            </button>
                                         )}
                                     </div>
                                 </Reveal>
@@ -1127,10 +1205,6 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                     type="submit"
                                     disabled={isSubmitting}
                                     className="w-full py-3 bg-white text-black font-bold rounded-xl text-xs uppercase tracking-widest hover:opacity-90 transition-all font-mono disabled:opacity-50"
-                                    style={{
-                                        backgroundColor: config.profile.themeColor || '#ffffff',
-                                        color: config.profile.themeColor ? (parseInt(config.profile.themeColor.replace('#', ''), 16) > 0xffffff / 2 ? '#000' : '#fff') : '#000'
-                                    }}
                                 >
                                     {isSubmitting ? 'CONNECTING...' : 'Subscribe_'}
                                 </button>
@@ -1260,7 +1334,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 .me-v7 .link-card,
                 .me-v7 .card-3d,
                 .me-v7 .sub-card {
-                    border-radius: 0 !important;
+                    border-radius: 14px !important;
                     border-color: rgba(255, 255, 255, 0.12) !important;
                     background: rgba(255, 255, 255, 0.025) !important;
                     box-shadow: none;
@@ -1268,15 +1342,15 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 .me-v7 .link-card:hover,
                 .me-v7 .card-3d:hover,
                 .me-v7 .sub-card:hover {
-                    border-color: rgba(96, 165, 250, 0.4) !important;
-                    background: linear-gradient(110deg, rgba(34, 211, 238, 0.045), rgba(139, 92, 246, 0.035)) !important;
+                    border-color: rgba(255, 255, 255, 0.34) !important;
+                    background: linear-gradient(110deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02)) !important;
                 }
                 .me-v7 input:not([type='range']) {
-                    border-radius: 0 !important;
+                    border-radius: 12px !important;
                 }
                 .me-v7 .sub-card button[type='submit'] {
-                    border-radius: 0 !important;
-                    background: linear-gradient(90deg, #67e8f9, #60a5fa, #a78bfa) !important;
+                    border-radius: 12px !important;
+                    background: linear-gradient(90deg, #e5e5e5, #bcbcbc, #8a8a8a) !important;
                     color: #050505 !important;
                 }
                 @media (max-width: 420px) {

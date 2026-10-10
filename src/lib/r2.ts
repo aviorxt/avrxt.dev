@@ -17,20 +17,27 @@ function getCdnBaseUrl(folder: 'i' | 'v') {
     return (/^https?:\/\//i.test(value) ? value : `https://${value}`).replace(/\/$/, "");
 }
 
-const r2 = new S3Client({
-    region: "auto",
-    endpoint: process.env.R2_ENDPOINT?.replace(/\/$/, ""), // Remove trailing slash if exists
-    credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID || "",
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || "",
-    },
-});
+let r2Client: S3Client | undefined;
+
+function getR2Client() {
+    if (!r2Client) {
+        r2Client = new S3Client({
+            region: "auto",
+            endpoint: requireEnv('R2_ENDPOINT').replace(/\/$/, ""),
+            credentials: {
+                accessKeyId: requireEnv('R2_ACCESS_KEY_ID'),
+                secretAccessKey: requireEnv('R2_SECRET_ACCESS_KEY'),
+            },
+        });
+    }
+    return r2Client;
+}
 
 export async function uploadFile(buffer: Buffer, fileName: string, contentType: string, folder: 'i' | 'v') {
     const bucketName = requireEnv('R2_BUCKET_NAME');
     const key = `${folder}/${fileName}`;
 
-    await r2.send(
+    await getR2Client().send(
         new PutObjectCommand({
             Bucket: bucketName,
             Key: key,
@@ -52,8 +59,8 @@ export async function getPresignedUploadUrl(fileName: string, contentType: strin
         ContentType: contentType,
     });
 
-    // Valid for 1 hour
-    const url = await getSignedUrl(r2, command, { expiresIn: 3600 });
+    // Short-lived upload URLs reduce the window for reuse if one is exposed.
+    const url = await getSignedUrl(getR2Client(), command, { expiresIn: 600 });
 
     const publicUrl = `${getCdnBaseUrl(folder)}/${folder}/${encodeURIComponent(fileName)}`;
 
@@ -61,24 +68,20 @@ export async function getPresignedUploadUrl(fileName: string, contentType: strin
 }
 
 export async function deleteFile(url: string) {
-    const bucketName = requireEnv('R2_BUCKET_NAME');
-
     // Extract key from URL
-    const parsed = new URL(url);
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        // Values such as built-in icon names are not R2 URLs.
+        return;
+    }
     const allowedHosts = new Set([getCdnBaseUrl('i'), getCdnBaseUrl('v')].map(value => new URL(value).host));
     if (!allowedHosts.has(parsed.host)) return;
 
     const key = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
     if (!/^[iv]\/.+/.test(key)) return;
 
-    try {
-        await r2.send(
-            new DeleteObjectCommand({
-                Bucket: bucketName,
-                Key: key,
-            })
-        );
-    } catch (error) {
-        console.error("Error deleting file from R2:", error);
-    }
+    const bucketName = requireEnv('R2_BUCKET_NAME');
+    await getR2Client().send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 }

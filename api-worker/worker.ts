@@ -2,6 +2,9 @@ interface Env {
   SITE_ORIGIN?: string;
   EDGE_ORIGIN?: string;
   YOUTUBE_API_KEY?: string;
+  MAIL_AI_SHARED_SECRET?: string;
+  AI: { run(model: string, input: { messages: Array<{ role: 'system' | 'user'; content: string }>; response_format?: { type: 'json_object' }; max_completion_tokens?: number }): Promise<unknown> };
+  MAIL_AI_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
 const ALLOWED_ORIGINS = new Set([
@@ -12,7 +15,6 @@ const ALLOWED_ORIGINS = new Set([
 
 const PUBLIC_PROXY_ROUTES: Record<string, string> = {
   '/v1/contact': '/api/contact',
-  '/v1/hire': '/api/hireme',
   '/v1/subscribe': '/api/subscribe',
   '/v1/status': '/api/status',
   '/v1/health': '/api/health',
@@ -92,6 +94,72 @@ async function youtubeSearch(request: Request, env: Env) {
   })), 200, { 'Cache-Control': 'public, max-age=120' });
 }
 
+function escapeAiHtml(html: string) {
+  return html
+    .replace(/<\s*(script|iframe|object|embed|form|input|button|svg|math|style|link|meta|base)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi, '')
+    .replace(/<\s*(script|iframe|object|embed|form|input|button|svg|math|style|link|meta|base)\b[^>]*\/?\s*>/gi, '')
+    .replace(/\s+on[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '')
+    .replace(/\s+(href|src|action|formaction)\s*=\s*(["'])\s*(?:javascript|data):[\s\S]*?\2/gi, '')
+    .replace(/\s+(href|src|action|formaction)\s*=\s*(?:javascript|data):[^\s>]*/gi, '');
+}
+
+async function generateMailDraft(request: Request, env: Env) {
+  if (request.method !== 'POST') return json(request, { error: 'Method not allowed' }, 405, { Allow: 'POST', 'Cache-Control': 'no-store' });
+  const expected = env.MAIL_AI_SHARED_SECRET?.trim();
+  const supplied = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '').trim() || '';
+  const suppliedBytes = new TextEncoder().encode(supplied);
+  const expectedBytes = new TextEncoder().encode(expected || 'missing-secret');
+  let mismatch = suppliedBytes.length ^ expectedBytes.length;
+  for (let index = 0; index < Math.max(suppliedBytes.length, expectedBytes.length); index++) {
+    mismatch |= (suppliedBytes[index] || 0) ^ (expectedBytes[index] || 0);
+  }
+  if (!expected || mismatch !== 0) {
+    return json(request, { error: 'Unauthorized' }, 401, { 'Cache-Control': 'no-store' });
+  }
+  const limited = await env.MAIL_AI_LIMITER.limit({ key: 'newsletter-draft' });
+  if (!limited.success) return json(request, { error: 'Email AI is busy. Please try again shortly.' }, 429, { 'Cache-Control': 'no-store' });
+
+  const length = Number(request.headers.get('Content-Length') || 0);
+  if (length > 8_000) return json(request, { error: 'Prompt is too large' }, 413, { 'Cache-Control': 'no-store' });
+  let prompt: unknown;
+  try { prompt = (await request.json() as { prompt?: unknown }).prompt; }
+  catch { return json(request, { error: 'Invalid JSON body' }, 400, { 'Cache-Control': 'no-store' }); }
+  if (typeof prompt !== 'string' || prompt.trim().length < 8 || prompt.length > 2_000) {
+    return json(request, { error: 'Prompt must be between 8 and 2,000 characters' }, 400, { 'Cache-Control': 'no-store' });
+  }
+  const model = '@cf/zai-org/glm-4.7-flash';
+  let failureStage: 'inference' | 'response' = 'inference';
+  try {
+    const output = await env.AI.run(model, {
+      response_format: { type: 'json_object' },
+      // Keep synchronous generation within server-action limits and avoid enormous drafts.
+      max_completion_tokens: 4096,
+      messages: [
+        { role: 'system', content: 'Create an email marketing/newsletter draft from the user request. Return a JSON object with exactly subject, previewText, and html string fields. HTML must be complete, responsive, email-client-safe HTML using tables and inline CSS; use a restrained black, white, and grayscale visual style. Keep the writing clear and polished. Do not invent company facts, claims, dates, prices, links, or offers absent from the prompt; use neutral copy/placeholders where needed. Do not include scripts, forms, iframes, external stylesheets, tracking pixels, or unsubscribe links/footers. The application adds the unsubscribe footer. Do not use markdown fences.' },
+        { role: 'user', content: prompt.trim() },
+      ],
+    }) as { response?: unknown; choices?: Array<{ message?: { content?: unknown } }> };
+    failureStage = 'response';
+    const generatedText: unknown = typeof output.response === 'string' ? output.response : output.choices?.[0]?.message?.content;
+    if (typeof generatedText !== 'string') throw new Error('Invalid AI response');
+    const responseText = generatedText.trim().replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(responseText) as { subject?: unknown; previewText?: unknown; html?: unknown };
+    if (typeof parsed.subject !== 'string' || typeof parsed.previewText !== 'string' || typeof parsed.html !== 'string'
+      || !parsed.subject.trim() || !parsed.html.trim() || parsed.subject.length > 200 || parsed.previewText.length > 240 || parsed.html.length > 50_000) {
+      throw new Error('Invalid AI draft');
+    }
+    return json(request, { draft: { subject: parsed.subject.trim(), previewText: parsed.previewText.trim(), html: escapeAiHtml(parsed.html.trim()) }, model }, 200, { 'Cache-Control': 'no-store' });
+  } catch (error) {
+    // Do not log prompt text, authorization values, or generated email content.
+    console.error('mail_ai_generation_failed', failureStage, error instanceof Error ? error.name : 'UnknownError');
+    return json(request, {
+      error: failureStage === 'inference'
+        ? 'Cloudflare Workers AI inference failed. Check that the AI binding is enabled and the model is available.'
+        : 'The AI response was not valid email JSON. Try a shorter or more specific prompt.',
+    }, 502, { 'Cache-Control': 'no-store' });
+  }
+}
+
 const worker = {
   async fetch(request: Request, env: Env) {
     if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders(request) });
@@ -105,6 +173,7 @@ const worker = {
     }
 
     if (url.pathname === '/v1/youtube/search' && request.method === 'GET') return youtubeSearch(request, env);
+    if (url.pathname === '/v1/mail/generate') return generateMailDraft(request, env);
     if (url.pathname === '/v1/geo/forecast' && request.method === 'GET') return proxyToEdge(request, env, '/v1/fnc/geo/forecast');
     if (url.pathname === '/v1/geo/search' && request.method === 'GET') return proxyToEdge(request, env, '/v1/fnc/geo/search');
     if (url.pathname.startsWith('/v1/discord/presence/') && request.method === 'GET') {

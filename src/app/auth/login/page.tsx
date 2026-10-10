@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Github, Disc } from 'lucide-react'; // Assuming 'Disc' for Discord or similar generic icon if not available
 
 export default function LoginPage() {
     return (
@@ -18,17 +17,13 @@ function LoginContent() {
     const [isDiscordLoading, setIsDiscordLoading] = useState(false);
     const [clientError, setClientError] = useState<string | null>(null);
     const source = searchParams.get('source');
-    const next = searchParams.get('next') || (source === 'guestbook' ? '/guestbook' : source === 'admin' ? '/me/admin' : '/docs/admin');
+    const next = searchParams.get('next') || (source === 'admin' ? '/me/admin' : '/docs/admin');
 
     useEffect(() => {
         if (!source) {
             router.push('/');
         }
     }, [source, router]);
-
-    const handleGithubLogin = async () => {
-        router.push(`/auth/start?provider=github&next=${encodeURIComponent(next)}`);
-    };
 
     const handleDiscordLogin = async () => {
         if (isDiscordLoading) return;
@@ -48,11 +43,11 @@ function LoginContent() {
             <div className="relative z-10 w-full max-w-md p-10 rounded-3xl resend-card text-center space-y-10 shadow-2xl">
                 <div className="space-y-2">
                     <h1 className="text-3xl font-black tracking-tighter uppercase font-outfit bg-gradient-to-b from-white to-white/50 bg-clip-text text-transparent">
-                        {source === 'guestbook' ? 'Guestbook Access' : 'System Admin'}
+                        System Admin
                     </h1>
                     <div className="h-1 w-20 mx-auto bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
                     <p className="text-[10px] text-zinc-400 tracking-[0.3em] uppercase font-mono pt-2">
-                        {source === 'guestbook' ? 'Authentication_Required' : 'Restricted_Area'}
+                        Restricted_Area
                     </p>
                 </div>
 
@@ -70,18 +65,6 @@ function LoginContent() {
                             {!clientError && !['discord_required', 'metadata_missing', 'unauthorized_role', 'oauth_callback_failed', 'provider_rejected', 'pkce_cookie_missing', 'admin_session_failed'].includes(searchParams.get('error') || '') && 'An authentication error occurred.'}
                         </p>
                     </div>
-                )}
-
-                {source === 'guestbook' && (
-                    <button
-                        onClick={handleGithubLogin}
-                        className="w-full group relative overflow-hidden rounded-xl bg-white p-[1px] transition-transform active:scale-[0.98]"
-                    >
-                        <div className="relative flex items-center justify-center gap-3 bg-white px-6 py-4 rounded-xl transition-colors hover:bg-zinc-50">
-                            <Github size={20} className="text-black group-hover:scale-110 transition-transform duration-500" />
-                            <span className="text-sm font-bold text-black font-mono tracking-wide uppercase">Connect via GitHub</span>
-                        </div>
-                    </button>
                 )}
 
                 {source === 'admin' && (

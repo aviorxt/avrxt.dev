@@ -6,6 +6,24 @@ import { MeConfig, defaultMeConfig } from '@/lib/me-config';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
 
+function safeUrl(value: unknown, media = false): string {
+    if (typeof value !== 'string') return '';
+    const candidate = value.trim();
+    if (!candidate || candidate.length > 2048 || /[\u0000-\u001f\\]/.test(candidate)) return '';
+
+    try {
+        const parsed = new URL(candidate, 'https://www.avrxt.dev');
+        const isInternal = parsed.origin === 'https://www.avrxt.dev';
+        if (isInternal && candidate.startsWith('/') && !candidate.startsWith('//')) {
+            return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+        }
+        if (parsed.username || parsed.password) return '';
+        const allowedProtocols = media ? ['https:'] : ['https:', 'http:', 'mailto:', 'tel:'];
+        return allowedProtocols.includes(parsed.protocol) ? parsed.toString() : '';
+    } catch {
+        return '';
+    }
+}
 
 function normalizeMeConfig(config: MeConfig): MeConfig {
     const normalized: MeConfig = {
@@ -23,6 +41,42 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
 
     normalized.music.audioUrl = (normalized.music.audioUrl || '').trim();
     normalized.music.youtubeVideoId = (normalized.music.youtubeVideoId || '').trim();
+    normalized.profile.avatarUrl = safeUrl(normalized.profile.avatarUrl, true) || defaultMeConfig.profile.avatarUrl;
+    normalized.profile.themeColor = '#ffffff';
+    normalized.profile.logoUrl = safeUrl(normalized.profile.logoUrl, true);
+    normalized.profile.bannerUrl = safeUrl(normalized.profile.bannerUrl, true);
+    normalized.music.coverUrl = safeUrl(normalized.music.coverUrl, true);
+    normalized.music.audioUrl = safeUrl(normalized.music.audioUrl, true);
+    normalized.music.youtubeVideoId = /^[\w-]{11}$/.test(normalized.music.youtubeVideoId) ? normalized.music.youtubeVideoId : '';
+    if (normalized.profile.presence?.discordId) {
+        normalized.profile.presence.discordId = /^\d{17,20}$/.test(normalized.profile.presence.discordId)
+            ? normalized.profile.presence.discordId
+            : '';
+    }
+    normalized.links = normalized.links
+        .filter((link) => link && typeof link.name === 'string' && typeof link.url === 'string')
+        .map((link) => {
+            if (link.icon === 'Instagram' || link.name.toLowerCase() === 'instagram') {
+                return { ...link, name: 'Instagram', url: 'https://www.instagram.com/aviorxt/' };
+            }
+            if (link.icon === 'Github' || link.name.toLowerCase() === 'github') {
+                return { ...link, name: 'GitHub', url: 'https://github.com/aviorxt' };
+            }
+            return { ...link, url: safeUrl(link.url) };
+        })
+        .filter((link) => Boolean(link.url));
+
+    if (!normalized.links.some((link) => link.icon === 'Instagram' || link.name.toLowerCase() === 'instagram')) {
+        normalized.links.unshift({ id: 'instagram-aviorxt', name: 'Instagram', url: 'https://www.instagram.com/aviorxt/', icon: 'Instagram', type: 'social' });
+    }
+    normalized.gallery = normalized.gallery
+        .filter((item) => item && typeof item.url === 'string')
+        .map((item) => ({ ...item, url: safeUrl(item.url, true) }))
+        .filter((item) => Boolean(item.url));
+    normalized.resources = normalized.resources
+        .filter((item) => item && typeof item.url === 'string')
+        .map((item) => ({ ...item, url: safeUrl(item.url), previewUrl: safeUrl(item.previewUrl, true) }))
+        .filter((item) => Boolean(item.url));
 
     // Prefer YouTube when a videoId is set (avoids stale audioUrl breaking playback)
     if (normalized.music.youtubeVideoId) {

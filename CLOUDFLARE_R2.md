@@ -31,22 +31,19 @@ sequenceDiagram
 
 ## 🚀 Key Features
 
-### 1. Direct-to-Cloud Uploads (Bypassing Vercel Limits)
-Vercel has a hard 4.5MB limit on request bodies. To support large **4K videos (50MB+)**, we implemented **S3 Presigned URLs**. The browser uploads high-resolution media directly to Cloudflare R2, ensuring 100% reliability for large assets.
+### 1. Direct-to-Cloud Uploads
+The admin requests a short-lived S3 presigned PUT URL after server-side admin authorization and file type/size checks. The browser sends the file directly to R2, avoiding application-server request-body limits. The upload size limits are enforced before issuing the URL: images up to 10 MB, audio up to 25 MB, and video up to 100 MB.
 
 ### 2. Intelligent Folder Hierarchy
 Assets are automatically routed to global edge CDN paths:
 - **Images**: `/i/` mapped to `cdn.avxt.qzz.io`
 - **Videos/Audio**: `/v/` mapped to `cdn.avxt.qzz.io`
 
-### 3. Automated Zero-Waste Storage
-When a user updates a profile picture, banner, or music track:
-- The system identifies the **Old Asset URL**.
-- Automatically triggers a delete command to R2 via Server Actions.
-- Ensures no "ghost files" accumulate in the bucket.
+### 3. Safe Asset Replacement
+When a user replaces or removes an asset in `/me/admin`, the old object stays available until the updated profile config is saved. After the save succeeds, the admin attempts to delete unreferenced R2 objects. Failed cleanup remains queued and can be retried by saving again.
 
-### 4. Interactive Purge Protocol
-In the `/me/admin` gallery, deleting an item doesn't just remove it from the UI; it invokes the `deleteFromR2Action`, permanently wiping the binary from the cloud to keep storage lean.
+### 4. Gallery Removal
+Removing a gallery item edits the pending profile draft. The R2 object is deleted only after that draft is saved successfully.
 
 ---
 
@@ -54,15 +51,16 @@ In the `/me/admin` gallery, deleting an item doesn't just remove it from the UI;
 
 ### 🛂 CORS Configuration
 To allow the browser to talk to Cloudflare, the following CORS policy is applied:
-- **Allowed Origins**: `avrxt.dev`, `www.avrxt.dev`, `localhost:3000`
+- **Allowed Origins**: `https://avrxt.dev`, `https://www.avrxt.dev`, `http://localhost:3000`
 - Apply the policy in `cloudflare/r2-cors.json` to the R2 bucket before testing direct uploads.
-- **Allowed Methods**: `PUT, GET, POST, DELETE, HEAD`
-- **Allowed Headers**: `*` (Support for `x-amz` checksums)
+- **Allowed Methods**: `GET, HEAD, PUT`
+- **Allowed Headers**: `Content-Type` (the browser upload signs and sends this header)
 
 ### ⚡ Performance Tuning
 - **Region**: `auto` (Routes to the nearest Cloudflare data center).
-- **TTL**: Presigned URLs are valid for **3600 seconds** (1 hour).
-- **MIME Fallback**: Implemented `application/octet-stream` fallbacks to prevent AWS-SDK signature mismatches on files without clear metadata.
+- **TTL**: Presigned URLs are valid for **600 seconds** (10 minutes).
+- **MIME**: The browser sends the file MIME type used when requesting the URL; unsupported or missing types are rejected by the server.
+- **Storage credentials**: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME` are server-only secrets. Configure the public CDN host variables separately.
 
 ---
 

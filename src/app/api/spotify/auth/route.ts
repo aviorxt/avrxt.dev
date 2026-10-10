@@ -11,7 +11,15 @@ export async function GET(request: Request) {
 
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const redirectUri = getSpotifyRedirectUri(request.url);
-  const scope = 'user-read-currently-playing user-read-playback-state user-read-recently-played';
+  const scope = [
+    'user-read-currently-playing',
+    'user-read-playback-state',
+    'user-read-recently-played',
+    'user-top-read',
+    'user-library-read',
+    'playlist-read-private',
+    'playlist-read-collaborative',
+  ].join(' ');
 
   if (!clientId) {
     return NextResponse.redirect(new URL('/me/admin?error=spotify_env_missing', request.url));

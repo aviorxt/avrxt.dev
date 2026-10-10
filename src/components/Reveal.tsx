@@ -13,37 +13,38 @@ interface RevealProps {
 }
 
 export default function Reveal({ children, className, id, style, delay = 0, direction = 'up' }: RevealProps) {
-    const [isVisible, setIsVisible] = useState(false);
-    const [isOut, setIsOut] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
+    const [canAnimate, setCanAnimate] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        const element = ref.current;
+        if (!element || !('IntersectionObserver' in window) || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            return;
+        }
+
+        const rect = element.getBoundingClientRect();
+        const startsBelowViewport = rect.top > window.innerHeight * 0.92;
+        if (startsBelowViewport) {
+            setCanAnimate(true);
+            setIsVisible(false);
+        }
+
         const observer = new IntersectionObserver(
             (entries) => {
                 entries.forEach((entry) => {
                     if (entry.isIntersecting) {
                         setIsVisible(true);
-                        setIsOut(false);
-                    } else {
-                        if (entry.boundingClientRect.top > 0) {
-                            setIsVisible(false);
-                            setIsOut(true);
-                        }
+                        observer.unobserve(entry.target);
                     }
                 });
             },
-            { threshold: 0.1, rootMargin: '0px 0px -50px 0px' }
+            { threshold: 0.06, rootMargin: '0px 0px 80px 0px' }
         );
 
-        if (ref.current) {
-            observer.observe(ref.current);
-        }
+        observer.observe(element);
 
-        return () => {
-            if (ref.current) {
-                observer.unobserve(ref.current);
-            }
-        };
+        return () => observer.disconnect();
     }, []);
 
     return (
@@ -58,7 +59,7 @@ export default function Reveal({ children, className, id, style, delay = 0, dire
                 "reveal",
                 `reveal-${direction}`,
                 isVisible && "active",
-                isOut && "out",
+                canAnimate && "reveal-ready",
                 className
             )}
         >

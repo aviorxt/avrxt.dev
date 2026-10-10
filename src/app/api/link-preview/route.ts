@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { lookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,12 +25,24 @@ function isPrivateIpv4(ip: string): boolean {
   if (a === 169 && b === 254) return true;
   if (a === 192 && b === 168) return true;
   if (a === 172 && b >= 16 && b <= 31) return true;
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  if (a === 192 && b === 0) return true;
+  if (a === 198 && (b === 18 || b === 19)) return true;
+  if ((a === 198 && b === 51 && parts[2] === 100) || (a === 203 && b === 0 && parts[2] === 113)) return true;
+  if (a >= 224) return true;
   return false;
+}
+
+function isPrivateIpv6(ip: string): boolean {
+  const value = ip.toLowerCase();
+  return value === '::' || value === '::1' || value.startsWith('::') || value.startsWith('fc') || value.startsWith('fd') ||
+    value.startsWith('fe8') || value.startsWith('fe9') || value.startsWith('fea') || value.startsWith('feb') ||
+    value.startsWith('ff') || value.startsWith('::ffff:');
 }
 
 function isLikelyPrivateHost(host: string): boolean {
   const h = host.toLowerCase();
-  if (h === 'localhost') return true;
+  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.internal')) return true;
   if (h.endsWith('.local')) return true;
   if (h === '0.0.0.0') return true;
   return false;
@@ -81,18 +94,48 @@ function abs(baseUrl: string, maybeRelative: string | null): string | null {
 }
 
 async function assertPublicHostname(hostname: string): Promise<void> {
-  if (isLikelyPrivateHost(hostname)) {
+  const normalizedHost = hostname.replace(/^\[|\]$/g, '').toLowerCase().replace(/\.$/, '');
+  if (isLikelyPrivateHost(normalizedHost)) {
     throw new Error('Blocked hostname');
   }
 
+  const ipVersion = isIP(normalizedHost);
+  if (ipVersion === 4 && isPrivateIpv4(normalizedHost)) throw new Error('Blocked IP');
+  if (ipVersion === 6 && isPrivateIpv6(normalizedHost)) throw new Error('Blocked IP');
+  if (ipVersion) return;
+
   // Best-effort DNS resolve to block private IPv4 ranges.
   // (Vercel/Node environments may not always resolve IPv6 here; keep it simple.)
-  const results = await lookup(hostname, { all: true, verbatim: true });
+  const results = await lookup(normalizedHost, { all: true, verbatim: true });
   for (const r of results) {
-    if (r.family === 4 && isPrivateIpv4(r.address)) {
+    if ((r.family === 4 && isPrivateIpv4(r.address)) || (r.family === 6 && isPrivateIpv6(r.address))) {
       throw new Error('Blocked IP');
     }
   }
+}
+
+async function readHtmlLimited(response: Response, limit: number): Promise<string> {
+  const length = Number(response.headers.get('content-length'));
+  if (Number.isFinite(length) && length > limit) throw new Error('Response too large');
+  if (!response.body) return '';
+
+  const reader = response.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.byteLength;
+    if (total > limit) {
+      await reader.cancel();
+      throw new Error('Response too large');
+    }
+    chunks.push(value);
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength; }
+  return new TextDecoder().decode(bytes);
 }
 
 export async function GET(request: Request) {
@@ -101,6 +144,7 @@ export async function GET(request: Request) {
   if (!input) {
     return NextResponse.json({ error: 'Missing url' }, { status: 400 });
   }
+  if (input.length > 2048) return NextResponse.json({ error: 'URL is too long' }, { status: 400 });
 
   let url: URL;
   try {
@@ -112,6 +156,7 @@ export async function GET(request: Request) {
   if (!['http:', 'https:'].includes(url.protocol)) {
     return NextResponse.json({ error: 'Unsupported protocol' }, { status: 400 });
   }
+  if (url.username || url.password) return NextResponse.json({ error: 'Credentials in URL are not supported' }, { status: 400 });
 
   try {
     await assertPublicHostname(url.hostname);
@@ -123,23 +168,36 @@ export async function GET(request: Request) {
   const timeout = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const res = await fetch(url.toString(), {
-      method: 'GET',
-      redirect: 'follow',
-      signal: controller.signal,
-      headers: {
-        // Some sites return lighter markup when the UA looks like a browser.
-        'user-agent':
-          'Mozilla/5.0 (compatible; avrxt-link-preview/1.0; +https://avrxt.dev)',
-        accept: 'text/html,application/xhtml+xml',
-      },
-      // Avoid edge caching; we set our own CDN cache headers on the response.
-      cache: 'no-store',
-    });
+    let target = url;
+    let res: Response | undefined;
+    for (let redirectCount = 0; redirectCount <= 4; redirectCount += 1) {
+      await assertPublicHostname(target.hostname);
+      res = await fetch(target.toString(), {
+        method: 'GET',
+        redirect: 'manual',
+        signal: controller.signal,
+        headers: {
+          'user-agent': 'Mozilla/5.0 (compatible; avrxt-link-preview/1.0; +https://www.avrxt.dev)',
+          accept: 'text/html,application/xhtml+xml',
+        },
+        cache: 'no-store',
+      });
 
-    const resolvedUrl = res.url || url.toString();
+      if (res.status < 300 || res.status >= 400) break;
+      const location = res.headers.get('location');
+      if (!location || redirectCount === 4) throw new Error('Too many redirects');
+      await res.body?.cancel();
+      target = new URL(location, target);
+      if (!['http:', 'https:'].includes(target.protocol) || target.username || target.password) {
+        throw new Error('Blocked redirect');
+      }
+    }
+    if (!res) throw new Error('Fetch failed');
+
+    const resolvedUrl = target.toString();
     const contentType = res.headers.get('content-type') || '';
     if (!contentType.toLowerCase().includes('text/html')) {
+      await res.body?.cancel();
       const payload: LinkPreviewResponse = {
         url: url.toString(),
         resolvedUrl,
@@ -158,7 +216,7 @@ export async function GET(request: Request) {
       });
     }
 
-    const html = await res.text();
+    const html = await readHtmlLimited(res, 1_000_000);
 
     const ogTitle = getMeta(html, { attr: 'property', value: 'og:title' });
     const ogDesc = getMeta(html, { attr: 'property', value: 'og:description' });

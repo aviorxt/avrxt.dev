@@ -1,7 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Mono, Outfit, Instrument_Serif } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
+import CookieBanner from "@/components/CookieBanner";
+import AskAi from "@/components/AskAi";
 import { ogSize } from "@/lib/og-image";
 
 const inter = Inter({
@@ -28,11 +32,8 @@ const instrumentSerif = Instrument_Serif({
 });
 
 const siteFavicon = "https://cdn.avxt.qzz.io/icons/favicon.jpg";
-const metadataBase = new URL(
-  process.env.NEXT_PUBLIC_SITE_URL ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    "https://avrxt.dev"
-);
+const siteUrl = "https://www.avrxt.dev";
+const metadataBase = new URL(siteUrl);
 
 const openGraphImage = {
   url: "/opengraph-image",
@@ -50,18 +51,35 @@ const twitterImage = {
 
 export const metadata: Metadata = {
   metadataBase,
-  title: "avrxt | Full Stack Developer & Tech Innovator",
-  description: "avrxt: Full Stack Developer specializing in React, Node.js, API development, and AI automation. Building secure, scalable, and enterprise-ready web solutions.",
+  applicationName: "AVRXT.DEV",
+  title: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",
+  description: "avrxt, also known as aviorxt, is an independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, and automation.",
+  keywords: ["avrxt", "aviorxt", "independent developer India", "aircraft maintenance engineer", "full stack developer", "web security", "API development", "AI automation"],
+  authors: [{ name: "avrxt (aviorxt)", url: "/about" }],
+  creator: "avrxt",
+  publisher: "avrxt",
+  category: "technology",
+  verification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+    ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+    : undefined,
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
+  },
   icons: {
     icon: [{ url: siteFavicon, type: "image/jpeg" }],
     shortcut: [siteFavicon],
     apple: [siteFavicon],
   },
   openGraph: {
-    title: "avrxt | Full Stack Developer & Tech Innovator",
-    description: "avrxt: Full Stack Developer specializing in React, Node.js, API development, and AI automation. Building secure, scalable, and enterprise-ready web solutions.",
+    title: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",
+    description: "Independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, and automation.",
     type: "website",
-    siteName: "avrxt.dev",
+    url: "/",
+    siteName: "AVRXT.DEV",
+    locale: "en_IN",
     images: [openGraphImage],
   },
   twitter: {
@@ -86,12 +104,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="dark scroll-smooth">
-      <body className={`${inter.variable} ${spaceMono.variable} ${outfit.variable} ${instrumentSerif.variable} theme-v7 font-sans bg-[#050505] text-white selection:bg-cyan-300/20 overflow-x-hidden`}>
+      <body className={`${inter.variable} ${spaceMono.variable} ${outfit.variable} ${instrumentSerif.variable} theme-v7 font-sans bg-[#050505] text-white selection:bg-cyan-300/20 overflow-x-clip`}>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebSite',
+              '@id': `${siteUrl}/#website`,
+              url: `${siteUrl}/`,
+              name: 'AVRXT.DEV',
+              alternateName: ['avrxt', 'aviorxt'],
+              inLanguage: 'en-IN',
+              publisher: { '@id': `${siteUrl}/about#person` },
+            }).replace(/</g, '\\u003c'),
+          }}
+        />
         <SiteChrome position="before" />
         <main className="relative z-10 min-h-screen">
           {children}
         </main>
         <SiteChrome position="after" />
+        <CookieBanner />
+        <AskAi />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

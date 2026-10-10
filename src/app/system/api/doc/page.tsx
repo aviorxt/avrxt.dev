@@ -1,16 +1,18 @@
 import type { Metadata } from 'next';
 import { ArrowUpRight, Braces, CheckCircle2, Cloud, KeyRound, ShieldCheck } from 'lucide-react';
+import { buildPageMetadata } from '@/lib/page-metadata';
 
-export const metadata: Metadata = {
-    title: 'API Documentation | AVRXT',
-    description: 'Reference documentation for the AVRXT API gateway.',
-};
+export const metadata: Metadata = buildPageMetadata({
+    title: 'API Documentation',
+    description: 'Reference documentation for the public AVRXT API gateway, endpoints, response formats, access, and error handling.',
+    keywords: ['AVRXT API', 'API documentation', 'developer API', 'REST API reference', 'aviorxt'],
+    path: '/system/api/doc',
+});
 
 const endpoints = [
     { method: 'GET', path: '/v1/health', summary: 'Check the website API health.' },
     { method: 'GET', path: '/v1/status', summary: 'Read the current public system status.' },
     { method: 'POST', path: '/v1/contact', summary: 'Submit the public contact form.' },
-    { method: 'POST', path: '/v1/hire', summary: 'Submit a project or hiring enquiry.' },
     { method: 'POST', path: '/v1/subscribe', summary: 'Subscribe an email address to updates.' },
     { method: 'GET', path: '/v1/link-preview?url={url}', summary: 'Return metadata for a public URL.' },
     { method: 'GET', path: '/v1/og', summary: 'Generate Open Graph output using query parameters.' },
@@ -40,7 +42,7 @@ function Code({ children }: { children: string }) {
 export default function ApiDocumentationPage() {
     return (
         <div className="min-h-screen bg-[#050505] text-zinc-300 selection:bg-cyan-300/20 selection:text-white">
-            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_5%,rgba(34,211,238,0.08),transparent_30%),radial-gradient(circle_at_85%_30%,rgba(99,102,241,0.06),transparent_28%)]" />
+            <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(circle_at_20%_5%,rgba(255,255,255,0.055),transparent_30%),radial-gradient(circle_at_85%_30%,rgba(255,255,255,0.035),transparent_28%)]" />
 
             <main className="relative mx-auto max-w-6xl px-5 pb-28 pt-36 sm:px-8 lg:px-12">
                 <header className="border-b border-white/10 pb-16">
