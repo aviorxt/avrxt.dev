@@ -17,10 +17,9 @@ const endpoints = [
     { method: 'GET', path: '/v1/link-preview?url={url}', summary: 'Return metadata for a public URL.' },
     { method: 'GET', path: '/v1/og', summary: 'Generate Open Graph output using query parameters.' },
     { method: 'GET', path: '/v1/spotify/now-playing', summary: 'Return the current or most recently played track.' },
-    { method: 'GET', path: '/v1/geo/forecast?lat={lat}&lon={lon}', summary: 'Return weather data for a coordinate.' },
-    { method: 'GET', path: '/v1/geo/search?q={query}', summary: 'Search for a geographic location.' },
+    { method: 'GET', path: '/v1/geo/forecast?latitude={latitude}&longitude={longitude}', summary: 'Return weather data for a coordinate.' },
+    { method: 'GET', path: '/v1/geo/search?name={query}', summary: 'Search for a geographic location.' },
     { method: 'GET', path: '/v1/discord/presence/{userId}', summary: 'Read public Discord presence for a user.' },
-    { method: 'GET', path: '/v1/youtube/search?q={query}', summary: 'Search YouTube videos through the gateway.' },
 ];
 
 const errors = [

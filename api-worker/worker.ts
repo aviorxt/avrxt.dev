@@ -3,6 +3,7 @@ interface Env {
   EDGE_ORIGIN?: string;
   YOUTUBE_API_KEY?: string;
   MAIL_AI_SHARED_SECRET?: string;
+  GATEWAY_SHARED_SECRET?: string;
   AI: { run(model: string, input: { messages: Array<{ role: 'system' | 'user'; content: string }>; response_format?: { type: 'json_object' }; max_completion_tokens?: number }): Promise<unknown> };
   MAIL_AI_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
@@ -57,6 +58,18 @@ async function proxyToSite(request: Request, env: Env, targetPath: string) {
   headers.delete('host');
   headers.set('X-Forwarded-Host', source.host);
   headers.set('X-AVRXT-Gateway', 'api-v1');
+  for (const name of ['x-avrxt-client-ip', 'x-avrxt-client-time', 'x-avrxt-client-signature']) headers.delete(name);
+  const gatewaySecret = env.GATEWAY_SHARED_SECRET || env.MAIL_AI_SHARED_SECRET;
+  const clientIp = request.headers.get('cf-connecting-ip');
+  if (gatewaySecret && clientIp) {
+    const timestamp = Date.now().toString();
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey('raw', encoder.encode(gatewaySecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+    const digest = await crypto.subtle.sign('HMAC', key, encoder.encode(`${timestamp}\n${clientIp}`));
+    headers.set('x-avrxt-client-ip', clientIp);
+    headers.set('x-avrxt-client-time', timestamp);
+    headers.set('x-avrxt-client-signature', Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join(''));
+  }
   const response = await fetch(target, {
     method: request.method,
     headers,
@@ -172,7 +185,7 @@ const worker = {
       }, 200, { 'Cache-Control': 'public, max-age=60' });
     }
 
-    if (url.pathname === '/v1/youtube/search' && request.method === 'GET') return youtubeSearch(request, env);
+    if (url.pathname === '/v1/youtube/search') return json(request, { error: 'YouTube search is available through the authenticated admin editor.' }, 403);
     if (url.pathname === '/v1/mail/generate') return generateMailDraft(request, env);
     if (url.pathname === '/v1/geo/forecast' && request.method === 'GET') return proxyToEdge(request, env, '/v1/fnc/geo/forecast');
     if (url.pathname === '/v1/geo/search' && request.method === 'GET') return proxyToEdge(request, env, '/v1/fnc/geo/search');

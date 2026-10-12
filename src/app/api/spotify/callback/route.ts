@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getSpotifyRedirectUri } from '@/lib/spotify-oauth';
+import { invalidatePublicCache } from '@/lib/public-cache';
 
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 
@@ -101,5 +102,6 @@ export async function GET(request: Request) {
     return redirectWithStateCleanup(request, `/me/admin?error=db_save_failed&msg=${encodeURIComponent(error.message)}`);
   }
 
+  await invalidatePublicCache('spotify');
   return redirectWithStateCleanup(request, '/me/admin?success=spotify_connected');
 }

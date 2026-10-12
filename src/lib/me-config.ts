@@ -30,6 +30,7 @@ export interface MeConfig {
             badgesManual?: Record<string, boolean>;
         };
         location?: string;
+        weatherCoordinates?: { latitude: number; longitude: number };
         weatherEnabled?: boolean;
     };
     music: {

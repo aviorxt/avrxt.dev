@@ -92,7 +92,7 @@ export default async function DocPage({ params }: Props) {
                             </div>
                             <div className="flex items-center gap-2">
                                 <Calendar size={13} />
-                                <span>{doc.date || doc.lastModified}</span>
+                                <span>{doc.date || doc.last_modified || doc.lastModified || doc.created_at}</span>
                             </div>
                             {doc.tags && doc.tags.length > 0 && (
                                 <div className="flex items-center gap-2">

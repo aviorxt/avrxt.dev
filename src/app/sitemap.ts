@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { tools } from '@/lib/tool-catalog';
+import { getPublicDocuments } from '@/lib/public-data';
 
 const SITE_URL = 'https://www.avrxt.dev';
 
@@ -16,20 +17,7 @@ async function getPublishedDocumentEntries(): Promise<SitemapEntry[]> {
     if (!supabaseUrl || !anonKey) return [];
 
     try {
-        const response = await fetch(
-            `${supabaseUrl}/rest/v1/documents?published=eq.true&select=slug,last_modified,created_at&order=created_at.desc`,
-            {
-                headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
-                next: { revalidate: 3600 },
-            },
-        );
-        if (!response.ok) return [];
-
-        const documents = await response.json() as Array<{
-            slug?: string;
-            last_modified?: string;
-            created_at?: string;
-        }>;
+        const documents = await getPublicDocuments();
 
         return documents
             .filter((document) => typeof document.slug === 'string' && document.slug.length > 0)

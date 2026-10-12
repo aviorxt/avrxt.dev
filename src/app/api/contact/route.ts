@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     if (origin && origin !== allowedOrigin && origin !== request.nextUrl.origin) {
       return NextResponse.json({ error: 'Cross-site requests are not allowed.' }, { status: 403 });
     }
-    if (isRateLimited(request.headers, 'contact', 5, 60 * 60 * 1000)) {
+    if (await isRateLimited(request.headers, 'contact', 5, 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'Too many requests. Please try again later.' }, { status: 429 });
     }
     const body = await readJsonLimited(request, 16_384);
@@ -64,14 +64,14 @@ export async function POST(request: NextRequest) {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'aviorxtaero@gmail.com',
+        user: process.env.ADMIN_GMAIL_ID || 'aviorxtaero@gmail.com',
         pass: process.env.GMAIL_APP_PASSWORD,
       },
     });
 
     await transporter.sendMail({
-      from: '"avrxt Terminal" <aviorxtaero@gmail.com>',
-      to: 'irgtxpc@gmail.com',
+      from: `"avrxt Terminal" <${process.env.ADMIN_GMAIL_ID || 'aviorxtaero@gmail.com'}>`,
+      to: process.env.CONTACT_RECIPIENT_EMAIL || 'irgtxpc@gmail.com',
       replyTo: userEmail,
       subject: `NEW_SIGNAL: ${normalizedName}`,
       html: `

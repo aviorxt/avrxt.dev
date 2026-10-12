@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DocArticle } from '@/lib/docs-config';
 import { createDocAction, updateDocAction, deleteDocAction } from '@/app/actions/docs';
-import { getPresignedR2UrlAction } from '@/app/actions/r2';
+import { uploadToR2 } from '@/lib/upload-client';
 import { logout } from '@/app/actions/auth';
 
 interface AdminClientProps {
@@ -62,19 +62,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         setUploading(true);
         setError('');
         try {
-            const res = await getPresignedR2UrlAction(file.name, file.type, file.size);
-            if ('error' in res) throw new Error(res.error);
-            const { uploadUrl, publicUrl } = res;
-            // Upload directly to R2
-            const uploadResponse = await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type || 'application/octet-stream' },
-            });
-            if (!uploadResponse.ok) {
-                const details = (await uploadResponse.text()).slice(0, 200);
-                throw new Error(`R2 upload failed (${uploadResponse.status})${details ? `: ${details}` : ''}`);
-            }
+            const { publicUrl } = await uploadToR2(file);
             onInsert(`![${alt || file.name}](${publicUrl})`);
         } catch (err: any) {
             setError(err.message);
@@ -161,14 +149,11 @@ function EmbedModal({ onInsert, onClose }: { onInsert: (md: string) => void; onC
     const [input, setInput] = useState('');
     const insert = () => {
         if (!input) return;
-        if (type === 'youtube') {
-            const id = input.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1] || input;
-            onInsert(`\n<iframe width="100%" height="400" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>\n`);
-        } else if (type === 'tweet') {
-            onInsert(`\n<blockquote class="twitter-tweet"><a href="${input}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"></script>\n`);
-        } else {
-            onInsert(`\n<iframe src="${input}" width="100%" height="400" frameborder="0"></iframe>\n`);
-        }
+        try {
+            const url = new URL(input);
+            if (!['https:', 'http:'].includes(url.protocol)) return;
+            onInsert(`\n[${type === 'youtube' ? 'Watch on YouTube' : type === 'tweet' ? 'View post' : 'Open link'}](${url.toString()})\n`);
+        } catch { return; }
     };
     return (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -187,11 +172,11 @@ function EmbedModal({ onInsert, onClose }: { onInsert: (md: string) => void; onC
                 </div>
                 <div className="space-y-3">
                     <input value={input} onChange={e => setInput(e.target.value)}
-                        placeholder={type === 'youtube' ? 'YouTube URL or video ID' : type === 'tweet' ? 'Tweet URL' : 'Embed URL'}
+                        placeholder={type === 'youtube' ? 'YouTube URL or video ID' : type === 'tweet' ? 'Tweet URL' : 'Media URL'}
                         className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500/50 transition-all font-mono" />
                     <button onClick={insert}
                         className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold font-mono uppercase transition-all">
-                        Insert Embed
+                        Insert Media Link
                     </button>
                 </div>
             </div>
@@ -205,21 +190,8 @@ function MarkdownPreview({ content }: { content: string }) {
     useEffect(() => {
         let active = true;
         (async () => {
-            const { unified } = await import('unified');
-            const { default: remarkParse } = await import('remark-parse');
-            const { default: remarkGfm } = await import('remark-gfm');
-            const { default: remarkRehype } = await import('remark-rehype');
-            const { default: rehypeRaw } = await import('rehype-raw');
-            const { default: rehypeHighlight } = await import('rehype-highlight');
-            const { default: rehypeStringify } = await import('rehype-stringify');
-            const result = await unified()
-                .use(remarkParse)
-                .use(remarkGfm)
-                .use(remarkRehype, { allowDangerousHtml: true })
-                .use(rehypeRaw)
-                .use(rehypeHighlight)
-                .use(rehypeStringify)
-                .process(content);
+            const { renderMarkdown } = await import('@/lib/render-markdown');
+            const result = await renderMarkdown(content);
             if (active) setHtml(String(result));
         })();
         return () => { active = false; };
@@ -314,12 +286,12 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
             } else {
                 result = await createDocAction(selectedDoc);
             }
-            if (result.error) {
+            if (!('data' in result)) {
                 setSaveOk(false);
                 setSaveStatus(`ERROR: ${result.error}`);
             } else {
                 setSaveOk(true);
-                setSaveStatus('✓ SYNCED');
+                setSaveStatus(result.warning || '✓ SYNCED');
                 if (result.data) {
                     if (isNew) {
                         setDocs([result.data as DocArticle, ...docs]);
@@ -329,7 +301,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                         setSelectedDoc(result.data as DocArticle);
                     }
                 }
-                setTimeout(() => setSaveStatus(''), 3000);
+                if (!result.warning) setTimeout(() => setSaveStatus(''), 3000);
             }
         } catch {
             setSaveOk(false);
@@ -342,10 +314,15 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     const handleDelete = async (id: string) => {
         if (!confirm('Delete this document? THIS CANNOT BE UNDONE.')) return;
         setIsPending(true);
-        await deleteDocAction(id);
-        setDocs(docs.filter(d => d.id !== id));
-        setSelectedDoc(null);
-        setIsPending(false);
+        try {
+            const result = await deleteDocAction(id);
+            if ('error' in result) { setSaveOk(false); setSaveStatus(`ERROR: ${result.error}`); return; }
+            setDocs(docs.filter(d => d.id !== id));
+            setSelectedDoc(null);
+            setSaveOk(true);
+            setSaveStatus(result.warning || '✓ DELETED');
+        } catch { setSaveOk(false); setSaveStatus('DELETE_FAILED'); }
+        finally { setIsPending(false); }
     };
 
     const handleNewDoc = () => {

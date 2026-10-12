@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { resolveMx } from 'node:dns/promises';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { getSpotifyRedirectUri } from '@/lib/spotify-oauth';
+import { timingSafeEqual } from 'node:crypto';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -149,7 +151,7 @@ async function checkSpotifyConfig(name: string): Promise<CheckResult> {
   const ok =
     required(process.env.SPOTIFY_CLIENT_ID) &&
     required(process.env.SPOTIFY_CLIENT_SECRET) &&
-    required(process.env.SPOTIFY_REDIRECT_URI);
+    getSpotifyRedirectUri('https://www.avrxt.dev').startsWith('https://');
 
   return {
     name,
@@ -208,7 +210,15 @@ async function checkStatusProvider(name: string): Promise<CheckResult> {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  if (new URL(request.url).searchParams.get('deep') !== '1') {
+    return NextResponse.json({ status: 'healthy', timestamp: new Date().toISOString() }, { headers: { 'Cache-Control': 'no-store' } });
+  }
+  const expected = process.env.HEALTH_CHECK_TOKEN || '';
+  const supplied = request.headers.get('authorization')?.replace(/^Bearer /i, '') || '';
+  if (!expected || Buffer.byteLength(expected) !== Buffer.byteLength(supplied) || !timingSafeEqual(Buffer.from(expected), Buffer.from(supplied))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
   const started = nowMs();
 
   const checks = await Promise.all([

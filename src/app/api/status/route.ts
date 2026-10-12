@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { cachedPublic } from '@/lib/public-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -82,7 +83,7 @@ async function fetchPublicStatus(): Promise<StatusPayload> {
     }
 }
 
-export async function GET() {
+async function loadStatus(): Promise<StatusPayload> {
     let result: StatusPayload = { status: 'unknown', label: 'Status Offline' };
 
     if (API_KEY && STATUS_PAGE_ID) {
@@ -97,9 +98,10 @@ export async function GET() {
         }
     }
 
-    return NextResponse.json(result, {
-        headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
-        }
-    });
+    return result;
+}
+
+export async function GET() {
+    const result = await cachedPublic('status', { ttlSeconds: 30, cacheable: value => value.status !== 'unknown' }, loadStatus);
+    return NextResponse.json(result, { headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=30' } });
 }

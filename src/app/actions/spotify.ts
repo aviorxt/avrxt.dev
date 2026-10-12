@@ -4,6 +4,7 @@ import { searchSpotify } from '@/lib/spotify';
 import { revalidatePath } from 'next/cache';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { invalidatePublicCache } from '@/lib/public-cache';
 
 export async function disconnectSpotifyAction() {
     const { authorized, error: authError } = await verifyAdmin();
@@ -17,6 +18,7 @@ export async function disconnectSpotifyAction() {
         return { error: error.message };
     }
 
+    await invalidatePublicCache('spotify');
     revalidatePath('/me/admin');
     return { success: true };
 }

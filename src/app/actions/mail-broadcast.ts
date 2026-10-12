@@ -19,7 +19,7 @@ export async function generateNewsletterEmailAction(input: { prompt: string }) {
     if (!authorized) return { error: 'Unauthorized.' };
 
     const requestHeaders = await headers();
-    if (isRateLimited(requestHeaders, 'newsletter-ai', 5, 60_000)) {
+    if (await isRateLimited(requestHeaders, 'newsletter-ai', 5, 60_000)) {
         return { error: 'Too many AI requests. Please wait a minute and try again.' };
     }
 
@@ -119,6 +119,9 @@ export async function createNewsletterBroadcastAction(input: {
         if (input.existingId) {
             const existing = await resend.broadcasts.get(input.existingId);
             if (existing.error) throw new Error(existing.error.message);
+            if (existing.data?.audience_id === audienceId && mode !== 'draft' && ['sent', 'scheduled', 'queued'].includes(existing.data.status)) {
+                return { success: true, id: input.existingId };
+            }
             if (!existing.data || existing.data.audience_id !== audienceId || existing.data.status !== 'draft') {
                 throw new Error('Only draft broadcasts in the configured newsletter audience can be updated or sent.');
             }
@@ -148,7 +151,8 @@ export async function createNewsletterBroadcastAction(input: {
             });
             if (updated.error) throw new Error(updated.error.message);
             if (mode === 'draft') return { success: true, id: input.existingId, recipientCount };
-            result = await resend.broadcasts.send(input.existingId, scheduledAt ? { scheduledAt } : undefined);
+            result = await resend.post<{ id: string }>(`/broadcasts/${input.existingId}/send`,
+                scheduledAt ? { scheduled_at: scheduledAt } : {}, { headers: { 'Idempotency-Key': idempotencyKey } });
         } else {
             result = await resend.broadcasts.create({
                 audienceId,

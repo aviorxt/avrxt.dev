@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Mono, Outfit, Instrument_Serif } from "next/font/google";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
+import OptionalAnalytics from '@/components/OptionalAnalytics';
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
@@ -127,8 +126,7 @@ export default function RootLayout({
         <SiteChrome position="after" />
         <CookieBanner />
         <AskAi />
-        <Analytics />
-        <SpeedInsights />
+        <OptionalAnalytics />
       </body>
     </html>
   );

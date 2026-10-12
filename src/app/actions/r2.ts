@@ -1,56 +1,39 @@
 'use server';
-
-import { deleteFile, getPresignedUploadUrl } from '@/lib/r2';
+import { headers } from 'next/headers';
+import { deleteFile, ensureR2Cors, getPresignedUploadUrl, verifyR2Upload } from '@/lib/r2';
 import { verifyAdmin } from '@/lib/auth-checks';
+import { uploadDetails } from '@/lib/upload-details';
 
 export async function deleteFromR2Action(url: string) {
-    const { authorized, error: authError } = await verifyAdmin();
-    if (!authorized) {
-        return { error: `Unauthorized: ${authError}` };
-    }
-
-    try {
-        await deleteFile(url);
-        return { success: true };
-    } catch (error: any) {
-        return { error: error.message || 'DELETE_FAILED' };
-    }
+    const auth = await verifyAdmin();
+    if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` };
+    try { await deleteFile(url); return { success: true }; }
+    catch { return { error: 'Could not delete the stored asset. Try saving again.' }; }
 }
 export async function getPresignedR2UrlAction(fileName: string, fileType: string, fileSize: number) {
-    const { authorized, error: authError } = await verifyAdmin();
-    if (!authorized) {
-        return { error: `Unauthorized: ${authError}` };
-    }
-    if (typeof fileName !== 'string' || typeof fileType !== 'string') {
-        return { error: 'Invalid file details.' };
-    }
-
-    const allowedImageTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif']);
-    const allowedMediaTypes = new Set(['video/mp4', 'video/webm', 'video/ogg', 'audio/mpeg', 'audio/wav', 'audio/ogg', 'audio/mp4', 'audio/flac']);
-    const isImage = allowedImageTypes.has(fileType);
-    const isMedia = allowedMediaTypes.has(fileType);
-    const maxSize = fileType.startsWith('video/') ? 100 * 1024 * 1024 : fileType.startsWith('audio/') ? 25 * 1024 * 1024 : 10 * 1024 * 1024;
-
-    if ((!isImage && !isMedia) || !Number.isSafeInteger(fileSize) || fileSize < 1 || fileSize > maxSize || fileName.length > 180) {
-        return { error: 'Unsupported file type or file size.' };
-    }
-    const folder: 'i' | 'v' = isImage ? 'i' : 'v';
-
+    const auth = await verifyAdmin();
+    if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` };
     try {
-        // Use a clean, timestamped filename
-        const cleanName = fileName.replace(/[^a-zA-Z0-9.]/g, '-');
-        const fileExt = cleanName.split('.').pop();
-        const nameWithoutExt = cleanName.split('.').slice(0, -1).join('.');
-        const finalName = `${nameWithoutExt}-${Date.now()}.${fileExt}`;
-
-        const cleanType = fileType || 'application/octet-stream';
-        const data = await getPresignedUploadUrl(finalName, cleanType, folder);
-
-        console.log(`[R2_PRESIGNED] Generated URL for ${finalName} in folder ${folder}`);
-
-        return { success: true, ...data };
-    } catch (error: any) {
-        console.error('R2 Presigned URL Action Error:', error);
-        return { error: error.message || 'R2_PRESIGNED_FAILED' };
+        if (typeof fileName !== 'string' || typeof fileType !== 'string') throw new Error('Invalid file details.');
+        const details = uploadDetails(fileName, fileType, fileSize);
+        const origin = (await headers()).get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://www.avrxt.dev';
+        let corsWarning: string | undefined;
+        try { await ensureR2Cors(origin); }
+        catch {
+            corsWarning = 'Bucket CORS could not be checked. Apply cloudflare/r2-cors.json to the bucket and allow this site origin.';
+        }
+        const data = await getPresignedUploadUrl(details.fileName, details.contentType, details.folder);
+        return { success: true, ...data, contentType: details.contentType, fileName: details.fileName, corsWarning };
+    } catch (error) {
+        return { error: error instanceof Error ? error.message : 'Could not prepare the upload. Check R2 configuration.' };
     }
+}
+export async function completeR2UploadAction(key: string, fileType: string, fileSize: number) {
+    const auth = await verifyAdmin();
+    if (!auth.authorized) return { error: `Unauthorized: ${auth.error}` };
+    try {
+        uploadDetails('upload', fileType, fileSize);
+        await verifyR2Upload(key, fileType, fileSize);
+        return { success: true };
+    } catch { return { error: 'The upload could not be verified. Try again before saving.' }; }
 }

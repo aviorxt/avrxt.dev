@@ -44,6 +44,15 @@ function createRequestKey() {
     return Array.from(crypto.getRandomValues(new Uint8Array(16)), value => value.toString(16).padStart(2, '0')).join('');
 }
 
+async function campaignKey(payload: unknown) {
+    const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(payload)));
+    const fingerprint = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');
+    const storageKey = `avrxt-campaign-${fingerprint}`;
+    let key = window.sessionStorage.getItem(storageKey);
+    if (!key) { key = createRequestKey(); window.sessionStorage.setItem(storageKey, key); }
+    return { key, storageKey };
+}
+
 export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { initialBroadcasts: RecentBroadcast[]; defaultFrom: string }) {
     const [name, setName] = useState('avrxt update');
     const [from, setFrom] = useState(defaultFrom);
@@ -91,15 +100,17 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
         setBusy(true);
         setStatus(mode === 'draft' ? 'Saving draft…' : 'Preparing audience and submitting to Resend…');
         try {
+            const operation = await campaignKey({ name, from, replyTo, subject, previewText, html, mode, scheduleLocal, editingId });
             const result = await createNewsletterBroadcastAction({
                 name, from, replyTo, subject, previewText, html, mode,
                 ...(mode === 'schedule' ? { scheduledAt: new Date(scheduleLocal).toISOString() } : {}),
-                idempotencyKey: createRequestKey(),
+                idempotencyKey: operation.key,
                 ...(editingId ? { existingId: editingId } : {}),
             });
             if ('error' in result) {
                 setStatus(`ERROR: ${result.error}`);
             } else {
+                window.sessionStorage.removeItem(operation.storageKey);
                 setStatus(mode === 'draft'
                     ? `Draft saved · ${result.id || 'Resend'}`
                     : mode === 'schedule'

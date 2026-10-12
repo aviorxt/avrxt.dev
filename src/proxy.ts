@@ -1,8 +1,12 @@
 import { NextResponse, type NextRequest } from 'next/server'
+import { getOpenAuthClient } from '@/lib/openauth'
+import { authSubjects } from '../auth-worker/subjects'
+import { getPublicMaintenance } from '@/lib/public-data'
 
 const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
     '/me/admin',
+    '/docs/admin',
     '/mail',
     '/auth',
     '/api',
@@ -14,20 +18,7 @@ async function isMaintenanceModeEnabled() {
     if (!supabaseUrl || !anonKey) return false
 
     try {
-        const response = await fetch(
-            `${supabaseUrl.replace(/\/$/, '')}/rest/v1/me_config?key=eq.main_config&select=data`,
-            {
-                headers: {
-                    apikey: anonKey,
-                    Authorization: `Bearer ${anonKey}`,
-                },
-                cache: 'no-store',
-            }
-        )
-        if (!response.ok) return false
-
-        const rows = await response.json() as Array<{ data?: { site?: { maintenanceEnabled?: boolean } } }>
-        return rows[0]?.data?.site?.maintenanceEnabled === true
+        return await getPublicMaintenance()
     } catch (error) {
         console.error('[MAINTENANCE_CHECK_FAILED]', error)
         return false
@@ -35,22 +26,21 @@ async function isMaintenanceModeEnabled() {
 }
 
 export default async function proxy(request: NextRequest) {
-    const host = request.nextUrl.hostname.toLowerCase()
     const url = request.nextUrl
 
-    // Subdomain routing for status.avrxt.dev
-    if (host === 'status.avrxt.dev') {
-        // Map root, /incidents, and /maintenance to the status route group
-        if (url.pathname === '/') {
-            return NextResponse.rewrite(new URL('/status', request.url))
-        }
-        if (['/incidents', '/maintenance'].includes(url.pathname)) {
-            return NextResponse.rewrite(new URL(`/status${url.pathname}`, request.url))
-        }
-        return NextResponse.next()
-    }
-
     const sessionResponse = NextResponse.next({ request })
+    const access = request.cookies.get('avrxt_access')?.value
+    const refresh = request.cookies.get('avrxt_refresh')?.value
+    if (access && refresh && (url.pathname.startsWith('/me/admin') || url.pathname.startsWith('/docs/admin'))) {
+        try {
+            const verified = await getOpenAuthClient().verify(authSubjects, access, { refresh })
+            if (!verified.err && verified.tokens) {
+                const options = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: 2592000 }
+                sessionResponse.cookies.set('avrxt_access', verified.tokens.access, options)
+                sessionResponse.cookies.set('avrxt_refresh', verified.tokens.refresh, options)
+            }
+        } catch { /* Authorization checks will reject an invalid session. */ }
+    }
 
     const bypassesMaintenance = MAINTENANCE_BYPASS_PREFIXES.some(prefix =>
         url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)

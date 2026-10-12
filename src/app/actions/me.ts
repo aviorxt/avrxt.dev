@@ -1,6 +1,7 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import { getPublicProfileRecord } from '@/lib/public-data';
+import { invalidatePublicCache } from '@/lib/public-cache';
 import { revalidatePath } from 'next/cache';
 import { MeConfig, defaultMeConfig } from '@/lib/me-config';
 import { verifyAdmin } from '@/lib/auth-checks';
@@ -26,6 +27,7 @@ function safeUrl(value: unknown, media = false): string {
 }
 
 function normalizeMeConfig(config: MeConfig): MeConfig {
+    if (!config || typeof config !== 'object' || !config.profile || !config.music) throw new Error('Invalid profile configuration.');
     const normalized: MeConfig = {
         ...config,
         site: {
@@ -39,8 +41,12 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
         widgets: config.widgets ? { ...config.widgets } : config.widgets,
     };
 
-    normalized.music.audioUrl = (normalized.music.audioUrl || '').trim();
-    normalized.music.youtubeVideoId = (normalized.music.youtubeVideoId || '').trim();
+    normalized.music.audioUrl = typeof normalized.music.audioUrl === 'string' ? normalized.music.audioUrl.trim() : '';
+    normalized.music.youtubeVideoId = typeof normalized.music.youtubeVideoId === 'string' ? normalized.music.youtubeVideoId.trim() : '';
+    const coordinates = normalized.profile.weatherCoordinates;
+    if (coordinates && (!Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude) || Math.abs(coordinates.latitude) > 90 || Math.abs(coordinates.longitude) > 180)) {
+        delete normalized.profile.weatherCoordinates;
+    }
     normalized.profile.avatarUrl = safeUrl(normalized.profile.avatarUrl, true) || defaultMeConfig.profile.avatarUrl;
     normalized.profile.themeColor = '#ffffff';
     normalized.profile.logoUrl = safeUrl(normalized.profile.logoUrl, true);
@@ -93,19 +99,8 @@ export async function getMeConfigAction(): Promise<MeConfig> {
     }
 
     try {
-        const supabase = await createClient();
-        const { data, error } = await supabase
-            .from('me_config')
-            .select('data')
-            .eq('key', 'main_config')
-            .single();
-
-        if (error || !data) {
-            console.warn('Error fetching me_config, returning default:', error);
-            return defaultMeConfig;
-        }
-
-        return normalizeMeConfig(data.data as MeConfig);
+        const config = await getPublicProfileRecord();
+        return config ? normalizeMeConfig(config) : defaultMeConfig;
     } catch (error) {
         console.warn('Unable to fetch me_config, returning default:', error);
         return defaultMeConfig;
@@ -132,8 +127,9 @@ export async function saveMeConfigAction(config: MeConfig) {
         return { error: error.message };
     }
 
+    const cacheInvalidated = await invalidatePublicCache('profile');
     revalidatePath('/me');
     revalidatePath('/me/admin');
     revalidatePath('/maintenance');
-    return { success: true };
+    return { success: true, ...(!cacheInvalidated ? { warning: 'Saved, but Redis cache invalidation failed. Public data may take up to two minutes to refresh.' } : {}) };
 }

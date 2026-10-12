@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getPublicDocument } from '@/lib/public-data';
 
 import { getOgFonts } from '@/app/_og/fonts';
 import { getTool, tools } from '@/lib/tool-catalog';
@@ -46,19 +46,11 @@ function normalizePath(input: string | null) {
   return !raw.startsWith('/') || raw.includes('://') || raw.includes('..') || raw.length > 200 ? '/' : raw;
 }
 
-function supabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) return null;
-  return createSupabaseClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-}
-
 async function documentCard(path: string): Promise<OgCard> {
   const slug = path.split('/').filter(Boolean)[1] || 'docs';
   const fallback = card(`Documentation · ${slug.replace(/-/g, ' ')}`, slug.replace(/-/g, ' '), 'A technical field note from the avrxt.dev knowledge base.', 'docs', '10', ['DOCUMENT', 'REFERENCE', 'AVRXT.DEV']);
-  const client = supabase();
-  if (!client) return fallback;
-  const { data } = await client.from('documents').select('title,description').eq('slug', slug).maybeSingle<{ title: string | null; description: string | null }>();
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return fallback;
+  const data = await getPublicDocument(decodeURIComponent(slug)).catch(() => null);
   return data ? { ...fallback, title: clampText(data.title || fallback.title, 58), description: clampText(data.description || fallback.description, 150) } : fallback;
 }
 

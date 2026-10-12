@@ -20,11 +20,15 @@ interface Env {
 function createIssuer(env: Env) {
   return issuer({
     subjects: authSubjects,
+    ttl: { access: 900, refresh: 60 * 60 * 24 * 30 },
     storage: CloudflareStorage({ namespace: env.OPENAUTH_STORAGE }),
     allow: async ({ clientID, redirectURI }) => {
       if (clientID !== 'avrxt-web') return false;
-      const hostname = new URL(redirectURI).hostname;
-      return hostname === 'avrxt.dev' || hostname === 'www.avrxt.dev' || hostname === 'localhost' || hostname === '127.0.0.1';
+      const url = new URL(redirectURI);
+      const local = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+      return url.pathname === '/auth/callback' && !url.username && !url.password &&
+        ((local && url.protocol === 'http:') || (url.protocol === 'https:' && !url.port &&
+          (url.hostname === 'avrxt.dev' || url.hostname === 'www.avrxt.dev')));
     },
     providers: {
       discord: DiscordProvider({

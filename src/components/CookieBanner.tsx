@@ -17,6 +17,7 @@ export default function CookieBanner() {
 
   const choose = (choice: 'accepted' | 'essential') => {
     window.localStorage.setItem(CONSENT_KEY, JSON.stringify({ choice, updatedAt: new Date().toISOString(), version: 1 }));
+    window.dispatchEvent(new Event('avrxt-cookie-choice'));
     setVisible(false);
   };
 
@@ -27,7 +28,7 @@ export default function CookieBanner() {
         <div className="hidden size-10 shrink-0 place-items-center border border-[#292929] bg-black text-[#BCBCBC] sm:grid"><Cookie size={17} /></div>
         <div className="min-w-0 flex-1">
           <div className="mb-2 flex items-start justify-between gap-4"><h2 className="font-mono text-xs font-bold uppercase tracking-[.18em] text-white">A small cookie note</h2><button type="button" onClick={() => choose('essential')} aria-label="Use essential storage only and close" className="text-[#858585] hover:text-white"><X size={16} /></button></div>
-          <p className="text-xs leading-6 text-[#A3A3A3]">avrxt.dev uses essential storage for security, sign-in, and your consent choice. There is no advertising cookie in this build. Optional third-party embeds load only when you open those features.</p>
+          <p className="text-xs leading-6 text-[#A3A3A3]">avrxt.dev uses essential storage for security, sign-in, and your consent choice. Accept enables optional usage and performance analytics. Third-party embeds load when you open those features.</p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <button type="button" onClick={() => choose('accepted')} className="min-h-10 bg-white px-4 font-mono text-[9px] font-bold uppercase tracking-[.16em] text-black">Accept</button>
             <button type="button" onClick={() => choose('essential')} className="min-h-10 border border-[#292929] bg-black px-4 font-mono text-[9px] uppercase tracking-[.16em] text-[#D0D0D0]">Essential only</button>

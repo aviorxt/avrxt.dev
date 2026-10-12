@@ -1,6 +1,7 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import { getPublicDocuments, getPublicDocument } from '@/lib/public-data';
+import { invalidatePublicCache } from '@/lib/public-cache';
 import { revalidatePath } from 'next/cache';
 import { DocArticle } from '@/lib/docs-config';
 import { verifyAdmin } from '@/lib/auth-checks';
@@ -32,19 +33,8 @@ export async function getPublishedDocs() {
         return [];
     }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('published', true)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error('Error fetching published docs:', error);
-        return [];
-    }
-
-    return data as DocArticle[];
+    try { return await getPublicDocuments(); }
+    catch { return []; }
 }
 
 export async function getDocBySlug(slug: string) {
@@ -52,20 +42,8 @@ export async function getDocBySlug(slug: string) {
         return null;
     }
 
-    const supabase = await createClient();
-    const { data, error } = await supabase
-        .from('documents')
-        .select('*')
-        .eq('slug', slug)
-        .eq('published', true)
-        .single(); // Assuming slug is unique
-
-    if (error) {
-        // console.error('Error fetching doc by slug:', error);
-        return null;
-    }
-
-    return data as DocArticle;
+    try { return await getPublicDocument(slug); }
+    catch { return null; }
 }
 
 export async function createDocAction(doc: Partial<DocArticle>) {
@@ -93,9 +71,12 @@ export async function createDocAction(doc: Partial<DocArticle>) {
         return { error: error.message };
     }
 
+    const invalidated = await invalidatePublicCache('documents');
     revalidatePath('/docs');
+    revalidatePath('/docs/[slug]', 'page');
+    revalidatePath('/sitemap.xml');
     revalidatePath('/docs/admin');
-    return { data };
+    return { data, ...(!invalidated ? { warning: 'Saved, but Redis invalidation failed. Public content may take up to five minutes to refresh.' } : {}) };
 }
 
 export async function updateDocAction(id: string, updates: Partial<DocArticle>) {
@@ -120,9 +101,12 @@ export async function updateDocAction(id: string, updates: Partial<DocArticle>) 
         return { error: error.message };
     }
 
+    const invalidated = await invalidatePublicCache('documents');
     revalidatePath('/docs');
+    revalidatePath('/docs/[slug]', 'page');
+    revalidatePath('/sitemap.xml');
     revalidatePath('/docs/admin');
-    return { data };
+    return { data, ...(!invalidated ? { warning: 'Saved, but Redis invalidation failed. Public content may take up to five minutes to refresh.' } : {}) };
 }
 
 export async function deleteDocAction(id: string) {
@@ -138,7 +122,10 @@ export async function deleteDocAction(id: string) {
         return { error: error.message };
     }
 
+    const invalidated = await invalidatePublicCache('documents');
     revalidatePath('/docs');
+    revalidatePath('/docs/[slug]', 'page');
+    revalidatePath('/sitemap.xml');
     revalidatePath('/docs/admin');
-    return { success: true };
+    return { success: true, ...(!invalidated ? { warning: 'Deleted, but Redis invalidation failed. Public content may take up to five minutes to refresh.' } : {}) };
 }

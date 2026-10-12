@@ -18,7 +18,8 @@ export async function checkDiscordRole(userId: string, providerToken?: string) {
                     headers: {
                         Authorization: `Bearer ${providerToken}`,
                     },
-                    cache: 'no-store'
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(5000)
                 }
             );
 
@@ -61,7 +62,8 @@ export async function checkDiscordRole(userId: string, providerToken?: string) {
                     headers: {
                         Authorization: `Bot ${botToken}`,
                     },
-                    cache: 'no-store'
+                    cache: 'no-store',
+                    signal: AbortSignal.timeout(5000)
                 }
             );
 

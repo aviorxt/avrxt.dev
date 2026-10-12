@@ -1,0 +1,14 @@
+{
+  "rules": [
+    {
+      "id": "avrxt-web-uploads",
+      "allowed": {
+        "origins": ["https://avrxt.dev", "https://www.avrxt.dev", "http://localhost:3000"],
+        "methods": ["GET", "HEAD", "PUT"],
+        "headers": ["Content-Type"]
+      },
+      "exposeHeaders": ["ETag"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

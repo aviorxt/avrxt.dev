@@ -21,7 +21,16 @@ export async function getSpotifyTokens() {
     return tokens;
 }
 
-export async function refreshAccessToken(refresh_token: string) {
+const refreshingTokens = new Map<string, Promise<string>>();
+export async function refreshAccessToken(refresh_token: string): Promise<string> {
+    const current = refreshingTokens.get(refresh_token);
+    if (current) return current;
+    const pending = performTokenRefresh(refresh_token).finally(() => refreshingTokens.delete(refresh_token));
+    refreshingTokens.set(refresh_token, pending);
+    return pending;
+}
+
+async function performTokenRefresh(refresh_token: string): Promise<string> {
     const response = await fetch(TOKEN_ENDPOINT, {
         method: 'POST',
         headers: {
@@ -74,7 +83,7 @@ export async function getNowPlaying() {
     }
 
     const song = await response.json();
-    if (!song?.item) return { isPlaying: false };
+    if (!song?.item?.album || !Array.isArray(song.item.artists)) return { isPlaying: false };
 
     // Save to history if playing
     if (song.is_playing) {
@@ -82,7 +91,7 @@ export async function getNowPlaying() {
         await supabase.from('spotify_history').upsert({
             song_name: song.item.name,
             artist: song.item.artists.map((_artist: any) => _artist.name).join(', '),
-            cover_url: song.item.album.images[0].url,
+            cover_url: song.item.album.images?.[0]?.url || '',
             played_at: new Date().toISOString()
         }, { onConflict: 'song_name, artist' });
     }
@@ -92,7 +101,7 @@ export async function getNowPlaying() {
         title: song.item.name,
         artist: song.item.artists.map((_artist: any) => _artist.name).join(', '),
         album: song.item.album.name,
-        albumImageUrl: song.item.album.images[0].url,
+        albumImageUrl: song.item.album.images?.[0]?.url || '',
         songUrl: song.item.external_urls.spotify,
         progressMs: song.progress_ms,
         durationMs: song.item.duration_ms,

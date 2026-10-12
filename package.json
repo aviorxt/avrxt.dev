@@ -7,6 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "tsx --conditions=import --test tests/*.test.ts",
+    "redis:check": "node scripts/check-redis.mjs",
     "auth:dev": "wrangler dev",
     "auth:deploy": "wrangler deploy",
     "api:dev": "wrangler dev --config api-worker/wrangler.jsonc",
@@ -48,6 +50,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260819.1",
+    "@electric-sql/pglite": "^0.5.9",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/nodemailer": "^7.0.5",
@@ -56,6 +59,7 @@
     "eslint": "^9",
     "eslint-config-next": "^16.3.1",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5",
     "wrangler": "^4.124.0"
   },

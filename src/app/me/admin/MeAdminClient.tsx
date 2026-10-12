@@ -15,7 +15,8 @@ import { saveMeConfigAction } from '@/app/actions/me';
 import { logout } from '@/app/actions/auth';
 import { disconnectSpotifyAction } from '@/app/actions/spotify';
 import { searchYouTubeAction } from '@/app/actions/youtube';
-import { getPresignedR2UrlAction, deleteFromR2Action } from '@/app/actions/r2';
+import { deleteFromR2Action } from '@/app/actions/r2';
+import { uploadToR2 } from '@/lib/upload-client';
 import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
@@ -68,8 +69,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
 
             setSaveStatus(failedCleanupUrls.length
                 ? `SAVED: R2_CLEANUP_FAILED (${failedCleanupUrls.length}); SAVE_AGAIN_TO_RETRY`
-                : 'SUCCESS: CONFIG_SYNCED');
-            if (!failedCleanupUrls.length) setTimeout(() => setSaveStatus(''), 3000);
+                : result.warning || 'SUCCESS: CONFIG_SYNCED');
+            if (!failedCleanupUrls.length && !result.warning) setTimeout(() => setSaveStatus(''), 3000);
         } catch (error) {
             setSaveStatus(`ERROR: ${error instanceof Error ? error.message : 'SAVE_FAILED'}`);
         } finally {
@@ -78,7 +79,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: string, galleryType?: 'image' | 'video') => {
-        const file = e.target.files?.[0];
+        const input = e.target;
+        const file = input.files?.[0];
         if (!file) return;
 
         let uploadFailed = false;
@@ -98,40 +100,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                 oldUrl = config.links.find(l => l.id === linkId)?.icon;
             }
 
-            // Step 1: Get Presigned URL from Server Action
-            setSaveStatus('STEP 1: PREPARING CLOUD...');
-            const result = await getPresignedR2UrlAction(file.name, file.type, file.size);
-
-            if ('error' in result) {
-                throw new Error(`S1_ERROR: ${result.error}`);
-            }
-
-            const { uploadUrl, publicUrl } = result;
-
-            // Step 2: Upload the file directly to Cloudflare
-            setSaveStatus(`STEP 2: UPLOADING (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
-
-            try {
-                const uploadResponse = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    body: file,
-                    headers: {
-                        'Content-Type': file.type || 'application/octet-stream',
-                    },
-                    // Direct upload to R2 doesn't need credentials in headers if using presigned URL
-                });
-
-                if (!uploadResponse.ok) {
-                    const errorText = await uploadResponse.text();
-                    console.error('Cloud upload response error:', errorText);
-                    // Extract a bit of the error message if possible
-                    const shortError = errorText.substring(0, 50).replace(/[<>]/g, '');
-                    throw new Error(`S2_CLOUD_FAIL: ${uploadResponse.status} ${shortError}`);
-                }
-            } catch (fetchError: any) {
-                console.error('Fetch error during upload:', fetchError);
-                throw new Error(`S2_NETWORK_FAIL: ${fetchError.message || 'Check CORS or Connection'}`);
-            }
+            setSaveStatus(`UPLOADING (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+            const { publicUrl } = await uploadToR2(file);
 
             // Step 3: Success! Update UI state
             setSaveStatus('STEP 3: FINALIZING...');
@@ -170,7 +140,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             setSaveStatus(`ERROR: ${error.message || 'UPLOAD_FAILED'}`);
         } finally {
             setIsPending(false);
-            e.target.value = '';
+            input.value = '';
             // Keep error messages visible longer (8 seconds)
             // but clear success messages faster (2 seconds)
             setTimeout(() => setSaveStatus(''), uploadFailed ? 12000 : 2000);
@@ -387,7 +357,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                             <input
                                                 type="text"
                                                 value={config.profile.location || ''}
-                                                onChange={(e) => setConfig({ ...config, profile: { ...config.profile, location: e.target.value } })}
+                                                onChange={(e) => setConfig({ ...config, profile: { ...config.profile, location: e.target.value, weatherCoordinates: undefined } })}
                                                 className="admin-input flex-1"
                                                 placeholder="City Name (e.g. Chennai)"
                                             />
@@ -400,12 +370,12 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                         const path = `/v1/geo/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
                                                         const res = await fetch(apiUrl(path, edgeUrl(`/v1/fnc/geo/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`)), { cache: 'no-store' });
                                                         const data = await res.json();
-                                                        if (data.results) {
+                                                        if (data.results?.length) {
                                                             // We'll use a simple alert/prompt for now or just take the first one
                                                             const first = data.results[0];
                                                             setConfig({
                                                                 ...config,
-                                                                profile: { ...config.profile, location: `${first.name}, ${first.country}` }
+                                                                profile: { ...config.profile, location: `${first.name}, ${first.country}`, weatherCoordinates: { latitude: first.latitude, longitude: first.longitude } }
                                                             });
                                                             setSaveStatus(`FOUND: ${first.name}`);
                                                         } else {

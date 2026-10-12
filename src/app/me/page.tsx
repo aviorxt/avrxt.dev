@@ -20,7 +20,7 @@ export async function generateMetadata({ searchParams }: PageProps): Promise<Met
 }
 
 export default async function MePage() {
-    // The profile action reads Supabase session cookies; keep it out of static prerendering.
+    // Render the live profile at request time; public data is shared through Redis.
     await connection();
     const config = await getMeConfigAction();
     return <MeClient config={config} />;

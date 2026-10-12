@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getMuzixChart } from '@/lib/spotify-chart';
+import { cachedPublic } from '@/lib/public-cache';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    const chart = await getMuzixChart();
+    const chart = await cachedPublic('spotify:chart', { ttlSeconds: 30, tags: ['spotify'], cacheable: value => value.connected === true }, getMuzixChart);
     return NextResponse.json(chart, {
       headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=120' },
     });

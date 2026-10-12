@@ -45,8 +45,12 @@ export async function getAuthUser(): Promise<AuthUser | null> {
   const store = await cookies();
   const access = store.get(ACCESS_COOKIE)?.value;
   if (!access) return null;
-  const verified = await getOpenAuthClient().verify(authSubjects, access);
+  const verified = await getOpenAuthClient().verify(authSubjects, access, { refresh: store.get(REFRESH_COOKIE)?.value });
   if (verified.err || verified.subject.type !== 'user') return null;
+  if (verified.tokens) {
+    // Server Components cannot write cookies; the proxy persists refreshed tokens.
+    try { await setAuthTokens(verified.tokens.access, verified.tokens.refresh); } catch { /* read-only render */ }
+  }
   const value = verified.subject.properties;
   return {
     id: value.id, email: value.email, provider: value.provider, admin: value.admin,

@@ -12,14 +12,14 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "frame-ancestors 'self'",
   "form-action 'self'",
-  `script-src 'self' 'unsafe-inline'${developmentScriptSources}${previewScriptSources}`,
-  `script-src-elem 'self' 'unsafe-inline'${previewScriptSources}`,
+  `script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com${developmentScriptSources}${previewScriptSources}`,
+  `script-src-elem 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com${previewScriptSources}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
-  "connect-src 'self' https:",
-  `frame-src https://open.spotify.com https://www.youtube-nocookie.com${previewFrameSources}`,
+  `connect-src 'self' https:${process.env.NEXT_PUBLIC_SUPABASE_URL ? ` ${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin.replace(/^https:/, 'wss:')}` : ''}`,
+  `frame-src 'self' https://open.spotify.com https://www.youtube-nocookie.com${previewFrameSources}`,
   "upgrade-insecure-requests",
 ].join('; ');
 

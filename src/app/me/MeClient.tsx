@@ -122,6 +122,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const ytPlayerRef = useRef<any>(null);
     const ytPendingPlayRef = useRef(false);
     const [ytReady, setYtReady] = useState(false);
+    const [youtubeRequested, setYoutubeRequested] = useState(false);
     const spotifyProgressBarRef = useRef<HTMLDivElement>(null);
     const spotifyProgressLastStateUpdateRef = useRef<number>(0);
     const galleryVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
@@ -141,7 +142,9 @@ export default function MeClient({ config }: { config: MeConfig }) {
         }
         const controller = new AbortController();
         let isActive = true;
-        const query = '?latitude=13.0827&longitude=80.2707&current=temperature_2m,relative_humidity_2m,wind_speed_10m';
+        const latitude = config.profile.weatherCoordinates?.latitude ?? 13.0827;
+        const longitude = config.profile.weatherCoordinates?.longitude ?? 80.2707;
+        const query = `?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
         const endpoints = [...new Set([
             apiUrl(`/v1/geo/forecast${query}`, edgeUrl(`/v1/fnc/geo/forecast${query}`)),
             edgeUrl(`/v1/fnc/geo/forecast${query}`),
@@ -176,7 +179,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
             controller.abort();
             window.clearInterval(refreshId);
         };
-    }, [weatherEnabled]);
+    }, [weatherEnabled, config.profile.weatherCoordinates?.latitude, config.profile.weatherCoordinates?.longitude]);
 
     // Discord Presence: only fetch when auto mode + id present, poll every 60s
     useEffect(() => {
@@ -452,7 +455,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
     }, [isPlaying]);
 
     useEffect(() => {
-        if (!isUsingYouTube) {
+        if (!isUsingYouTube || !youtubeRequested) {
             setYtReady(false);
             ytPendingPlayRef.current = false;
             if (ytPlayerRef.current?.destroy) ytPlayerRef.current.destroy();
@@ -526,7 +529,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
         return () => {
             cancelled = true;
         };
-    }, [isUsingYouTube, youtubeVideoId]);
+    }, [isUsingYouTube, youtubeVideoId, youtubeRequested]);
 
     useEffect(() => {
         if (!isUsingYouTube || !ytReady) return;
@@ -551,6 +554,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
     const togglePlay = () => {
         if (isUsingYouTube) {
+            setYoutubeRequested(true);
             const player = ytPlayerRef.current;
 
             if (!player || !ytReady) {
@@ -667,7 +671,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
         setIsSubmitting(true);
         setSubscribeStatus({ type: null, message: '' });
 
-        const formData = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        const formData = new FormData(form);
         const data = Object.fromEntries(formData);
 
         try {
@@ -681,7 +686,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
             if (response.ok) {
                 setSubscribeStatus({ type: 'success', message: result.message || '// SUCCESS: SUBSCRIPTION_ACTIVE' });
-                e.currentTarget.reset();
+                form.reset();
             } else {
                 setSubscribeStatus({ type: 'error', message: `// ERROR: ${result.error || 'UPLINK_DENIED'}` });
             }
