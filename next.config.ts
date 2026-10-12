@@ -65,6 +65,13 @@ const nextConfig: NextConfig = {
           { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
         ],
       },
+      {
+        source: '/newsletter/fonts/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Cache-Control', value: 'public, max-age=86400' },
+        ],
+      },
     ];
   },
 };
