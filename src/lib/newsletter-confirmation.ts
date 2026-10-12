@@ -11,6 +11,10 @@ export async function issueConfirmation(email: string, audienceId: string) {
     expires_at: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   });
   if (error) throw new Error('Could not create subscription confirmation.');
-  const origin = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.avrxt.dev';
+  const configured = new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.avrxt.dev');
+  // Send email links directly to the canonical host instead of passing a
+  // token through the apex redirect before confirmation.
+  const origin = configured.hostname === 'avrxt.dev' || configured.hostname === 'www.avrxt.dev'
+    ? 'https://www.avrxt.dev' : configured.origin;
   return { token, url: new URL(`/subscribe/confirm?token=${token}`, origin).toString() };
 }

@@ -127,7 +127,7 @@ export default function AskAi() {
     copyPrompt();
   };
 
-  if (pathname === '/') return null;
+  if (pathname === '/' || pathname === '/subscribe/confirm') return null;
 
   return (
     <>

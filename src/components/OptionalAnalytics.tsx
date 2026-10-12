@@ -1,11 +1,13 @@
 'use client';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
+import { usePathname } from 'next/navigation';
 
 const Analytics = dynamic(() => import('@vercel/analytics/next').then(module => module.Analytics), { ssr: false });
 const SpeedInsights = dynamic(() => import('@vercel/speed-insights/next').then(module => module.SpeedInsights), { ssr: false });
 
 export default function OptionalAnalytics() {
+  const pathname = usePathname();
   const [enabled, setEnabled] = useState(false);
   useEffect(() => {
     const read = () => {
@@ -15,5 +17,5 @@ export default function OptionalAnalytics() {
     read(); window.addEventListener('avrxt-cookie-choice', read);
     return () => window.removeEventListener('avrxt-cookie-choice', read);
   }, []);
-  return enabled ? <><Analytics /><SpeedInsights /></> : null;
+  return enabled && pathname !== '/subscribe/confirm' ? <><Analytics /><SpeedInsights /></> : null;
 }
