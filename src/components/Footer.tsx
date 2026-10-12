@@ -25,6 +25,7 @@ const pageGroups = [
         links: [
             { label: 'Documentation', href: '/docs' },
             { label: 'Tools directory', href: '/tools' },
+            { label: 'Terminal', href: '/terminal' },
             { label: 'Muzix chart', href: '/muzix/chart' },
             { label: 'Subscribe', href: '/subscribe' },
             { label: 'API documentation', href: '/system/api/doc' },

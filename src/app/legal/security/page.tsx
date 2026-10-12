@@ -50,6 +50,7 @@ export default function SecurityPage() {
         'The TCP port checker requires an authorization acknowledgement, resolves the target server-side, and blocks private, local, reserved, and mixed-address targets.',
         'DNS and external lookups use bounded timeouts so an unavailable provider does not hold a request indefinitely.',
         'The keyboard tester processes keystrokes only inside the focused browser component and does not send key history to an API.',
+        'The website terminal uses an explicit public-page catalog and renders command text as plain text. It does not execute operating-system commands, evaluate code, accept arbitrary navigation URLs, or bypass administrator authorization. Input length and in-memory history are bounded.',
         'Ask AI builds its prompt in the browser and opens a provider only after a user action; no provider is contacted merely by displaying the launcher.',
       ]} />
     </PolicySection>

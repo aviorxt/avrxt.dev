@@ -40,6 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { route: '/me', priority: 0.8, changeFrequency: 'monthly' },
         { route: '/contact', priority: 0.8, changeFrequency: 'monthly' },
         { route: '/tools', priority: 0.8, changeFrequency: 'monthly' },
+        { route: '/terminal', priority: 0.6, changeFrequency: 'monthly' },
         ...tools.map(({ slug }) => ({ route: `/tools/${slug}`, priority: 0.7, changeFrequency: 'monthly' as const })),
         { route: '/gallery', priority: 0.7, changeFrequency: 'monthly' },
         { route: '/signature', priority: 0.65, changeFrequency: 'monthly' },

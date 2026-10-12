@@ -25,6 +25,7 @@ export default function Navbar() {
             { name: '/gallery', href: '/gallery', description: 'Visual gallery' },
             { name: '/docs', href: '/docs', description: 'Docs and resources' },
             { name: '/tools', href: '/tools', description: 'Focused web utilities' },
+            { name: '/terminal', href: '/terminal', description: 'Explore the website with commands' },
             { name: '/legal/privacy', href: '/legal/privacy', description: 'Privacy policy' },
             { name: '/legal/terms', href: '/legal/terms', description: 'Terms of service' },
             { name: '/legal/refund', href: '/legal/refund', description: 'Refund policy' },

@@ -36,6 +36,7 @@ export default function PrivacyPage() {
 
     <PolicySection id="tools" number="03" title="How the public tools process requests">
       <p>Tool inputs are used to produce the result you request. The application does not intentionally create a user profile from tool history, although hosting and upstream providers may keep ordinary security or operational logs.</p>
+      <p>The website terminal processes commands and a bounded recent-command history in browser memory. Commands are not submitted to a terminal API, saved in browser storage, or included in custom analytics events. Clearing or reloading the terminal resets its history. Your browser may keep a page in memory for back navigation. Opening a page through a command creates an ordinary page request, which may be handled by the destination’s analytics and infrastructure providers.</p>
       <p>The administrator-only newsletter drafting assistant sends the administrator’s prompt to Cloudflare Workers AI and returns proposed email content for review. It is separate from the public Ask AI launcher. Generating a draft does not itself send a newsletter or require submitting the subscriber list to the model.</p>
       <PolicyList items={[
         <><strong>IP lookup:</strong> the request IP and browser details are returned to you; public network information is enriched through ipwho.is.</>,

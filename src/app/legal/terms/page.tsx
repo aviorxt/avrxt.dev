@@ -22,6 +22,7 @@ export default function TermsPage() {
 
     <PolicySection id="tools" number="02" title="Public tools and result accuracy">
       <p>IP, DNS, RDAP, TCP port, email-domain, font, Spotify preview, quote, and keyboard tools are provided for convenience and general information. Outputs may be incomplete, delayed, approximate, provider-dependent, or affected by VPNs, proxies, DNS caching, network filtering, browser restrictions, and third-party outages.</p>
+      <p>The website terminal offers commands for finding public pages and displaying browser-local output. It does not provide a server shell or grant administrator access. Opening a linked tool or service remains subject to its own processing rules and these terms.</p>
       <PolicyList items={[
         'Do not rely on a tool result as the only basis for a legal, medical, financial, safety-critical, or production-security decision.',
         'Mailfy verifies syntax and domain mail routing; it does not confirm that a mailbox exists or belongs to a person.',
