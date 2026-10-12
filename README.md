@@ -63,6 +63,14 @@ See `CLOUDFLARE_R2.md` for CORS, filename rewriting and upload verification. Smo
 
 The development-only braces advisory currently has no published patched version. Production audit is clean. Keep repository lint patterns trusted; do not force npm's suggested Next.js downgrade. Track https://github.com/advisories/GHSA-vfj7-8cjw-p6xm for an upstream fix.
 
+## Public site search
+
+Algolia powers the navigation search dialog with typo tolerance, keyboard navigation, and a public-page fallback. Configure the three `NEXT_PUBLIC_ALGOLIA_*` values, an index-scoped server `ALGOLIA_WRITE_KEY` with `addObject`, `deleteObject`, `browse`, and `editSettings`, and a random `CRON_SECRET` of at least 32 characters. The browser key needs only `search`, the same index restriction, trusted website referers, max 10 hits per query, and a per-IP limit. Never use an Admin key in either environment.
+
+The protected `/api/search/sync` GET endpoint requires `Authorization: Bearer <CRON_SECRET>`. Vercel runs it daily at 04:00 UTC. It reads published notes through the anonymous/RLS database client, updates public page metadata and bounded note excerpts, and removes obsolete records. Admin document mutations request a background index update after saving. Failures preserve the database save and are repaired by daily reconciliation. Redis serializes index writers. Preview deployments read the Production public index and never rewrite it. A database outage stops reconciliation rather than clearing indexed content.
+
+After the first Production deployment, invoke the protected sync endpoint once and verify a public note query. Keep the Free plan and its visible search attribution; quotas or provider outages fall back to local page navigation. Search requests disable query/click analytics and send no user identity; ordinary provider logs may still apply. Indexing limits require review before exceeding 5,000 published notes.
+
 ## License
 
 Source code is covered by the repository `LICENSE`. Brand assets, personal media, and third-party materials are not automatically licensed by that file.

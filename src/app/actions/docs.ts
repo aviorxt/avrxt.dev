@@ -3,6 +3,8 @@
 import { getPublicDocuments, getPublicDocument } from '@/lib/public-data';
 import { invalidatePublicCache } from '@/lib/public-cache';
 import { revalidatePath } from 'next/cache';
+import { after } from 'next/server';
+import { syncSearchDocument } from '@/lib/search-index';
 import { DocArticle } from '@/lib/docs-config';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
@@ -71,6 +73,7 @@ export async function createDocAction(doc: Partial<DocArticle>) {
         return { error: error.message };
     }
 
+    after(() => syncSearchDocument(data.id));
     const invalidated = await invalidatePublicCache('documents');
     revalidatePath('/docs');
     revalidatePath('/docs/[slug]', 'page');
@@ -101,6 +104,7 @@ export async function updateDocAction(id: string, updates: Partial<DocArticle>) 
         return { error: error.message };
     }
 
+    after(() => syncSearchDocument(data.id));
     const invalidated = await invalidatePublicCache('documents');
     revalidatePath('/docs');
     revalidatePath('/docs/[slug]', 'page');
@@ -122,6 +126,7 @@ export async function deleteDocAction(id: string) {
         return { error: error.message };
     }
 
+    after(() => syncSearchDocument(id));
     const invalidated = await invalidatePublicCache('documents');
     revalidatePath('/docs');
     revalidatePath('/docs/[slug]', 'page');

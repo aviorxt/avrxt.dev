@@ -1,50 +1,17 @@
 'use client';
 
-import { useMemo, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Menu, X, Search, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Magnetic from '@/components/Magnetic';
+import SiteSearch from '@/components/SiteSearch';
 
 export default function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const pathname = usePathname();
-
-    const searchItems = useMemo(() => {
-        return [
-            { name: '/', href: '/', description: 'Home and overview' },
-            { name: '/me', href: '/me', description: "Profile and Link's" },
-            { name: '/about', href: '/about', description: 'About avrxt, also known as aviorxt' },
-            { name: '/uses', href: '/uses', description: 'Tools, apps, and gear' },
-            { name: '/muzix/chart', href: '/muzix/chart', description: 'Live Spotify listening chart' },
-            { name: '/subscribe', href: '/subscribe', description: 'Newsletter Subscription' },
-            { name: '/contact', href: '/contact', description: 'Contact @avrxt' },
-            { name: '/gallery', href: '/gallery', description: 'Visual gallery' },
-            { name: '/docs', href: '/docs', description: 'Docs and resources' },
-            { name: '/tools', href: '/tools', description: 'Focused web utilities' },
-            { name: '/terminal', href: '/terminal', description: 'Explore the website with commands' },
-            { name: '/legal/privacy', href: '/legal/privacy', description: 'Privacy policy' },
-            { name: '/legal/terms', href: '/legal/terms', description: 'Terms of service' },
-            { name: '/legal/refund', href: '/legal/refund', description: 'Refund policy' },
-            { name: '/legal/security', href: '/legal/security', description: 'Security policy' },
-            { name: '/legal/assets', href: '/legal/assets', description: 'Official logos and brand rights' },
-            { name: '/annon/ownership', href: '/annon/ownership', description: 'Ownership and independence notice' },
-        ];
-    }, []);
-
-    const filteredSearchItems = useMemo(() => {
-        const query = searchQuery.trim().toLowerCase();
-        if (!query) return searchItems;
-        return searchItems.filter((item) => {
-            const name = item.name.toLowerCase();
-            const description = item.description.toLowerCase();
-            const href = item.href.toLowerCase();
-            return name.includes(query) || description.includes(query) || href.includes(query);
-        });
-    }, [searchQuery, searchItems]);
 
     const isHiddenRoute = pathname.startsWith('/me') || pathname.startsWith('/docs/admin');
 
@@ -138,6 +105,7 @@ export default function Navbar() {
                     <Magnetic>
                         <button
                             onClick={handleToggleSearch}
+                            aria-label="Open site search"
                             className="hidden sm:flex items-center gap-3 px-4 py-2 hover:bg-cyan-300/[0.06] transition-all group border-l border-white/5"
                         >
                             <Search className="w-3 h-3 group-hover:text-white transition-colors" />
@@ -182,61 +150,7 @@ export default function Navbar() {
                 </nav>
             </header>
 
-            {isSearchOpen && (
-                <div className="fixed inset-0 z-[250] flex items-start justify-center px-3 pt-[max(2rem,env(safe-area-inset-top))] sm:px-6 sm:pt-[15vh]">
-                    <div className="absolute inset-0 bg-black/90 backdrop-blur-xl cursor-pointer" onClick={() => setIsSearchOpen(false)} />
-                    <div className="v7-search relative max-h-[calc(100dvh-3rem)] w-full max-w-2xl overflow-hidden border border-white/20 bg-[#080808] shadow-[0_0_100px_rgba(0,0,0,1)] animate-fade-in">
-                        <div className="p-4 sm:p-6 flex items-center gap-4 border-b border-white/5 bg-white/[0.01]">
-                            <Search className="w-5 h-5 text-zinc-600" />
-                            <input
-                                autoFocus
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Execute command..."
-                                className="bg-transparent border-none outline-none text-white w-full text-base sm:text-lg placeholder:text-zinc-800 font-mono"
-                            />
-                            <div className="flex items-center gap-3">
-                                <div className="hidden sm:flex items-center gap-1.5 border border-white/10 bg-black/40 px-2 py-1 rounded text-[9px] font-mono text-zinc-600">
-                                    <span>ESC</span>
-                                </div>
-                            <button type="button" aria-label="Close site search" onClick={() => setIsSearchOpen(false)} className="flex min-h-11 min-w-11 items-center justify-center p-2 text-zinc-400 transition-colors hover:text-white">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        </div>
-                        <div className="max-h-[min(60vh,32rem)] overflow-y-auto overscroll-contain p-2 sm:p-4 space-y-1 custom-scrollbar">
-                            {filteredSearchItems.map((item) => (
-                                <Link
-                                    key={item.href}
-                                    href={item.href}
-                                    onClick={() => setIsSearchOpen(false)}
-                                    className="group flex items-center justify-between p-3 sm:p-4 hover:bg-cyan-300/[0.04] border-l border-white/0 hover:border-cyan-300/50 transition-all transform hover:translate-x-1"
-                                >
-                                    <div>
-                                        <div className="text-sm font-bold text-zinc-400 group-hover:text-white transition-colors flex items-center gap-2">
-                                            {item.name}
-                                            <div className="w-1 h-1 rounded-full bg-zinc-900 group-hover:bg-emerald-500 transition-colors" />
-                                        </div>
-                                        <div className="text-[10px] text-zinc-600 group-hover:text-zinc-500 transition-colors uppercase tracking-widest">{item.description}</div>
-                                    </div>
-                                    <div className="hidden sm:flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <span className="text-[8px] font-mono text-zinc-700 uppercase tracking-tighter">Enter_Return</span>
-                                        <div className="px-2 py-1 rounded bg-white/10 text-white text-[9px] font-black uppercase tracking-tighter border border-white/10">↵</div>
-                                    </div>
-                                </Link>
-                            ))}
-                            {filteredSearchItems.length === 0 && (
-                                <div className="p-16 text-center">
-                                    <Search className="w-12 h-12 mx-auto text-zinc-900 mb-4" />
-                                    <div className="text-zinc-700 font-mono text-[10px] uppercase tracking-[0.3em]">
-                                        Signal lost. No matching protocols found.
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {isSearchOpen && <SiteSearch onClose={() => setIsSearchOpen(false)} />}
 
             {/* Mobile Menu */}
             {isOpen && (
