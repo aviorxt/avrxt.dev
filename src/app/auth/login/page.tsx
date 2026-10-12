@@ -30,7 +30,9 @@ function LoginContent() {
         setIsDiscordLoading(true);
         setClientError(null);
 
-        router.push(`/auth/start?provider=discord&next=${encodeURIComponent(next)}`);
+        // OAuth start mutates the transaction cookie. Avoid RSC/prefetch
+        // navigation issuing a second start request with different state.
+        window.location.assign(new URL(`/auth/start?provider=discord&next=${encodeURIComponent(next)}`, window.location.origin).toString());
     };
 
     if (!source) return null;
@@ -61,11 +63,12 @@ function LoginContent() {
                             {searchParams.get('error') === 'discord_unavailable' && 'Discord membership verification is temporarily unavailable. Please retry shortly.'}
                             {searchParams.get('error') === 'auth_configuration' && 'Admin verification is not configured correctly. Check the server, role, and bot settings.'}
                             {searchParams.get('error') === 'oauth_callback_failed' && 'Discord authentication could not be completed. Please try again.'}
+                            {searchParams.get('error') === 'oauth_service_unavailable' && 'The sign-in service timed out or is unavailable. Start a new Discord login; the previous link cannot be reused.'}
                             {searchParams.get('error') === 'provider_rejected' && 'Discord rejected or cancelled the authorization request.'}
                             {searchParams.get('error') === 'pkce_cookie_missing' && 'The secure login cookie was lost. Start again in this same browser tab.'}
                             {searchParams.get('error') === 'admin_session_failed' && 'Admin access was verified, but the secure session could not be refreshed. Please sign in again.'}
                             {clientError}
-                            {!clientError && !['discord_required', 'metadata_missing', 'unauthorized_role', 'discord_not_member', 'discord_unavailable', 'auth_configuration', 'oauth_callback_failed', 'provider_rejected', 'pkce_cookie_missing', 'admin_session_failed'].includes(searchParams.get('error') || '') && 'An authentication error occurred.'}
+                            {!clientError && !['discord_required', 'metadata_missing', 'unauthorized_role', 'discord_not_member', 'discord_unavailable', 'auth_configuration', 'oauth_callback_failed', 'oauth_service_unavailable', 'provider_rejected', 'pkce_cookie_missing', 'admin_session_failed'].includes(searchParams.get('error') || '') && 'An authentication error occurred.'}
                         </p>
                     </div>
                 )}

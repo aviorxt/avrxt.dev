@@ -4,6 +4,8 @@ import { lookupDiscordAccess } from '../src/lib/discord-access';
 import { getOpenAuthClient } from '../src/lib/openauth';
 import proxy from '../src/proxy';
 import { NextRequest } from 'next/server';
+import { GET as startLogin } from '../src/app/auth/start/route';
+import { GET as callbackLogin } from '../src/app/auth/callback/route';
 
 const user = '1269352892146384957';
 const config = { guildId: '1554095197959491595', roleId: '1557908876538683402', botToken: 'test-token' };
@@ -75,4 +77,21 @@ test('proxy forwards refreshed cookies to the render and persists them for the b
     assert.match(forwarded, /unrelated=keep/);
     assert.doesNotMatch(forwarded, /old-access|old-refresh/);
   } finally { client.verify = original; }
+});
+
+test('callback service timeout redirects to a fresh-login message instead of HTTP 500', async () => {
+  const started = await startLogin(new NextRequest('http://localhost:3000/auth/start?provider=discord&next=%2Fme%2Fadmin'));
+  const cookie = started.cookies.get('avrxt_oauth_transaction')!;
+  const transaction = JSON.parse(cookie.value);
+  const client = getOpenAuthClient(); const original = client.exchange;
+  client.exchange = async () => { throw new DOMException('timeout', 'TimeoutError'); };
+  try {
+    const result = await callbackLogin(new NextRequest(`http://localhost:3000/auth/callback?next=%2Fme%2Fadmin&code=test-only-code&state=${transaction.state}`, {
+      headers: { cookie: `avrxt_oauth_transaction=${encodeURIComponent(cookie.value)}` },
+    }));
+    assert.equal(result.status, 307);
+    assert.match(result.headers.get('location')!, /oauth_service_unavailable/);
+    assert.equal(result.cookies.get('avrxt_oauth_transaction')?.value, '');
+    assert.equal(result.cookies.get('avrxt_access'), undefined);
+  } finally { client.exchange = original; }
 });

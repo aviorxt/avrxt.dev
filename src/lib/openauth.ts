@@ -23,7 +23,7 @@ export function getOpenAuthClient() {
   // Refresh it periodically so signing-key rotation is picked up.
   if (!cachedClient || cachedIssuer !== issuer || Date.now() - clientCreatedAt >= 300_000) {
     cachedClient = createClient({ clientID: 'avrxt-web', issuer, fetch: (url, options) => fetch(url, {
-      ...options, signal: options?.signal ?? AbortSignal.timeout(5000),
+      ...options, signal: options?.signal ?? AbortSignal.timeout(options?.method === 'POST' ? 15000 : 5000),
     }) });
     cachedIssuer = issuer;
     clientCreatedAt = Date.now();
