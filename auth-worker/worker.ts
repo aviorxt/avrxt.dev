@@ -2,6 +2,7 @@ import { issuer } from '@openauthjs/openauth';
 import { DiscordProvider } from '@openauthjs/openauth/provider/discord';
 import { GithubProvider } from '@openauthjs/openauth/provider/github';
 import { authStorage } from './storage';
+import { cleanupAuthNamespace } from './cleanup';
 import { authSubjects } from './subjects';
 import { lookupDiscordAccess } from '../src/lib/discord-access';
 import type { ExecutionContext, KVNamespace } from '@cloudflare/workers-types';
@@ -35,12 +36,12 @@ function createIssuer(env: Env) {
       discord: DiscordProvider({
         clientID: env.DISCORD_CLIENT_ID,
         clientSecret: env.DISCORD_CLIENT_SECRET,
-        scopes: ['identify', 'email'],
+        scopes: ['identify'],
       }),
       github: GithubProvider({
         clientID: env.GITHUB_CLIENT_ID,
         clientSecret: env.GITHUB_CLIENT_SECRET,
-        scopes: ['read:user', 'user:email'],
+        scopes: ['read:user'],
       }),
     },
     async success(ctx, value) {
@@ -60,7 +61,6 @@ function createIssuer(env: Env) {
 
         if (!admin) {
           console.warn('[OPENAUTH_DISCORD_ACCESS_DENIED]', {
-            userId: profile.id,
             status: access.status,
             reason: access.reason,
             httpStatus: access.status === 'unavailable' ? access.httpStatus : undefined,
@@ -70,9 +70,6 @@ function createIssuer(env: Env) {
         return ctx.subject('user', {
           id: profile.id,
           provider: 'discord',
-          email: profile.email,
-          name: profile.username,
-          avatar: profile.avatar ? `https://cdn.discordapp.com/avatars/${profile.id}/${profile.avatar}.png` : undefined,
           admin,
         });
       }
@@ -90,9 +87,6 @@ function createIssuer(env: Env) {
         return ctx.subject('user', {
           id: String(profile.id),
           provider: 'github',
-          email: profile.email,
-          name: profile.name || profile.login,
-          avatar: profile.avatar_url,
           admin: false,
         });
       }
@@ -103,10 +97,20 @@ function createIssuer(env: Env) {
 }
 
 let openAuthApp: ReturnType<typeof createIssuer> | undefined;
+let issuerCreatedAt = 0;
 
 const worker = {
+  async scheduled(_controller: unknown, env: Env) {
+    const counts = await cleanupAuthNamespace(env.OPENAUTH_STORAGE);
+    console.log('[AUTH_CLEANUP]', counts);
+  },
   fetch(request: Request, env: Env, executionCtx: ExecutionContext) {
-    openAuthApp ??= createIssuer(env);
+    // Bound in-memory key selection as well as persisted retirement. A warm
+    // isolate must not keep issuing tokens with a key retired weeks ago.
+    if (!openAuthApp || Date.now() - issuerCreatedAt >= 300_000) {
+      openAuthApp = createIssuer(env);
+      issuerCreatedAt = Date.now();
+    }
     return openAuthApp.fetch(request, env, executionCtx);
   },
 };

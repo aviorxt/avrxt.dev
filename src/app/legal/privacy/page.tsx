@@ -31,6 +31,7 @@ export default function PrivacyPage() {
       ]} />
       <p>Do not submit passwords, full payment-card details, government identifiers, health information, or other sensitive information through ordinary contact fields.</p>
       <p>Published documents, profile configuration, and service-status information are stored in Supabase. Drafts, integration tokens, newsletter records, and administrative data are restricted to server-side access. Publishing a document or media makes that content accessible to visitors; deleting the original cannot recall copies already downloaded or cached elsewhere.</p>
+      <p>New authentication records keep the provider user ID, provider name, and authorization result, together with necessary short-lived OAuth and refresh data. They do not retain profile email, display name, or avatar URL. Discord sign-in requests identity access without an email scope. Authentication storage expires session records and runs daily maintenance to minimize legacy records and safely retire redundant keys; it is not used to build a login-history profile.</p>
     </PolicySection>
 
     <PolicySection id="tools" number="03" title="How the public tools process requests">

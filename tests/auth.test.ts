@@ -6,7 +6,8 @@ import proxy from '../src/proxy';
 import { NextRequest } from 'next/server';
 import { GET as startLogin } from '../src/app/auth/start/route';
 import { GET as callbackLogin } from '../src/app/auth/callback/route';
-import { authStorage } from '../auth-worker/storage';
+import { authStorage, minimalAuthRecord } from '../auth-worker/storage';
+import { cleanupAuthNamespace } from '../auth-worker/cleanup';
 
 const user = '1269352892146384957';
 const config = { guildId: '1554095197959491595', roleId: '1557908876538683402', botToken: 'test-token' };
@@ -120,4 +121,50 @@ test('auth storage scans preserve keys, pagination and expired-entry filtering w
   assert.ok(peak > 1 && peak <= 20);
   assert.deepEqual(keys[0].key, ['signing:key', '0']);
   assert.deepEqual(keys.at(-1)?.key, ['signing:key', '27']);
+});
+
+test('auth records omit profile data while preserving the authorization and refresh protocol', () => {
+  const value = { subject: 'opaque', ttl: { refresh: 30 }, pkce: { challenge: 'test' }, nextToken: 'test-next',
+    properties: { id: user, provider: 'discord', admin: true, email: 'private@example.com', name: 'Private', avatar: 'private-url' } };
+  const minimal = minimalAuthRecord(['oauth:refresh', 'opaque'], value);
+  assert.deepEqual(minimal.properties, { id: user, provider: 'discord', admin: true });
+  assert.equal(minimal.subject, value.subject);
+  assert.deepEqual(minimal.pkce, value.pkce);
+  assert.equal(minimal.nextToken, value.nextToken);
+  assert.equal(minimalAuthRecord(['signing:key'], value), value);
+});
+
+test('namespace cleanup preserves current keys and sessions, minimizes legacy identity and deletes only proven-expired records', async () => {
+  const separator = String.fromCharCode(31); const now = Date.now();
+  const records = new Map<string, { value: unknown; metadata?: { retiredAt?: number; expiresAt?: number }; expiration?: number }>([
+    [`signing:key${separator}newest`, { value: { created: now } }],
+    [`signing:key${separator}backup`, { value: { created: now-1 } }],
+    [`signing:key${separator}retire`, { value: { created: now-2 } }],
+    [`signing:key${separator}old-retired`, { value: { created: now-3 }, metadata: { retiredAt: now-32*86400_000 } }],
+    [`oauth:refresh${separator}active`, { value: { subject: 'active', properties: { id: user, provider: 'discord', admin: true, email: 'private@example.com' } }, expiration: Math.floor(now/1000)+3600 }],
+    [`oauth:code${separator}expired`, { value: {}, metadata: { expiresAt: now-1 } }],
+    ['unknown-record', { value: { preserve: true } }],
+  ]);
+  const namespace = {
+    async list(options: { prefix?: string }) {
+      return { keys: [...records].filter(([name]) => !options.prefix || name.startsWith(options.prefix))
+        .map(([name, record]) => ({ name, metadata: record.metadata, expiration: record.expiration })), list_complete: true };
+    },
+    async get(name: string, type?: string) { const value = records.get(name)?.value; return type === 'json' ? value ?? null : value ? String(value) : null; },
+    async put(name: string, raw: string, options?: { metadata?: { retiredAt?: number; expiresAt?: number }; expirationTtl?: number }) {
+      records.set(name, { value: name === 'avrxt:cleanup:cursor' ? raw : JSON.parse(raw), metadata: options?.metadata,
+        expiration: options?.expirationTtl ? Math.floor(now/1000)+options.expirationTtl : undefined });
+    },
+    async delete(name: string) { records.delete(name); },
+  };
+  const counts = await cleanupAuthNamespace(namespace as unknown as Parameters<typeof cleanupAuthNamespace>[0], now);
+  assert.equal(counts.removedKeys, 1); assert.equal(counts.retiredKeys, 1);
+  assert.equal(counts.removedExpired, 1); assert.equal(counts.minimized, 1);
+  assert.ok(records.has(`signing:key${separator}newest`));
+  assert.ok(records.has(`signing:key${separator}backup`));
+  assert.equal(records.get(`signing:key${separator}retire`)?.metadata?.retiredAt, now);
+  assert.ok(records.has('unknown-record'));
+  const active = records.get(`oauth:refresh${separator}active`)!;
+  assert.equal(active.expiration, Math.floor(now/1000)+3600);
+  assert.equal(JSON.stringify(active.value).includes('private@example.com'), false);
 });

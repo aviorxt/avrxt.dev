@@ -4,6 +4,7 @@
   "main": "auth-worker/worker.ts",
   "compatibility_date": "2026-08-19",
   "keep_vars": true,
+  "triggers": { "crons": ["0 3 * * *"] },
   "vars": {
     "DISCORD_ADMIN_USER_ID": "1269352892146384957",
     "DISCORD_GUILD_ID": "1554095197959491595",
