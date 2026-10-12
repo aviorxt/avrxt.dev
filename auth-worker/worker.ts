@@ -1,7 +1,7 @@
 import { issuer } from '@openauthjs/openauth';
 import { DiscordProvider } from '@openauthjs/openauth/provider/discord';
 import { GithubProvider } from '@openauthjs/openauth/provider/github';
-import { CloudflareStorage } from '@openauthjs/openauth/storage/cloudflare';
+import { authStorage } from './storage';
 import { authSubjects } from './subjects';
 import { lookupDiscordAccess } from '../src/lib/discord-access';
 import type { ExecutionContext, KVNamespace } from '@cloudflare/workers-types';
@@ -22,7 +22,7 @@ function createIssuer(env: Env) {
   return issuer({
     subjects: authSubjects,
     ttl: { access: 900, refresh: 60 * 60 * 24 * 30 },
-    storage: CloudflareStorage({ namespace: env.OPENAUTH_STORAGE }),
+    storage: authStorage(env.OPENAUTH_STORAGE),
     allow: async ({ clientID, redirectURI }) => {
       if (clientID !== 'avrxt-web') return false;
       const url = new URL(redirectURI);

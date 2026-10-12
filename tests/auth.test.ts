@@ -6,6 +6,7 @@ import proxy from '../src/proxy';
 import { NextRequest } from 'next/server';
 import { GET as startLogin } from '../src/app/auth/start/route';
 import { GET as callbackLogin } from '../src/app/auth/callback/route';
+import { authStorage } from '../auth-worker/storage';
 
 const user = '1269352892146384957';
 const config = { guildId: '1554095197959491595', roleId: '1557908876538683402', botToken: 'test-token' };
@@ -94,4 +95,29 @@ test('callback service timeout redirects to a fresh-login message instead of HTT
     assert.equal(result.cookies.get('avrxt_oauth_transaction')?.value, '');
     assert.equal(result.cookies.get('avrxt_access'), undefined);
   } finally { client.exchange = original; }
+});
+
+test('auth storage scans preserve keys, pagination and expired-entry filtering with bounded parallel reads', async () => {
+  const separator = String.fromCharCode(31);
+  let running = 0; let peak = 0; let lists = 0;
+  const namespace = {
+    async list(options: { prefix: string; cursor?: string }) {
+      assert.equal(options.prefix, `signing:key${separator}`); lists++;
+      const start = options.cursor ? 25 : 0; const count = options.cursor ? 3 : 25;
+      return { keys: Array.from({ length: count }, (_, i) => ({ name: `signing:key${separator}${start+i}` })),
+        list_complete: Boolean(options.cursor), cursor: options.cursor ? undefined : 'page-two' };
+    },
+    async get(name: string) {
+      running++; peak = Math.max(peak, running);
+      await new Promise(resolve => setTimeout(resolve, 1)); running--;
+      return name.endsWith(`${separator}4`) ? null : { name };
+    },
+  };
+  const keys = [];
+  for await (const [key, value] of authStorage(namespace as unknown as Parameters<typeof authStorage>[0]).scan(['signing:key'])) keys.push({ key, value });
+  assert.equal(keys.length, 27);
+  assert.equal(lists, 2);
+  assert.ok(peak > 1 && peak <= 20);
+  assert.deepEqual(keys[0].key, ['signing:key', '0']);
+  assert.deepEqual(keys.at(-1)?.key, ['signing:key', '27']);
 });
