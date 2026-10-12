@@ -38,7 +38,7 @@ export default function DiscordPrivacyPage() {
           title: 'OAuth, Cookies & Storage',
           content: <>
             <p>Discord authentication is handled by our self-hosted <strong>OpenAuth</strong> service. It uses essential, HTTP-only cookies and short-lived authorization records to complete OAuth and maintain your session. Authentication records are stored in Cloudflare Workers KV. The public website runs on Vercel.</p>
-            <p>We request only the Discord scopes needed for identity and authentication. Bot-based role verification is performed server-side and does not expose the bot token to your browser.</p>
+            <p>Discord OAuth requests the identify and email scopes. Server membership and current roles are checked with the bot on the server; its token is not exposed to your browser. Restricted admin access requires the configured server role or explicit owner authorization. Permission failures and provider outages do not prove that a role is missing, and verification failures do not grant access.</p>
           </>,
         },
         {
@@ -51,7 +51,7 @@ export default function DiscordPrivacyPage() {
         {
           title: 'Retention & Deletion',
           content: <>
-            <p>OAuth state is retained only long enough to complete authorization. Website authentication cookies normally expire within 30 days. Security logs may be retained for up to 30 days unless a longer period is required to investigate abuse or comply with law. Bot interaction data is retained only when necessary for the requested feature.</p>
+            <p>The website’s OAuth transaction cookie expires after 10 minutes. OpenAuth access tokens are short-lived; authentication cookies and refresh sessions have a 30-day maximum age and can renew with use. Authentication records are handled through Cloudflare Workers KV. Provider security logs follow their own retention schedules; we do not promise a universal 30-day log-deletion deadline. Bot interaction data is retained when needed for a requested feature or security investigation.</p>
             <p>You may revoke access through Discord&apos;s Authorized Apps settings at any time. To request access, correction, or deletion, email <a href="mailto:connect@elvnx.org">connect@elvnx.org</a> with your Discord user ID. After identity verification, we will act promptly and ordinarily complete deletion within 30 days, except where retention is legally required.</p>
           </>,
         },

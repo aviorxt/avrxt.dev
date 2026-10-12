@@ -30,7 +30,7 @@ export default function DiscordLegalPage({
           <h1 className="text-4xl sm:text-6xl font-black tracking-tighter text-white mb-5">{title}</h1>
           <p className="max-w-2xl text-sm sm:text-base text-zinc-400 leading-relaxed">{summary}</p>
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-zinc-600">
-            <span>Effective: August 19, 2026</span>
+            <span>Updated: October 12, 2026</span>
             <span>Operator: AVRXT</span>
             <span>Application: AVRXT Discord App</span>
           </div>

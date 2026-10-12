@@ -13,7 +13,7 @@ const nav = [
 ];
 
 export default function SecurityPage() {
-  return <PolicyShell eyebrow="Trust center" title="Security" description="How www.avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v4.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Public endpoints', value: 'Validated + rate-limited' }]}>
+  return <PolicyShell eyebrow="Trust center" title="Security" description="How www.avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v5.0" lastUpdated="12 October 2026" nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Public endpoints', value: 'Validated + rate-limited' }]}>
     <PolicySection id="approach" number="01" title="Security approach">
       <p>Security is treated as an ongoing engineering process rather than a guarantee or certification. Controls are selected for the site’s actual risk: public forms and utilities, newsletter delivery, administrator-only features, GitHub, Discord and Spotify OAuth connections, public music data, and third-party infrastructure.</p>
       <p>No internet service is completely secure. This page describes controls visible in the current application and avoids claiming a specific audit result, cipher suite, recovery target, or compliance certification that has not been independently verified.</p>
@@ -22,7 +22,7 @@ export default function SecurityPage() {
     <PolicySection id="web" number="02" title="Web and browser safeguards">
       <PolicyList items={[
         <><strong>Encrypted transport:</strong> the deployed site is served over HTTPS and sends a long-lived HSTS policy.</>,
-        <><strong>Content controls:</strong> Content Security Policy limits scripts, frames, fonts, media, connections, and other resources to approved sources; the Vercel toolbar origin is allowed only on preview deployments.</>,
+        <><strong>Content controls:</strong> Content Security Policy restricts resource categories and names specific script, frame, and font sources. HTTPS images, media, and connections have broader allowances for connected features. The Vercel toolbar origin is allowed only on preview deployments.</>,
         <><strong>Browser isolation:</strong> frame, content-type, referrer, permissions, opener, and cross-domain policy headers reduce common browser attack paths.</>,
         <><strong>Safer rendering:</strong> user-supplied contact content is validated, length-limited, and HTML-escaped before it is relayed.</>,
       ]} />
@@ -32,13 +32,21 @@ export default function SecurityPage() {
     <PolicySection id="data" number="03" title="Data, identity, and privileged access">
       <p>Secrets, email credentials, OAuth client secrets, and Spotify access or refresh tokens are expected to remain in server-side environment configuration and are not intentionally exposed to client JavaScript. Authentication uses provider-backed OAuth flows, security-state checks, HTTP-only cookies where applicable, and server-side authorization for restricted routes.</p>
       <p>Public Muzix responses contain selected listening information rather than credentials. Operational data is handled through providers such as Vercel, Cloudflare, Supabase, Resend, Gmail, GitHub, Discord, and Spotify. Those systems maintain their own infrastructure controls. Access should be limited to what is required to operate and support the site.</p>
+      <PolicyList items={[
+        <><strong>Discord administration:</strong> login uses OAuth state and PKCE. The application verifies signed sessions and their audience, then checks current server membership and the required role, or the configured owner identity. Provider errors deny access with a distinct verification error rather than proving a role is absent.</>,
+        <><strong>Database access:</strong> Supabase row-level security separates published content from drafts and server-only integration, newsletter, and rate-limit records. Service credentials remain on the server; private admin reads do not use the public Redis cache.</>,
+        <><strong>Redis:</strong> Upstash REST requests use authenticated HTTPS. Public caches use expiry and invalidation, separate deployment namespaces, and fill locks. Rate limiting uses shared Redis counters with a database fallback; production requests fail closed if the configured distributed protection cannot run.</>,
+        <><strong>Media uploads:</strong> R2 credentials are restricted to the media bucket. Authenticated administrators obtain short-lived signed upload URLs; the application validates supported types and sizes, generates filenames, and checks the stored object’s size and declared content type before completion. Bucket CORS limits browser upload origins.</>,
+      ]} />
+      <PolicyCallout title="Public media and file validation">cdn.avrxt.dev serves published media publicly. Signed upload URLs protect upload authorization, not the confidentiality of downloaded files. Size and declared-type checks are not malware scanning, file-content verification, or automatic removal of embedded metadata.</PolicyCallout>
     </PolicySection>
 
     <PolicySection id="tools" number="04" title="Abuse resistance in public tools">
       <PolicyList items={[
         'Public API requests use route-specific validation, rate limits where applicable, and explicit JSON body-size limits.',
         'Contact submissions enforce same-origin checks, validation, length limits, and email-address syntax checks.',
-        'Newsletter submissions validate address format, limit attempts, reject known disposable or prohibited addresses, and issue a tokenized unsubscribe link.',
+        'Newsletter submissions validate address format, limit attempts, reject known disposable or prohibited addresses, and require email confirmation before enrollment. Confirmation and unsubscribe records store token hashes; confirmation requires an explicit action rather than a link preview alone.',
+        'Published Markdown is sanitized to remove scripts and privileged HTML. URL-preview requests reject private or reserved addresses and validate redirects before fetching a target.',
         'The TCP port checker requires an authorization acknowledgement, resolves the target server-side, and blocks private, local, reserved, and mixed-address targets.',
         'DNS and external lookups use bounded timeouts so an unavailable provider does not hold a request indefinitely.',
         'The keyboard tester processes keystrokes only inside the focused browser component and does not send key history to an API.',
