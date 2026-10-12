@@ -1,18 +1,22 @@
 import { getAuthUser } from '@/lib/openauth';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
-import { checkDiscordRole } from '@/lib/discord';
+import { getDiscordAccess } from '@/lib/discord-access';
 
 const hasCurrentAdminAccess = cache(async (id: string) => {
-  const owner = process.env.DISCORD_ADMIN_USER_ID?.trim();
-  return Boolean(owner && id === owner) || await checkDiscordRole(id);
+  return getDiscordAccess(id);
 });
 
 export async function verifyAdmin() {
-  const user = await getAuthUser();
+  let user;
+  try { user = await getAuthUser(); }
+  catch { return { authorized: false, error: 'discord_unavailable' } as const; }
   if (!user) return { authorized: false, error: 'not_logged_in' } as const;
-  if (!user.admin || user.provider !== 'discord') return { authorized: false, error: 'unauthorized_role' } as const;
-  if (!await hasCurrentAdminAccess(user.id)) return { authorized: false, error: 'unauthorized_role' } as const;
+  if (user.provider !== 'discord') return { authorized: false, error: 'discord_required' } as const;
+  // A role granted after login must not be rejected by an old JWT snapshot.
+  const access = await hasCurrentAdminAccess(user.id);
+  if (access.status === 'unavailable') return { authorized: false, error: access.reason === 'configuration' ? 'auth_configuration' : 'discord_unavailable' } as const;
+  if (access.status === 'denied') return { authorized: false, error: access.reason === 'not_member' ? 'discord_not_member' : 'unauthorized_role' } as const;
   return { authorized: true, user } as const;
 }
 

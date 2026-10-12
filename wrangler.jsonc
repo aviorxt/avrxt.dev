@@ -5,7 +5,9 @@
   "compatibility_date": "2026-08-19",
   "keep_vars": true,
   "vars": {
-    "DISCORD_ADMIN_USER_ID": "1269352892146384957"
+    "DISCORD_ADMIN_USER_ID": "1269352892146384957",
+    "DISCORD_GUILD_ID": "1554095197959491595",
+    "DISCORD_ROLE_ID": "1557908876538683402"
   },
   "routes": [
     { "pattern": "auth.avrxt.dev", "custom_domain": true }

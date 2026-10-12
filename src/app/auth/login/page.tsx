@@ -57,12 +57,15 @@ function LoginContent() {
                             {searchParams.get('error') === 'discord_required' && 'Discord authentication is required.'}
                             {searchParams.get('error') === 'metadata_missing' && 'Discord identity not found.'}
                             {searchParams.get('error') === 'unauthorized_role' && 'Access Denied: Required Role Missing.'}
+                            {searchParams.get('error') === 'discord_not_member' && 'Your Discord account is not a member of the configured server.'}
+                            {searchParams.get('error') === 'discord_unavailable' && 'Discord membership verification is temporarily unavailable. Please retry shortly.'}
+                            {searchParams.get('error') === 'auth_configuration' && 'Admin verification is not configured correctly. Check the server, role, and bot settings.'}
                             {searchParams.get('error') === 'oauth_callback_failed' && 'Discord authentication could not be completed. Please try again.'}
                             {searchParams.get('error') === 'provider_rejected' && 'Discord rejected or cancelled the authorization request.'}
                             {searchParams.get('error') === 'pkce_cookie_missing' && 'The secure login cookie was lost. Start again in this same browser tab.'}
                             {searchParams.get('error') === 'admin_session_failed' && 'Admin access was verified, but the secure session could not be refreshed. Please sign in again.'}
                             {clientError}
-                            {!clientError && !['discord_required', 'metadata_missing', 'unauthorized_role', 'oauth_callback_failed', 'provider_rejected', 'pkce_cookie_missing', 'admin_session_failed'].includes(searchParams.get('error') || '') && 'An authentication error occurred.'}
+                            {!clientError && !['discord_required', 'metadata_missing', 'unauthorized_role', 'discord_not_member', 'discord_unavailable', 'auth_configuration', 'oauth_callback_failed', 'provider_rejected', 'pkce_cookie_missing', 'admin_session_failed'].includes(searchParams.get('error') || '') && 'An authentication error occurred.'}
                         </p>
                     </div>
                 )}

@@ -3,6 +3,7 @@ import { DiscordProvider } from '@openauthjs/openauth/provider/discord';
 import { GithubProvider } from '@openauthjs/openauth/provider/github';
 import { CloudflareStorage } from '@openauthjs/openauth/storage/cloudflare';
 import { authSubjects } from './subjects';
+import { lookupDiscordAccess } from '../src/lib/discord-access';
 import type { ExecutionContext, KVNamespace } from '@cloudflare/workers-types';
 
 interface Env {
@@ -46,25 +47,23 @@ function createIssuer(env: Env) {
       if (value.provider === 'discord') {
         const profileResponse = await fetch('https://discord.com/api/v10/users/@me', {
           headers: { Authorization: `Bearer ${value.tokenset.access}` },
+          signal: AbortSignal.timeout(5000),
         });
         if (!profileResponse.ok) throw new Error('Discord profile lookup failed');
         const profile = await profileResponse.json() as { id: string; email?: string; username?: string; avatar?: string };
 
-        const memberResponse = await fetch(
-          `https://discord.com/api/v10/guilds/${env.DISCORD_GUILD_ID}/members/${profile.id}`,
-          { headers: { Authorization: `Bot ${env.DISCORD_TOKEN}` } },
-        );
-        const member = memberResponse.ok ? await memberResponse.json() as { roles?: string[] } : null;
-        const isOwner = Boolean(env.DISCORD_ADMIN_USER_ID && profile.id === env.DISCORD_ADMIN_USER_ID);
-        const hasAdminRole = Boolean(member?.roles?.includes(env.DISCORD_ROLE_ID));
-        const admin = isOwner || hasAdminRole;
+        const access = await lookupDiscordAccess(profile.id, {
+          guildId: env.DISCORD_GUILD_ID, roleId: env.DISCORD_ROLE_ID,
+          botToken: env.DISCORD_TOKEN, ownerId: env.DISCORD_ADMIN_USER_ID,
+        });
+        const admin = access.status === 'allowed';
 
         if (!admin) {
           console.warn('[OPENAUTH_DISCORD_ACCESS_DENIED]', {
             userId: profile.id,
-            memberStatus: memberResponse.status,
-            configuredRole: Boolean(env.DISCORD_ROLE_ID),
-            roleCount: member?.roles?.length || 0,
+            status: access.status,
+            reason: access.reason,
+            httpStatus: access.status === 'unavailable' ? access.httpStatus : undefined,
           });
         }
 
