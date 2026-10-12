@@ -23,7 +23,7 @@ export const TERMINAL_PAGES: TerminalPage[] = [
   { command: 'discord-privacy', title: 'Discord privacy', description: 'Discord application data handling.', href: '/dc/privacy', group: 'legal' },
   { command: 'discord-terms', title: 'Discord terms', description: 'Discord application terms.', href: '/dc/terms', group: 'legal' },
   { command: 'terminal', title: 'Terminal', description: 'Explore the website with commands.', href: '/terminal', group: 'site' },
-  { command: 'status', title: 'System status', description: 'AVRXT service availability. Opens the status website.', href: 'https://status.avrxt.dev', group: 'site', external: true },
+  { command: 'status', title: 'System status', description: 'Service availability, uptime, public incidents, and maintenance.', href: '/status', group: 'site' },
 ];
 
 const HELP = 'help                 Command reference\npages [site|tools|docs|legal]  Browse pages\nsearch <words>       Find a page or published note\nopen <command|path>  Go to a listed page\nprofile / contact    Preview a page and its link\ntools / docs         Browse utilities or published notes\nwhoami / pwd         Visitor session / current location\necho <text>          Display plain text\nhistory              Recent commands in this tab\nclear                Clear output and command history\n\n↑ ↓ recall history · Tab completes a unique match · Ctrl+L clears\nTry: open profile, pages legal, search dns';

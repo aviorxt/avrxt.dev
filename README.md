@@ -71,6 +71,16 @@ The protected `/api/search/sync` GET endpoint requires `Authorization: Bearer <C
 
 After the first Production deployment, invoke the protected sync endpoint once and verify a public note query. Keep the Free plan and its visible search attribution; quotas or provider outages fall back to local page navigation. Search requests disable query/click analytics and send no user identity; ordinary provider logs may still apply. Indexing limits require review before exceeding 5,000 published notes.
 
+## Public status page
+
+`/status` and `/api/status/details` read Better Stack’s public JSON feed for the existing AVRXT hosted status page. Both sources are fixed HTTPS URLs; no account API key is needed. The server whitelists public service, report and update fields, bounds response size and fetch duration, and shares a 30-second Redis cache. Source failure is displayed as unknown availability rather than healthy. The footer summary uses the same source. Public page links now lead to `/status`; `status.avrxt.dev` remains the independent fallback.
+
+The browser updates status in place every minute and when returning to a visible tab. There is no reload or manual Refresh button. It preserves local history selection and expanded report timelines during normal updates. History gaps remain unmonitored, and manually reported entries have no measured uptime. Motion respects reduced-motion preferences.
+
+The database monitor calls `/api/health/database` with a dedicated `STATUS_MONITOR_TOKEN`. Keep this random bearer token only in the Better Stack monitor and server environments. The route rejects missing/incorrect authentication before issuing a five-second anonymous/RLS query and returns only healthy/unavailable. It never returns records, database credentials, provider errors, or the broader deep-readiness report. The fresh service checks start on 12 October 2026; earlier legacy checks targeted unrelated or duplicated endpoints, so their history is not presented as AVRXT uptime.
+
+Manage public incidents and scheduled maintenance in Better Stack’s existing status page. Only published status reports enter the web UI; internal incident alerts and notes do not. The current response limits are 50 public resources, 90 history days, 100 public reports, and 25 updates per report. Verify these before expanding the status page beyond those limits.
+
 ## License
 
 Source code is covered by the repository `LICENSE`. Brand assets, personal media, and third-party materials are not automatically licensed by that file.

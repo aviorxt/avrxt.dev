@@ -730,3 +730,114 @@ button:active, a:active {
                     .doc-prose pre { padding: 1rem; border-radius: 10px; }
                     .doc-prose table { font-size: 0.8em; }
                 }
+
+
+/* AVRXT public status dashboard. Semantic health colors stay scoped here. */
+.status-page { --status-color: #a2adb9; }
+.status-tone-operational { --status-color: #91dfbb; }
+.status-tone-degraded { --status-color: #e7c377; }
+.status-tone-down { --status-color: #ec939a; }
+.status-tone-maintenance { --status-color: #a6b7e4; }
+.status-tone-unknown { --status-color: #56606c; }
+.status-dot { width: 5px; height: 5px; display: inline-block; border-radius: 50%; background: var(--status-color); flex-shrink: 0; }
+.status-label { display: inline-flex; align-items: center; gap: 7px; color: var(--status-color); font-family: var(--font-mono); font-size: 9px; white-space: nowrap; }
+.status-dashboard-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+.status-kicker { font-family: var(--font-mono); font-size: 9px; letter-spacing: .17em; text-transform: uppercase; color: #727a85; }
+.status-header-mark { display: grid; place-items: center; width: 22px; height: 22px; border: 1px solid #363d46; border-radius: 6px; color: #9ba5b2; }
+.status-external-link { display: inline-flex; align-items: center; gap: 11px; padding: 11px 15px; border: 1px solid #30353c; border-radius: 7px; background: #0c0e12; color: #9ea7b2; font-family: var(--font-mono); font-size: 10px; transition: border-color .25s,color .25s,background .25s; }
+.status-external-link:hover { color: #fff; border-color: #606974; background: #151920; }
+.status-overview { position: relative; overflow: hidden; background: linear-gradient(110deg,#101512,#0c0f12 65%); border: 1px solid #303832; border-radius: 15px; box-shadow: 0 20px 65px #0004,inset 0 1px 0 #ffffff05; }
+.status-overview::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 10% 10%,color-mix(in srgb,var(--status-color) 5%,transparent),transparent 65%); }
+.status-overview::after { content: ''; position: absolute; top: 0; left: 0; width: 25%; height: 1px; background: linear-gradient(90deg,transparent,var(--status-color),transparent); opacity: .35; animation: status-scan 12s ease-in-out infinite; }
+.status-overview-pattern { position: absolute; inset: 0; opacity: .11; pointer-events: none; background-image: radial-gradient(#a8b3bf 1px,transparent 1px); background-size: 20px 20px; mask-image: linear-gradient(90deg,transparent 40%,#000); }
+.status-live { color: var(--status-color); }
+.status-overview-body { min-height: 132px; }
+.status-auto { display: inline-flex; align-items: center; gap: 8px; font: 9px var(--font-mono); letter-spacing: .08em; border: 1px solid #36433c; border-radius: 20px; background: #132018; color: #b4c8ba; padding: 9px 13px; white-space: nowrap; }
+.status-orbit { width: 64px; height: 64px; position: relative; display: grid; place-items: center; color: var(--status-color); }
+.status-orbit-ring { position: absolute; inset: 0; border: 1px solid color-mix(in srgb,var(--status-color) 14%,transparent); border-radius: 50%; }
+.status-orbit-ring.second { inset: 6px; border-style: dashed; animation: status-orbit 45s linear infinite; }
+.status-orbit-core { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid color-mix(in srgb,var(--status-color) 32%,transparent); border-radius: 50%; background: color-mix(in srgb,var(--status-color) 7%,#0b100e); box-shadow: 0 0 30px color-mix(in srgb,var(--status-color) 8%,transparent); }
+.status-metrics { border-top: 1px solid #2b332d; background: #0b0e0ce6; }
+.status-metric { display: flex; align-items: center; gap: 18px; padding: 20px 28px; }
+.status-overview-meta { background: #080b09; border-top: 1px solid #222b25; }
+.status-auto-indicator { width: 3px; height: 3px; background: #8a9a8f; border-radius: 50%; }
+.status-section-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 28px; border-bottom: 1px solid #262b32; padding-bottom: 15px; }
+.status-section-nav a { color: #929aa5; font: 10px var(--font-mono); letter-spacing: .025em; transition: color .2s; }
+.status-section-nav a:hover,.status-section-nav a:focus-visible { color: #fff; }
+.status-content-grid { display: grid; grid-template-columns: minmax(0,1fr) 280px; gap: 28px; align-items: start; }
+.status-monitors-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; }
+.status-monitor-featured { grid-column: 1 / -1; }
+.status-monitor { position: relative; height: 100%; overflow: hidden; padding: 23px; border: 1px solid #282f37; border-radius: 11px; background: linear-gradient(135deg,#101317,#0c0f12); transition: border-color .3s,transform .3s,box-shadow .3s; }
+.status-monitor::before { content: ''; position: absolute; left: 22px; right: 22px; top: 0; height: 1px; background: linear-gradient(90deg,transparent,color-mix(in srgb,var(--status-color) 30%,transparent),transparent); opacity: .3; transition: opacity .3s; }
+.status-monitor:hover { border-color: #4b5661; transform: translateY(-2px); box-shadow: 0 10px 35px #0005; }
+.status-monitor:hover::before { opacity: 1; }
+.status-monitor-icon { display: grid; place-items: center; width: 39px; height: 39px; border: 1px solid #303944; border-radius: 9px; background: #161c23; color: #a6b0bc; flex-shrink: 0; }
+.status-uptime { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+.status-uptime strong { font-size: 22px; font-weight: 500; letter-spacing: -.06em; line-height: 1; color: #ebedf0; }
+.status-uptime small { font-size: 12px; margin-left: 2px; color: #7a8694; }
+.status-uptime > span { font: 8px var(--font-mono); text-transform: uppercase; letter-spacing: .08em; color: #687381; }
+.status-monitor-details summary { display: flex; align-items: center; gap: 6px; width: fit-content; color: #707c8b; font: 9px var(--font-mono); list-style: none; cursor: pointer; }
+.status-monitor-details summary::-webkit-details-marker { display: none; }
+.status-monitor-details[open] summary svg { transform: rotate(180deg); }
+.status-monitor-details p { color: #919ba7; font-size: 11px; line-height: 1.7; margin-top: 10px; }
+.status-history-bars { display: grid; gap: 2px; height: 24px; align-items: stretch; }
+.status-day { min-width: 0; border-radius: 2px; background: var(--status-color); opacity: .6; transition: opacity .15s,transform .15s; }
+.status-day.status-tone-unknown { opacity: .27; background: repeating-linear-gradient(45deg,#738090,#738090 2px,#2d3640 2px,#2d3640 4px); }
+.status-day:hover,.status-day:focus-visible,.status-day.is-selected { opacity: 1; transform: scaleY(1.12); }
+.status-day:focus-visible { outline-offset: 1px; }
+.status-day-detail { padding: 9px 0 0; border-top: 1px solid #252c34; min-height: 27px; }
+.status-history-legend { display: flex; flex-wrap: wrap; gap: 12px 18px; border-top: 1px solid #222a33; padding-top: 16px; color: #808a96; font-size: 9px; }
+.status-history-legend > span { display: flex; align-items: center; gap: 6px; }
+.status-sidebar { position: sticky; top: 24px; display: flex; flex-direction: column; gap: 16px; padding-top: 69px; }
+.status-watch-panel { overflow: hidden; border: 1px solid #2d343e; border-radius: 11px; background: #0f1318; }
+.status-watch-heading { display: flex; align-items: center; gap: 10px; padding: 16px; border-bottom: 1px solid #252d37; }
+.status-panel-icon { display: grid; place-items: center; width: 29px; height: 29px; color: #a5b2c2; background: #1b222c; border: 1px solid #303b49; border-radius: 7px; }
+.status-watch-heading h2 { font-size: 11px; font-weight: 550; color: #d4dae2; }
+.status-count { margin-left: auto; border: 1px solid #354150; border-radius: 5px; background: #1c2530; font: 10px var(--font-mono); color: #a8b6c7; padding: 3px 6px; }
+.status-watch-empty { padding: 20px 18px 22px; }
+.status-watch-symbol { display: grid; place-items: center; width: 43px; height: 43px; color: var(--status-color); border: 1px solid color-mix(in srgb,var(--status-color) 20%,transparent); border-radius: 12px; background: color-mix(in srgb,var(--status-color) 5%,transparent); margin-bottom: 15px; }
+.status-watch-empty h3 { font-size: 12px; font-weight: 550; color: #cfd6e0; }
+.status-watch-empty p { margin-top: 8px; font-size: 11px; line-height: 1.75; color: #737f8f; }
+.status-panel-link { display: flex; justify-content: space-between; align-items: center; padding: 12px 17px; border-top: 1px solid #242d38; font: 9px var(--font-mono); color: #8b99ab; transition: background .2s,color .2s; }
+.status-panel-link:hover { color: #fff; background: #18202a; }
+.status-sidebar-events { padding: 10px 17px; }
+.status-sidebar-events a { display: flex; flex-direction: column; gap: 7px; padding: 12px 0; color: #c6d0dc; font-size: 12px; }
+.status-sidebar-events small { color: #6d7d91; font: 9px var(--font-mono); }
+.status-dependencies { border: 1px solid #2d343e; border-radius: 11px; padding: 20px 17px; background: #0c1016; }
+.status-dependency-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 17px; padding-top: 16px; border-top: 1px solid #27303c; font-size: 11px; color: #aab5c4; }
+.status-section-heading { font-size: clamp(20px,3.5vw,25px); font-weight: 550; letter-spacing: -.04em; color: #e5e9ef; }
+.status-period { display: flex; flex-wrap: wrap; padding: 3px; border: 1px solid #2e3743; border-radius: 8px; background: #0c1118; gap: 2px; }
+.status-period button { padding: 7px 10px; border-radius: 5px; font: 9px var(--font-mono); color: #8090a4; transition: background .2s,color .2s,box-shadow .2s; }
+.status-period button[aria-pressed=true] { background: #263140; color: #e2e9f3; box-shadow: 0 1px 3px #0005; }
+.status-period button:hover { color: #fff; }
+.status-event-section { border: 1px solid #28313b; border-radius: 13px; background: #0b1016; padding: 25px; }
+.status-event-header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 22px; }
+.status-event-mark { color: #65758b; width: 39px; height: 39px; border: 1px solid #2c3949; border-radius: 9px; display: grid; place-items: center; background: #131c27; }
+.status-large-empty { position: relative; display: flex; gap: 22px; align-items: center; padding: 25px; border: 1px dashed #2d3a4b; border-radius: 9px; background: linear-gradient(120deg,#10192455,transparent); overflow: hidden; }
+.status-empty-emblem { display: grid; place-items: center; width: 58px; height: 58px; color: #8f9fb5; border: 1px solid #35435a; border-radius: 50%; box-shadow: 0 0 0 7px #26354b18,0 0 0 15px #26354b0b; background: #15203066; flex-shrink: 0; }
+.status-large-empty h3 { font-size: 13px; font-weight: 550; color: #b9c5d6; }
+.status-large-empty p { font-size: 11px; line-height: 1.8; color: #6d7e96; margin-top: 8px; }
+.status-empty-caption { margin-left: auto; padding-left: 20px; color: #38475c; font: 9px var(--font-mono); letter-spacing: .12em; white-space: nowrap; }
+.status-empty { display: flex; align-items: center; gap: 16px; padding: 28px; border: 1px dashed #2c3745; border-radius: 9px; color: #8492a6; background: #0b1119; font-size: 13px; }
+.status-report { border: 1px solid #303b4a; border-radius: 10px; background: #101822; overflow: hidden; transition: border-color .25s; }
+.status-report[open] { border-color: #506079; }
+.status-report[open] > div { animation: status-enter .25s ease-out; }
+.status-report-icon { color: var(--status-color); display: grid; place-items: center; width: 34px; height: 34px; flex-shrink: 0; border: 1px solid color-mix(in srgb,var(--status-color) 20%,transparent); border-radius: 8px; background: color-mix(in srgb,var(--status-color) 5%,transparent); }
+.status-report summary::-webkit-details-marker { display: none; }
+.status-phase { border: 1px solid #3a4658; border-radius: 5px; color: #9dadc4; padding: 3px 6px; font: 8px var(--font-mono); text-transform: uppercase; letter-spacing: .1em; }
+.status-announcement { display: flex; align-items: flex-start; gap: 14px; padding: 20px; border: 1px solid #3b4a65; border-radius: 10px; background: #131c2c; color: #a6b7e4; }
+.status-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; padding: 18px 5px; border-bottom: 1px solid #252d38; }
+.status-bottom p,.status-bottom a { display: flex; align-items: center; gap: 8px; font: 9px var(--font-mono); color: #778699; }
+.status-bottom strong { font-weight: 500; color: #a2afc1; }
+.status-bottom a:hover { color: #e5edf7; }
+@keyframes status-scan { 0%,100% { transform: translateX(-100%); } 50% { transform: translateX(400%); } }
+@keyframes status-orbit { to { transform: rotate(360deg); } }
+@keyframes status-enter { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 1023px) { .status-content-grid { grid-template-columns: minmax(0,1fr); } .status-sidebar { position: static; padding-top: 0; display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); } .status-dependencies { height: 100%; } }
+@media (max-width: 639px) { .status-overview-body { padding: 22px 18px; } .status-orbit { width: 48px; height: 48px; } .status-orbit-ring.second { inset: 3px; } .status-orbit-core { width: 36px; height: 36px; } .status-orbit-core svg { width: 21px; } .status-metric { padding: 17px 15px; } .status-content-grid { gap: 22px; } .status-monitors-grid { grid-template-columns: minmax(0,1fr); } .status-sidebar { grid-template-columns: minmax(0,1fr); } .status-monitor { padding: 19px; } .status-event-section { padding: 19px; } .status-large-empty { padding: 22px 18px; gap: 18px; } .status-empty-emblem { width: 42px; height: 42px; } .status-empty-caption { display: none; } .status-history-bars { gap: 1px; } .status-section-nav { gap: 22px; } }
+@media (prefers-reduced-motion: reduce) { .status-page *, .status-page::before, .status-page::after, .status-overview::after { animation: none !important; transition: none !important; } .status-monitor:hover,.status-day:hover,.status-day:focus-visible,.status-day.is-selected { transform: none; } }
+
+.status-overview-meta { color: #86948d; }
+.status-day-detail { color: #86919f; }
+.status-monitor-details summary { color: #8d9aad; }
+.status-watch-empty p,.status-large-empty p { color: #8a98ad; }

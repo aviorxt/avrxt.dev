@@ -1,3 +1,4 @@
+import { getPublicStatusSnapshot } from '@/lib/status-source';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { resolveMx } from 'node:dns/promises';
@@ -163,51 +164,10 @@ async function checkSpotifyConfig(name: string): Promise<CheckResult> {
 
 async function checkStatusProvider(name: string): Promise<CheckResult> {
   const start = nowMs();
-  const betterstackKey = process.env.BETTERSTACK_API_KEY;
-  const statusPageId = process.env.BETTERSTACK_STATUS_PAGE_ID;
-
   try {
-    if (required(betterstackKey) && required(statusPageId)) {
-      const response = await withTimeout(
-        fetch(`https://uptime.betterstack.com/api/v2/status-pages/${statusPageId}`, {
-          headers: {
-            Authorization: `Bearer ${betterstackKey}`,
-            'Content-Type': 'application/json',
-          },
-          cache: 'no-store',
-        }),
-        10000
-      );
-
-      if (response.ok) {
-        return {
-          name,
-          ok: true,
-          details: 'Betterstack reachable',
-          latencyMs: nowMs() - start,
-        };
-      }
-    }
-
-    const fallbackResponse = await withTimeout(
-      fetch('https://status.avrxt.dev/badge?theme=dark', { cache: 'no-store' }),
-      10000
-    );
-
-    return {
-      name,
-      ok: fallbackResponse.ok,
-      details: fallbackResponse.ok ? 'Public status page reachable' : `Public status check failed (${fallbackResponse.status})`,
-      latencyMs: nowMs() - start,
-    };
-  } catch (error) {
-    return {
-      name,
-      ok: false,
-      details: `Status provider check failed: ${error instanceof Error ? error.message : 'unknown error'}`,
-      latencyMs: nowMs() - start,
-    };
-  }
+    const snapshot = await getPublicStatusSnapshot();
+    return { name, ok: snapshot.available, details: snapshot.available ? 'Public Better Stack feed reachable' : 'Public status feed unavailable', latencyMs: nowMs() - start };
+  } catch { return { name, ok: false, details: 'Public status feed unavailable', latencyMs: nowMs() - start }; }
 }
 
 export async function GET(request: Request) {

@@ -30,7 +30,7 @@ const pageGroups = [
             { label: 'Subscribe', href: '/subscribe' },
             { label: 'API documentation', href: '/system/api/doc' },
             { label: 'Website source', href: 'https://github.com/aviorxt/avrxt-core-web', external: true },
-            { label: 'System status', href: 'https://status.avrxt.dev', external: true },
+            { label: 'System status', href: '/status' },
         ],
     },
     {

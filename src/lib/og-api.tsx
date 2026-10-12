@@ -14,6 +14,7 @@ const card = (eyebrow: string, title: string, description: string, motif: Motif,
   ({ eyebrow, title, description, motif, index, chips });
 
 const ROUTES: Record<string, OgCard> = {
+  '/status': card('System telemetry', 'System status. Every signal accounted for.', 'Live service availability, measured uptime, public incidents, and maintenance from Better Stack.', 'tools', '21', ['UPTIME', 'INCIDENTS', 'LIVE']),
   '/terminal': card('Interactive index', 'Less clicking. More exploring.', 'Explore public AVRXT pages, published notes, and useful tools with simple browser commands.', 'tools', '20', ['COMMANDS', 'EXPLORE', 'BROWSER']),
   '/': card('Independent developer · India', 'Ideas, systems & useful digital tools.', 'The personal web home of avrxt — also known as aviorxt.', 'identity', '00', ['DEVELOPMENT', 'AVIATION', 'EXPERIMENTS']),
   '/about': card('About avrxt', 'Developer by craft. Aircraft engineer by discipline.', 'An independent builder based in India, working where technology and precision meet.', 'identity', '01', ['PROFILE', 'STORY', 'INDIA']),

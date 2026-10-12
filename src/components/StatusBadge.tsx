@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { ArrowUpRight, CircleCheck, CloudOff, Gauge, LoaderCircle, WifiOff, Wrench } from 'lucide-react';
 import { apiUrl } from '@/lib/api-gateway';
@@ -88,10 +89,8 @@ export default function StatusBadge() {
     const statusLabel = loading ? 'Checking status' : data.label;
 
     return (
-        <a
-            href="https://status.avrxt.dev"
-            target="_blank"
-            rel="noopener noreferrer"
+        <Link
+            href="/status"
             aria-label={`${statusLabel}. View the AVRXT system status page.`}
             className="group relative flex min-h-20 w-full min-w-0 max-w-[18rem] touch-manipulation overflow-hidden border border-[#292929] bg-[#080808] text-left shadow-[0_18px_60px_rgba(0,0,0,.45)] transition-[transform,border-color,background-color] duration-300 hover:-translate-y-0.5 hover:border-[#686868] hover:bg-[#0b0b0b] active:translate-y-0 active:scale-[.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E5E5E5] motion-reduce:transform-none motion-reduce:transition-none sm:w-72"
         >
@@ -127,6 +126,6 @@ export default function StatusBadge() {
             </span>
 
             <span className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/[.025] to-transparent transition-transform duration-700 group-hover:translate-x-full" />
-        </a>
+        </Link>
     );
 }
