@@ -4,28 +4,24 @@ import { createPublicClient } from '@/utils/supabase/public';
 import { configuredRedis } from '@/lib/redis-rest';
 import { PUBLIC_SEARCH_PAGES, documentSearchRecord, validSearchConfig, type SearchRecord } from '@/lib/site-search';
 import type { DocArticle } from '@/lib/docs-config';
+import { waitForSearchTask } from '@/lib/search-task';
 
 function indexConfig() {
   const config = { appId: process.env.NEXT_PUBLIC_ALGOLIA_APP_ID || '', index: process.env.NEXT_PUBLIC_ALGOLIA_INDEX_NAME || '', key: process.env.ALGOLIA_WRITE_KEY || '' };
   if (!validSearchConfig(config)) throw new Error('Search indexing is not configured');
   return config;
 }
-async function api(path: string, body?: unknown, method = 'POST') {
+async function api(path: string, body?: unknown, method = 'POST', timeoutMs = 5000) {
   const config = indexConfig();
   const response = await fetch(`https://${config.appId}.algolia.net/1/indexes/${config.index}${path}`, {
     method, headers: { 'Content-Type': 'application/json', 'X-Algolia-Application-Id': config.appId, 'X-Algolia-API-Key': config.key },
-    body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(5000),
+    body: body === undefined ? undefined : JSON.stringify(body), cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(Math.max(1, Math.ceil(timeoutMs))),
   });
   if (!response.ok) throw new Error(`Search indexing HTTP ${response.status}`);
   return response.json();
 }
 async function waitTask(taskID: number) {
-  for (let attempt = 0; attempt < 15; attempt++) {
-    const task = await api(`/task/${taskID}`, undefined, 'GET');
-    if (task.status === 'published') return;
-    await new Promise(resolve => setTimeout(resolve, 250));
-  }
-  throw new Error('Search indexing task timed out');
+  await waitForSearchTask(timeout => api(`/task/${taskID}`, undefined, 'GET', timeout));
 }
 type IndexRequest = { action: 'addObject' | 'deleteObject'; body: SearchRecord | { objectID: string } };
 async function batch(requests: IndexRequest[]) {
@@ -63,8 +59,8 @@ export async function syncPublicSearchIndex() {
       if (!cursor) break;
     }
     if (cursor) throw new Error('Public search index exceeded its limit');
-    const settings = await api('/settings', { searchableAttributes: ['title', 'unordered(keywords)', 'description', 'content', 'href'], attributesToRetrieve: ['title', 'description', 'href', 'category'], attributesToHighlight: [], attributesToSnippet: [], typoTolerance: true, hitsPerPage: 10 }, 'PUT');
-    await waitTask(settings.taskID);
+    // Ranking is configured once in Algolia. Rewriting identical settings on
+    // every reconciliation creates unnecessary, expensive index-level tasks.
     const ids = new Set(records.map(record => record.objectID));
     await batch([
       ...Array.from(existing).filter(id => !ids.has(id)).map(objectID => ({ action: 'deleteObject' as const, body: { objectID } })),

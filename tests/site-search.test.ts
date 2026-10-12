@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { documentSearchRecord, fetchSearch, parseSearchHits, localSearch, PUBLIC_SEARCH_PAGES } from '../src/lib/site-search';
 import type { DocArticle } from '../src/lib/docs-config';
+import { waitForSearchTask } from '../src/lib/search-task';
 
 test('search accepts only public destinations and treats provider HTML as text', () => {
   const title = '<img src=x onerror=alert(1)>';
@@ -38,4 +39,20 @@ test('browser search bounds requests, disables analytics and uses only its suppl
   assert.equal(hits.length, 1);
   await assert.rejects(fetchSearch('x', { ...config, appId: 'evil.test/' }, new AbortController().signal, request));
   assert.equal(calls, 1);
+});
+
+test('index synchronization waits for delayed publishing with bounded backoff', async () => {
+  let elapsed = 0;
+  let requests = 0;
+  const options = { now: () => elapsed, pause: async (ms: number) => { elapsed += ms; } };
+  await waitForSearchTask(async timeout => {
+    requests++;
+    assert.ok(timeout > 0 && timeout <= 5000);
+    return { status: elapsed >= 12_000 ? 'published' : 'notPublished' };
+  }, options);
+  assert.ok(elapsed >= 12_000 && elapsed < 25_000);
+  assert.ok(requests < 20);
+  elapsed = 0;
+  await assert.rejects(waitForSearchTask(async () => ({ status: 'notPublished' }), options), /timed out/);
+  assert.equal(elapsed, 25_000);
 });
