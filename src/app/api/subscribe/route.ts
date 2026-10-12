@@ -5,6 +5,7 @@ import { readJsonLimited, RequestBodyError } from '@/lib/read-json-limited';
 import { issueConfirmation, confirmationHash } from '@/lib/newsletter-confirmation';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { isRateLimited } from '@/lib/api-rate-limit';
+import { confirmationEmail } from '@/lib/newsletter-emails';
 
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
 
@@ -112,12 +113,9 @@ export async function POST(request: NextRequest) {
 
     const confirmation = await issueConfirmation(sanitizedEmail, AUDIENCE_ID);
     const { error: emailError } = await resend.emails.send({
-      from: process.env.RESEND_DEFAULT_FROM || 'avrxt Updates <news@avrxt.dev>',
+      ...confirmationEmail(confirmation.url),
       to: sanitizedEmail,
-      subject: 'Confirm your avrxt newsletter subscription',
-      html: `<p>Confirm that you want to receive avrxt updates.</p><p><a href="${confirmation.url}">Confirm subscription</a></p><p>This link expires in 24 hours. If you did not request this, ignore this email.</p>`,
-      text: `Confirm your subscription: ${confirmation.url}\nThis link expires in 24 hours. If you did not request this, ignore this email.`,
-    });
+    }, { idempotencyKey: `newsletter-confirmation/${confirmationHash(confirmation.token)}` });
     if (emailError) {
       await createAdminClient().from('newsletter_confirmations').delete().eq('token_hash', confirmationHash(confirmation.token));
       throw new Error('Confirmation email failed');

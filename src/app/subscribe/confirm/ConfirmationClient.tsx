@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Check, CheckCheck, Clock3, LoaderCircle, Mail, ShieldCheck, TriangleAlert } from 'lucide-react';
 
 type State = 'ready' | 'loading' | 'confirmed' | 'expired' | 'unavailable' | 'error';
-export default function ConfirmationClient({ token }: { token: string }) {
-  const [state, setState] = useState<State>(token ? 'ready' : 'unavailable');
+export default function ConfirmationClient({ token, initialState }: { token: string; initialState: 'ready' | 'expired' | 'unavailable' | 'error' }) {
+  const [state, setState] = useState<State>(initialState);
   const [message, setMessage] = useState('');
   const pending = useRef(false);
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function ConfirmationClient({ token }: { token: string }) {
   const success = state === 'confirmed';
   const invalid = state === 'expired' || state === 'unavailable';
   const title = success ? 'You’re on the list.' : state === 'expired' ? 'A fresh link awaits.' : state === 'unavailable' ? 'Let’s try a new link.' : state === 'error' ? 'One small interruption.' : 'One click. Stay in the loop.';
-  const description = message || (invalid ? 'This confirmation link is missing or no longer available. Request a new email to join the newsletter.' : 'Confirm your email to receive thoughtful updates on what I’m building, technical notes, and ideas worth sharing.');
+  const description = message || (state === 'error' ? 'We couldn’t check your link right now. Please try confirmation again.' : invalid ? 'This confirmation link is missing, already used, or no longer available. If you already confirmed, you’re subscribed. Otherwise, request a new email.' : 'Confirm your email to receive thoughtful updates on what I’m building, technical notes, and ideas worth sharing.');
   return (
     <section className="newsletter-confirmation mx-auto max-w-6xl px-5 pb-24 pt-32 sm:px-8 sm:pt-44">
       <div className="confirmation-heading"><Link href="/subscribe" className="confirmation-eyebrow"><span className="confirmation-dot" /> AVRXT / NEWSLETTER</Link><span className="confirmation-step">{success ? 'COMPLETE' : 'EMAIL VERIFICATION'}</span></div>

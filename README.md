@@ -59,6 +59,10 @@ Deploy the auth Worker together with the web app. Login now uses a state/PKCE tr
 
 Newsletter signup sends a confirmation link; it does not activate or reactivate a contact until the recipient confirms with POST. Configure the canonical HTTPS site origin and verified Resend sender. `/api/health` is cheap liveness; protected readiness is `/api/health?deep=1` with `Authorization: Bearer <HEALTH_CHECK_TOKEN>`.
 
+Confirmation emails use `confirm@avrxt.dev`; welcome emails use `info@avrxt.dev`. Both require the existing `avrxt.dev` verified sending domain, with no new credentials. Templates are in `src/lib/newsletter-emails.ts`; static doodle PNGs and optional fonts are served from `/newsletter/`. Email clients that block web fonts use the supplied system fallbacks. Regenerate artwork with `node scripts/build-newsletter-assets.mjs`.
+
+The confirmation page performs a read-only token check on GET and submits JSON to `/api/subscribe/confirm` after an explicit click. Tokens expire after 24 hours and are consumed through an atomic `confirmed_at IS NULL` update. Used links cannot activate a contact or send another welcome. The winning confirmation schedules welcome delivery with Next `after`, up to three bounded retries using one Resend idempotency key, and a working branded unsubscribe link. A welcome-provider outage does not roll back the subscription; inspect the sanitized `NEWSLETTER_WELCOME_UNAVAILABLE` event if delivery fails. The page suppresses analytics, removes the token from the visible URL, and prevents cross-site requests.
+
 See `CLOUDFLARE_R2.md` for CORS, filename rewriting and upload verification. Smoke-test a new profile image and a media file from the deployed admin page after configuration. Existing assets are removed only after the edited profile is saved.
 
 The development-only braces advisory currently has no published patched version. Production audit is clean. Keep repository lint patterns trusted; do not force npm's suggested Next.js downgrade. Track https://github.com/advisories/GHSA-vfj7-8cjw-p6xm for an upstream fix.
