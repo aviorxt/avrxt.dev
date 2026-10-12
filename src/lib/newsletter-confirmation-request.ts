@@ -9,6 +9,12 @@ export function trustedConfirmationOrigin(request: Request) {
   // Public aliases are explicit: an internal deployment URL or forwarded host
   // must never become authorization for an arbitrary origin.
   if (origin === 'https://www.avrxt.dev' || origin === 'https://avrxt.dev') return true;
+  if (process.env.VERCEL_ENV === 'preview') {
+    const previews = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+      .filter((host): host is string => Boolean(host && /^[a-z0-9-]+\.vercel\.app$/.test(host)))
+      .map(host => `https://${host}`);
+    if (origin === 'https://staging.avrxt.dev' || previews.includes(origin)) return true;
+  }
   const url = new URL(request.url);
   return process.env.NODE_ENV !== 'production' && (url.hostname === 'localhost' || url.hostname === '127.0.0.1') && origin === url.origin;
 }
