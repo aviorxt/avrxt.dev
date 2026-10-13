@@ -11,6 +11,7 @@ export default function robots(): MetadataRoute.Robots {
                 '/api/',
                 '/auth/',
                 '/private/',
+                '/preferance/',
             ],
         },
         sitemap: 'https://www.avrxt.dev/sitemap.xml',

@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { Resend } from 'resend';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { makeUnsubscribeUrl } from './unsubscribe-core';
+export { makeUnsubscribeUrl } from './unsubscribe-core';
 
 export const UNSUBSCRIBE_PROPERTY = 'UNSUBSCRIBE_URL';
 export const TEST_UNSUBSCRIBE_AUDIENCE_ID = '__avrxt_test__';
@@ -15,15 +17,6 @@ export function getNewsletterAudienceId() {
     const id = process.env.RESEND_AUDIENCE_ID?.trim();
     if (!id) throw new Error('RESEND_AUDIENCE_ID is not configured.');
     return id;
-}
-
-export function makeUnsubscribeUrl(token: string) {
-    const configured = process.env.NEWSLETTER_UNSUBSCRIBE_BASE_URL?.trim() || 'https://unsub.avrxt.dev';
-    const base = new URL(configured);
-    if (base.protocol !== 'https:' && process.env.NODE_ENV === 'production') {
-        throw new Error('Newsletter unsubscribe URL must use HTTPS in production.');
-    }
-    return `${base.origin}/mail/${encodeURIComponent(token)}`;
 }
 
 function hashToken(token: string) {
