@@ -6,14 +6,23 @@ import { requestWebhook,notifyRequest } from './discord-requests';
 import { requestEmail } from './request-emails';
 import { type Intake,type RequestKind,validRequestToken } from './request-intake-core';
 import { completeRequestConfirmation } from './request-confirmation-core';
+import { deliverContact } from './contact-submission-core';
 const hash=(token:string)=>createHash('sha256').update(token).digest('hex');
-export async function submitVerifiedRequest(kind:RequestKind,payload:Intake) {
+export async function submitContactRequest(payload:Intake) {
+ const id=randomUUID();
+ const result=await deliverContact({
+  notify:()=>notifyRequest(id,'contact',payload),
+  receipt:async()=>{const sent=await createResendClient().emails.send({...requestEmail('contact',id),to:payload.email},{idempotencyKey:`contact-receipt/${id}`});return !sent.error && Boolean(sent.data);}
+ });
+ return {reference:id,...result};
+}
+export async function submitVerifiedRequest(kind:'deletion',payload:Intake) {
  requestWebhook(kind);
  const resend=createResendClient(),db=createAdminClient(),id=randomUUID(),token=randomBytes(32).toString('base64url');
  await db.from('verified_requests').delete().is('confirmed_at',null).lt('expires_at',new Date().toISOString());
  const inserted=await db.from('verified_requests').insert({id,kind,email:payload.email,payload,token_hash:hash(token),expires_at:new Date(Date.now()+86400000).toISOString()});
  if(inserted.error) throw new Error('Request storage unavailable');
- const route=kind === 'deletion' ? '/delete-request/confirm' : '/contact/confirm';
+ const route='/delete-request/confirm';
  const result=await resend.emails.send({...requestEmail(kind,id,`https://www.avrxt.dev${route}?token=${token}`),to:payload.email},{idempotencyKey:`request-verify/${id}`});
  if(result.error || !result.data) {await db.from('verified_requests').delete().eq('id',id).is('confirmed_at',null);throw new Error('Verification delivery unavailable');}
  return id;

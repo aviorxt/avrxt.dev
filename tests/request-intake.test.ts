@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { validateIntake,requestEmbed,validRequestToken } from '../src/lib/request-intake-core';
 import { requestEmail } from '../src/lib/request-emails';
 import { completeRequestConfirmation } from '../src/lib/request-confirmation-core';
+import { deliverContact } from '../src/lib/contact-submission-core';
 const fixture={name:'Test requester',email:'FIXTURE@example.com',message:'Find my old messages.',scopes:['contact'],authorized:true};
 test('deletion requires authority, scope, and locator for accounts/media without collecting identity documents',()=>{
  assert.equal(validateIntake(fixture,'deletion').email,'fixture@example.com');
@@ -14,7 +15,15 @@ test('Discord embeds fit limits and disable mentions even at maximum contact len
  const payload=requestEmbed('fixture-reference','contact',validateIntake({...fixture,name:'x'.repeat(120),message:'@everyone '+ 'x'.repeat(4990)},'contact'));
  assert.deepEqual(payload.allowed_mentions.parse,[]);
  const embed=payload.embeds[0];assert.ok(embed.fields.every(f=>f.value.length<=1024));
+ assert.equal(embed.title,'Contact request');assert.ok(embed.fields.some(f=>f.name==='Submitted email (unverified)'));assert.ok(!embed.fields.some(f=>f.name==='Verified email'));
  assert.ok(embed.title.length+embed.footer.text.length+embed.fields.reduce((n,f)=>n+f.name.length+f.value.length,0)<6000);
+});
+test('contact goes directly to Discord and a receipt outage does not reject an accepted message',async()=>{
+ const events:string[]=[];
+ const result=await deliverContact({notify:async()=>{events.push('discord');return 'message';},receipt:async()=>{events.push('receipt');throw new Error('Mail unavailable');}});
+ assert.deepEqual(events,['discord','receipt']);assert.equal(result.receiptDelivered,false);
+ const receipt=requestEmail('contact','fixture');assert.doesNotMatch(receipt.text,/verified|Verify:/i);assert.match(receipt.text,/72 hours/);
+ let receipts=0;await assert.rejects(()=>deliverContact({notify:async()=>{throw new Error('Discord unavailable');},receipt:async()=>{receipts++;return true;}}));assert.equal(receipts,0);
 });
 test('verification mail has a private link and receipt distinguishes review from actual erasure',()=>{
  const email=requestEmail('deletion','fixture','https://www.avrxt.dev/delete-request/confirm?token='+'a'.repeat(43));

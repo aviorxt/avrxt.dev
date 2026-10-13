@@ -24,8 +24,8 @@ export function validateIntake(body: unknown, kind: RequestKind): Intake {
 }
 export const validRequestToken = (v: unknown): v is string => typeof v === 'string' && /^[A-Za-z0-9_-]{43}$/.test(v);
 export function requestEmbed(id: string, kind: RequestKind, input: Intake) {
- const fields = [{name:'Reference',value:id},{name:'Name',value:input.name},{name:'Verified email',value:input.email}];
+ const fields = [{name:'Reference',value:id},{name:'Name',value:input.name},{name:kind === 'deletion' ? 'Verified email' : 'Submitted email (unverified)',value:input.email}];
  if (kind === 'deletion') fields.push({name:'Records requested',value:input.scopes.join(', ')},{name:'Account / content identifiers',value:input.identifier || 'Not supplied'},{name:'Authorization',value:'Requester affirmed authority. Inbox verified; ownership and scope still require manual review.'});
  for(let offset=0;offset<input.message.length;offset+=1000) fields.push({name:offset ? 'Details continued' : 'Details',value:input.message.slice(offset,offset+1000)});
- return {allowed_mentions:{parse:[]},embeds:[{title:kind === 'deletion' ? 'Verified data-deletion request' : 'Verified contact request',color:0x252525,fields,footer:{text:'Review and respond within 72 hours. Manual ownership review required before deletion.'},timestamp:new Date().toISOString()}]};
+ return {allowed_mentions:{parse:[]},embeds:[{title:kind === 'deletion' ? 'Verified data-deletion request' : 'Contact request',color:0x252525,fields,footer:{text:kind === 'deletion' ? 'Review and respond within 72 hours. Manual ownership review required before deletion.' : 'Review and respond within 72 hours. Submitted email ownership is not verified.'},timestamp:new Date().toISOString()}]};
 }
