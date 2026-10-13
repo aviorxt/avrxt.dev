@@ -9,7 +9,7 @@ const request = (origin = 'https://www.avrxt.dev', body = JSON.stringify({ token
 
 test('new unsubscribe links always use the canonical Next.js route, including with obsolete Worker configuration', () => {
   const previous = process.env.NEWSLETTER_UNSUBSCRIBE_BASE_URL; process.env.NEWSLETTER_UNSUBSCRIBE_BASE_URL = 'https://unsub.avrxt.dev';
-  try { assert.equal(makeUnsubscribeUrl(token), `https://www.avrxt.dev/preferance/mail/unsub/${token}`); assert.throws(() => makeUnsubscribeUrl('<script>')); }
+  try { assert.equal(makeUnsubscribeUrl(token), `https://www.avrxt.dev/preference/mail/unsub/${token}`); assert.throws(() => makeUnsubscribeUrl('<script>')); }
   finally { if (previous === undefined) delete process.env.NEWSLETTER_UNSUBSCRIBE_BASE_URL; else process.env.NEWSLETTER_UNSUBSCRIBE_BASE_URL = previous; }
 });
 test('old email links redirect safely and never call a provider or perform an unsubscribe', async () => {

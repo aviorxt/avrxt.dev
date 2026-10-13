@@ -17,5 +17,5 @@ export default function OptionalAnalytics() {
     read(); window.addEventListener('avrxt-cookie-choice', read);
     return () => window.removeEventListener('avrxt-cookie-choice', read);
   }, []);
-  return enabled && pathname !== '/subscribe/confirm' && !pathname.startsWith('/preferance/mail/unsub') ? <><Analytics /><SpeedInsights /></> : null;
+  return enabled && pathname !== '/subscribe/confirm' && !pathname.startsWith('/preference/mail/unsub') && !pathname.startsWith('/preferance/mail/unsub') ? <><Analytics /><SpeedInsights /></> : null;
 }

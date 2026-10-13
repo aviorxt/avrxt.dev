@@ -1,4 +1,4 @@
-export const UNSUBSCRIBE_PATH = '/preferance/mail/unsub';
+export const UNSUBSCRIBE_PATH = '/preference/mail/unsub';
 export const TEST_UNSUBSCRIBE_AUDIENCE = '__avrxt_test__';
 export const validUnsubscribeToken = (value: unknown): value is string => typeof value === 'string' && /^[A-Za-z0-9_-]{40,60}$/.test(value);
 export function makeUnsubscribeUrl(token: string) {

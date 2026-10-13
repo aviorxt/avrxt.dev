@@ -27,6 +27,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
+      { source: '/preferance/mail/unsub/:path*', destination: '/preference/mail/unsub/:path*', permanent: true },
       { source: '/home', destination: '/', permanent: true },
       { source: '/portfolio', destination: '/gallery', permanent: true },
       { source: '/hireme', destination: '/contact', permanent: true },
@@ -74,6 +75,14 @@ const nextConfig: NextConfig = {
       },
       {
         source: '/preferance/mail/unsub/:path*',
+        headers: [
+          { key: 'Referrer-Policy', value: 'same-origin' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+      {
+        source: '/preference/mail/unsub/:path*',
         headers: [
           { key: 'Referrer-Policy', value: 'same-origin' },
           { key: 'Cache-Control', value: 'private, no-store' },

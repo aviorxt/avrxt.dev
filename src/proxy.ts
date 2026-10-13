@@ -10,6 +10,7 @@ const MAINTENANCE_BYPASS_PREFIXES = [
     '/auth',
     '/api',
     '/preferance/mail/unsub',
+    '/preference/mail/unsub',
 ]
 
 async function isMaintenanceModeEnabled() {

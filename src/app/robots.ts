@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
                 '/auth/',
                 '/private/',
                 '/preferance/',
+                '/preference/',
             ],
         },
         sitemap: 'https://www.avrxt.dev/sitemap.xml',
