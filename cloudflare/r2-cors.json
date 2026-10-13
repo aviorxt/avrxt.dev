@@ -3,7 +3,9 @@
     "AllowedOrigins": [
       "https://avrxt.dev",
       "https://www.avrxt.dev",
-      "http://localhost:3000"
+      "https://staging.avrxt.dev",
+      "http://localhost:3000",
+      "http://localhost:3007"
     ],
     "AllowedMethods": [
       "GET",

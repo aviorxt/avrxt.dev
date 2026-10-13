@@ -4,7 +4,7 @@ import { safeReturnPath } from '../src/lib/auth-redirect';
 import { uploadDetails } from '../src/lib/upload-details';
 import { publicAddress, publicFetch } from '../src/lib/public-fetch';
 import { renderMarkdown } from '../src/lib/render-markdown';
-import { getPresignedUploadUrl, getR2Client, ensureR2Cors, verifyR2Upload } from '../src/lib/r2';
+import { getPresignedUploadUrl, getR2Client, verifyR2Upload } from '../src/lib/r2';
 import { putR2File } from '../src/lib/upload-transport';
 import { NextRequest } from 'next/server';
 import { GET as startLogin } from '../src/app/auth/start/route';
@@ -88,23 +88,18 @@ test('R2 PUT signing excludes empty-body checksums and binds Content-Type', asyn
   assert.ok(url.searchParams.get('X-Amz-SignedHeaders')?.includes('content-type'));
   assert.equal(url.searchParams.get('X-Amz-Expires'), '600');
 });
-test('CORS repair preserves existing bucket rules; completion rejects mismatched files', async () => {
+test('R2 completion rejects mismatched files without bucket-policy calls', async () => {
   const client = getR2Client(); const original = client.send;
-  const existing = { AllowedOrigins: ['https://other.example'], AllowedMethods: ['GET'] };
   const calls: any[] = [];
   client.send = (async (command: any) => {
     calls.push(command);
-    if (command.constructor.name === 'GetBucketCorsCommand') return { CORSRules: [existing] };
     if (command.constructor.name === 'HeadObjectCommand') return { ContentLength: 99, ContentType: 'image/png' };
     return {};
   }) as typeof client.send;
   try {
-    await ensureR2Cors('https://www.avrxt.dev');
-    const put = calls.find(item => item.constructor.name === 'PutBucketCorsCommand');
-    assert.deepEqual(put.input.CORSConfiguration.CORSRules[0], existing);
-    assert.deepEqual(put.input.CORSConfiguration.CORSRules[1].AllowedMethods, ['GET','HEAD','PUT']);
     await assert.rejects(verifyR2Upload('i/avrxt-12345678-1234-1234-1234-123456789012.png', 'image/png', 42));
     assert.ok(calls.some(item => item.constructor.name === 'DeleteObjectCommand'));
+    assert.deepEqual(calls.map(item => item.constructor.name), ['HeadObjectCommand', 'DeleteObjectCommand']);
   } finally { client.send = original; }
 });
 test('public fetch rejects private, mapped and reserved addresses', async () => {

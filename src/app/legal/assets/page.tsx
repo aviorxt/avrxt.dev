@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowUpRight, Copyright, FileImage, ShieldCheck } from 'lucide-react';
 import { buildPageMetadata } from '@/lib/page-metadata';
+import logoMetadata from './logo-metadata.json';
 
 export const metadata = buildPageMetadata({
   title: 'Brand Assets & Logo Rights',
@@ -38,6 +39,33 @@ const logos = [
     border: '#333333',
     description: 'Primary tonal treatment built entirely from the AVRXT neutral palette.',
   },
+  {
+    name: 'Terminal Stack',
+    code: 'AVRXT / MARK-04',
+    file: '/assets/logo/avrxt-terminal-stack.png',
+    color: '#FFFFFF',
+    surface: '#000000',
+    border: '#292929',
+    description: 'A compact avr / xt composition with rounded strokes and angular terminals.',
+  },
+  {
+    name: 'Vector Slash',
+    code: 'AVRXT / MARK-05',
+    file: '/assets/logo/avrxt-vector-slash.png',
+    color: '#FFFFFF',
+    surface: '#000000',
+    border: '#292929',
+    description: 'A two-line av / rxt mark with a sharp diagonal cut through the X.',
+  },
+  {
+    name: 'Nexus Ligature',
+    code: 'AVRXT / MARK-06',
+    file: '/assets/logo/avrxt-nexus-ligature.png',
+    color: '#FFFFFF',
+    surface: '#000000',
+    border: '#292929',
+    description: 'An interlocked V and X connect the stacked letterforms. The selected site favicon design.',
+  },
 ] as const;
 
 const palette = [
@@ -46,6 +74,10 @@ const palette = [
 ];
 
 function LogoCard({ logo, index }: { logo: (typeof logos)[number]; index: number }) {
+  const details = logoMetadata[logo.file];
+  const fileSize = details.bytes >= 1_000_000
+    ? `${(details.bytes / 1_000_000).toFixed(2)} MB`
+    : `${(details.bytes / 1_000).toFixed(1)} kB`;
   return (
     <article className="group overflow-hidden border border-[#1F1F1F] bg-[#080808] transition-colors hover:border-[#484848]">
       <div
@@ -53,7 +85,7 @@ function LogoCard({ logo, index }: { logo: (typeof logos)[number]; index: number
         style={{ backgroundColor: logo.surface }}
       >
         <div className="pointer-events-none absolute inset-0 opacity-[.14] [background-image:linear-gradient(to_right,#858585_1px,transparent_1px),linear-gradient(to_bottom,#858585_1px,transparent_1px)] [background-size:32px_32px]" />
-        <div className="relative aspect-[2.08/1] w-full max-w-xl transition-transform duration-500 group-hover:scale-[1.015]">
+        <div className="relative w-full max-w-xl transition-transform duration-500 motion-reduce:transition-none group-hover:scale-[1.015] motion-reduce:group-hover:scale-100" style={{ aspectRatio: `${details.width} / ${details.height}` }}>
           <Image src={logo.file} alt={`${logo.name} AVRXT wordmark`} fill sizes="(max-width: 768px) 92vw, 560px" className="object-contain" priority={index === 0} />
         </div>
       </div>
@@ -68,7 +100,17 @@ function LogoCard({ logo, index }: { logo: (typeof logos)[number]; index: number
           </span>
         </div>
         <p className="mt-4 max-w-xl text-sm leading-6 text-[#858585]">{logo.description}</p>
-        <p className="mt-4 flex items-center gap-2 font-mono text-[8px] uppercase tracking-[.14em] text-[#666666]"><FileImage size={11} />{logo.file}</p>
+        <dl className="mt-5 grid grid-cols-2 gap-x-5 gap-y-4 border-t border-[#292929] pt-5 font-mono text-[10px] sm:grid-cols-4">
+          <div><dt className="text-[#666666]">Registered</dt><dd className="mt-1 text-[#BCBCBC]"><time dateTime={details.registered}>14 Oct 2026</time></dd></div>
+          <div><dt className="text-[#666666]">Dimensions</dt><dd className="mt-1 text-[#BCBCBC]">{details.width} × {details.height} px</dd></div>
+          <div><dt className="text-[#666666]">Format</dt><dd className="mt-1 text-[#BCBCBC]">{details.format}</dd></div>
+          <div><dt className="text-[#666666]">File size</dt><dd className="mt-1 text-[#BCBCBC]">{fileSize}</dd></div>
+        </dl>
+        <details className="mt-4 font-mono text-[10px] text-[#858585]">
+          <summary className="cursor-pointer py-2 transition-colors hover:text-white">File integrity / SHA-256</summary>
+          <p className="mt-2 break-all leading-5">{details.sha256}</p>
+        </details>
+        <a href={logo.file} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex max-w-full items-center gap-2 break-all font-mono text-[9px] leading-5 text-[#858585] underline-offset-4 hover:text-white hover:underline"><FileImage size={11} className="shrink-0" />{logo.file}<ArrowUpRight size={11} className="shrink-0" /></a>
       </div>
     </article>
   );
@@ -84,7 +126,7 @@ export default function BrandAssetsPage() {
         <header className="border-b border-[#1F1F1F] pb-12 sm:pb-16">
           <div className="flex flex-wrap items-center justify-between gap-4 font-mono text-[8px] uppercase tracking-[.22em] text-[#666666]">
             <span>/legal/assets</span>
-            <span className="inline-flex items-center gap-2"><ShieldCheck size={12} /> Official asset registry / v1.0</span>
+            <span className="inline-flex items-center gap-2"><ShieldCheck size={12} /> Official asset registry / v1.1</span>
           </div>
           <div className="mt-9 grid gap-8 lg:grid-cols-[1fr_.55fr] lg:items-end">
             <div>
@@ -98,7 +140,7 @@ export default function BrandAssetsPage() {
         <section aria-labelledby="logo-library-heading" className="py-12 sm:py-16">
           <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
             <div><p className="font-mono text-[8px] uppercase tracking-[.22em] text-[#666666]">01 / Registered set</p><h2 id="logo-library-heading" className="mt-2 text-3xl font-semibold sm:text-4xl">Logo library</h2></div>
-            <p className="font-mono text-[8px] uppercase tracking-[.16em] text-[#666666]">3 controlled variants</p>
+            <p className="font-mono text-[8px] uppercase tracking-[.16em] text-[#666666]">{logos.length} controlled variants</p>
           </div>
           <div className="grid gap-4">{logos.map((logo, index) => <LogoCard key={logo.file} logo={logo} index={index} />)}</div>
         </section>
@@ -129,7 +171,7 @@ export default function BrandAssetsPage() {
           </div>
         </section>
 
-        <footer className="border-t border-[#1F1F1F] pt-6 font-mono text-[8px] uppercase leading-5 tracking-[.14em] text-[#666666]">Asset files are published at their listed paths for site delivery and visual reference. Technical access to a file is not permission to reuse it.</footer>
+        <footer className="border-t border-[#1F1F1F] pt-6 font-mono text-[8px] uppercase leading-5 tracking-[.14em] text-[#666666]">Dates record registration in this asset library. Dimensions, sizes, and checksums describe the original files. Asset files are published at their listed paths for site delivery and visual reference. Technical access to a file is not permission to reuse it.</footer>
       </div>
     </main>
   );

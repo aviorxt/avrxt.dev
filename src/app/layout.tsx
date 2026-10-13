@@ -30,7 +30,7 @@ const instrumentSerif = Instrument_Serif({
   style: ["italic"],
 });
 
-const siteFavicon = "https://cdn.avxt.qzz.io/icons/favicon.jpg";
+const siteFavicon = "/brand/avrxt-selected/favicon.ico";
 const siteUrl = "https://www.avrxt.dev";
 const metadataBase = new URL(siteUrl);
 
@@ -68,9 +68,14 @@ export const metadata: Metadata = {
     googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1, "max-video-preview": -1 },
   },
   icons: {
-    icon: [{ url: siteFavicon, type: "image/jpeg" }],
+    icon: [
+      { url: siteFavicon, type: "image/x-icon", sizes: "16x16 32x32 48x48 64x64 128x128 256x256" },
+      { url: "/brand/avrxt-selected/icon-32.png", type: "image/png", sizes: "32x32" },
+      { url: "/brand/avrxt-selected/icon-192.png", type: "image/png", sizes: "192x192" },
+      { url: "/brand/avrxt-selected/icon-512.png", type: "image/png", sizes: "512x512" },
+    ],
     shortcut: [siteFavicon],
-    apple: [siteFavicon],
+    apple: [{ url: "/brand/avrxt-selected/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
   openGraph: {
     title: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",

@@ -53,8 +53,8 @@ Removing a gallery item edits the pending profile draft. The R2 object is delete
 
 ### 🛂 CORS Configuration
 To allow the browser to talk to Cloudflare, the following CORS policy is applied:
-- **Allowed Origins**: `https://avrxt.dev`, `https://www.avrxt.dev`, `http://localhost:3000`
-- Before signing, the server attempts to inspect bucket CORS and append a missing trusted-origin upload rule, preserving other rules. The credential must have permission for GetBucketCors/PutBucketCors. If it is an object-only credential, apply `cloudflare/r2-cors.json` in Cloudflare's bucket settings; signing remains available and the UI explains a failed network/CORS upload.
+- **Allowed Origins**: `https://avrxt.dev`, `https://www.avrxt.dev`, `https://staging.avrxt.dev`, `http://localhost:3000`, `http://localhost:3007`
+- Apply `cloudflare/r2-cors.json` once through Cloudflare bucket settings. Upload requests do not inspect or change bucket CORS; the application's object-scoped credential does not need GetBucketCors/PutBucketCors privileges. This prevents failed management checks or concurrent policy changes from interfering with uploads. The server checks the explicit upload-origin allowlist before signing.
 - Additional preview/local origins must be explicitly included in `R2_UPLOAD_ORIGINS` and the bucket CORS configuration. Do not allow arbitrary origins supplied by visitors.
 - **Allowed Methods**: `GET, HEAD, PUT`
 - **Allowed Headers**: `Content-Type` (the browser upload signs and sends this header)
@@ -75,6 +75,7 @@ The existing `r2-cors.json` uses S3 field names; it is not a valid input to Wran
 - **Storage credentials**: `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and `R2_BUCKET_NAME` are server-only secrets. Configure the public CDN host variables separately.
 - **Endpoint**: Use the HTTPS S3 endpoint ending in `.r2.cloudflarestorage.com`, without a bucket path. A public CDN URL cannot sign S3 requests.
 - **Troubleshooting**: Distinguish timeout, network/CORS, HTTP rejection (including a safe R2 error code), and server verification failure. Never log the signed URL. A live test must use the deployed application's actual origin and credentials.
+- **Recovery**: After a failed PUT, the server checks the existing object before the browser retries. If it already matches the approved size and MIME type, the upload succeeds without resending. Transient failures permit one retry with a fresh signed URL for the same key; signature/permission rejections do not blindly retry. A brief HEAD failure after a successful PUT retries verification once, without reuploading. Large files above 25 MB have a ten-minute transfer timeout; smaller files have three minutes. The URL remains valid for ten minutes and is renewed for a retry. Retries cannot create a second asset key.
 
 ---
 
@@ -92,4 +93,4 @@ The existing `r2-cors.json` uses S3 field names; it is not a valid input to Wran
 
 ---
 
-*Upload fixes verified: 12 October 2026.*
+*14 October 2026: regression tests cover recovery, same-key renewal, bounded retries, origin policy and MIME/size validation. Live preflight requests accepted Production, staging and localhost:3007, and rejected an unrelated origin. A full signed-upload browser smoke test is still required after deploying this correction.*

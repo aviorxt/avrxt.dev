@@ -1,6 +1,6 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetBucketCorsCommand, PutBucketCorsCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import type { CORSRule } from '@aws-sdk/client-s3';
+import { validateR2UploadKey } from './upload-details';
 
 const DEFAULT_CDN_URL = "https://cdn.avrxt.dev";
 
@@ -100,28 +100,8 @@ export function getR2Endpoint() {
     }
     return endpoint.origin;
 }
-const corsReady = new Set<string>();
-export async function ensureR2Cors(origin: string) {
-    const bucket = requireEnv('R2_BUCKET_NAME');
-    const trusted = new Set(['https://avrxt.dev', 'https://www.avrxt.dev', 'http://localhost:3000', process.env.NEXT_PUBLIC_SITE_URL, ...(process.env.R2_UPLOAD_ORIGINS || '').split(',').map(value => value.trim())]);
-    if (!trusted.has(origin)) throw new Error('This upload origin is not configured in R2_UPLOAD_ORIGINS.');
-    if (corsReady.has(origin)) return;
-    let rules: CORSRule[];
-    try { rules = (await getR2Client().send(new GetBucketCorsCommand({ Bucket: bucket }))).CORSRules || []; }
-    catch (error) {
-        if (!(error instanceof Error) || error.name !== 'NoSuchCORSConfiguration') throw error;
-        rules = [];
-    }
-    if (!rules.some(rule => (rule.AllowedOrigins?.includes(origin) || rule.AllowedOrigins?.includes('*')) && rule.AllowedMethods?.includes('PUT') &&
-        rule.AllowedHeaders?.some(header => header === '*' || header.toLowerCase() === 'content-type'))) {
-        await getR2Client().send(new PutBucketCorsCommand({ Bucket: bucket, CORSConfiguration: { CORSRules: [
-            ...rules, { AllowedOrigins: [origin], AllowedMethods: ['GET', 'HEAD', 'PUT'], AllowedHeaders: ['Content-Type'], ExposeHeaders: ['ETag'], MaxAgeSeconds: 3600 },
-        ] } }));
-    }
-    corsReady.add(origin);
-}
 export async function verifyR2Upload(key: string, contentType: string, size: number) {
-    if (!/^[iv]\/avrxt-[a-f0-9-]{36}\.[a-z0-9]+$/.test(key)) throw new Error('Invalid upload key.');
+    validateR2UploadKey(key, contentType, size);
     const object = await getR2Client().send(new HeadObjectCommand({ Bucket: requireEnv('R2_BUCKET_NAME'), Key: key }));
     if (object.ContentLength !== size || object.ContentType !== contentType) {
         await getR2Client().send(new DeleteObjectCommand({ Bucket: requireEnv('R2_BUCKET_NAME'), Key: key }));

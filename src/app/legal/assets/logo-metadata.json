@@ -1,0 +1,50 @@
+{
+  "/assets/logo/avrxt-absolute-black.png": {
+    "registered": "2026-10-14",
+    "width": 1811,
+    "height": 868,
+    "format": "PNG",
+    "bytes": 227978,
+    "sha256": "6fdf475c92f744acc0c0576b5921f2f64861041825b9b3706e13b07c8c185ab1"
+  },
+  "/assets/logo/avrxt-pure-white.png": {
+    "registered": "2026-10-14",
+    "width": 1810,
+    "height": 869,
+    "format": "PNG",
+    "bytes": 475609,
+    "sha256": "b04b38504be4f4158f2d08f486c014ac4cdfac36b42f3e55e39bed75f04f1cfd"
+  },
+  "/assets/logo/avrxt-graphite-spectrum.png": {
+    "registered": "2026-10-14",
+    "width": 1811,
+    "height": 868,
+    "format": "PNG",
+    "bytes": 590264,
+    "sha256": "04b76c06e485a3af7157926c51eb00f6b8ce2f54ff97ff70c7c85648ecf88bef"
+  },
+  "/assets/logo/avrxt-terminal-stack.png": {
+    "registered": "2026-10-14",
+    "width": 1254,
+    "height": 1254,
+    "format": "PNG",
+    "bytes": 1126154,
+    "sha256": "d3e5d65112904d2eb995aed5cc51354c1844f20782389d6aa32166b3e9337034"
+  },
+  "/assets/logo/avrxt-vector-slash.png": {
+    "registered": "2026-10-14",
+    "width": 1254,
+    "height": 1254,
+    "format": "PNG",
+    "bytes": 1147144,
+    "sha256": "27f94570a9266c8bc1d60262c140e0b29617f12a696d1b6ce7c121e6e75f51ff"
+  },
+  "/assets/logo/avrxt-nexus-ligature.png": {
+    "registered": "2026-10-14",
+    "width": 1254,
+    "height": 1254,
+    "format": "PNG",
+    "bytes": 1129476,
+    "sha256": "06f59dc63b26bfdd1530ae44c3141ddc966ff6b1d33acaac5334d864b7116fa0"
+  }
+}

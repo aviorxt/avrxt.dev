@@ -25,3 +25,9 @@ export function uploadDetails(name: string, mime: string, size: number) {
   const fileName = `avrxt-${crypto.randomUUID()}.${type.extension}`;
   return { ...type, contentType, fileName };
 }
+export function validateR2UploadKey(key: string, contentType: string, size: number) {
+  const type = UPLOAD_TYPES[contentType];
+  const match = typeof key === 'string' && key.match(/^([iv])\/(avrxt-[a-f0-9-]{36}\.([a-z0-9]+))$/);
+  if (!type || !match || match[1] !== type.folder || match[3] !== type.extension || !Number.isSafeInteger(size) || size < 1 || size > type.maxBytes) throw new Error('Invalid upload details.');
+  return { folder: type.folder, fileName: match[2] };
+}
