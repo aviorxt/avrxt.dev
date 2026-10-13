@@ -4,7 +4,7 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
   title: 'Terms of Use',
-  description: 'Terms for using avrxt.dev, its public tools, Muzix dashboard, newsletter, Ask AI handoffs, forms, account features, integrations, content, and APIs.',
+  description: 'Terms for AVRXT public tools, accounts, newsletters, email preferences, public media, search, service status, and third-party integrations.',
   keywords: ['terms of use', 'avrxt terms', 'acceptable use', 'developer tools', 'Spotify dashboard', 'AI handoff', 'API terms'],
   path: '/legal/terms',
 });
@@ -14,7 +14,7 @@ const nav = [
 ];
 
 export default function TermsPage() {
-  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using www.avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.2" lastUpdated="12 October 2026" nav={nav} highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}>
+  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using www.avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.3" lastUpdated="13 October 2026" nav={nav} highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}>
     <PolicySection id="agreement" number="01" title="Agreement and scope">
       <p>By accessing or using www.avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the site. These terms cover public pages, forms, tools, APIs, newsletter features, Ask AI handoffs, the Muzix dashboard, account features, and integrations operated through this website.</p>
       <p>The site may change, experience downtime, or discontinue a feature. No promise is made that every feature will remain available, error-free, or compatible with every device.</p>
@@ -45,7 +45,9 @@ export default function TermsPage() {
 
     <PolicySection id="submissions" number="05" title="Contact messages and other submissions">
       <p>You retain rights you already have in content you submit. You give AVRXT permission to process contact messages, newsletter addresses, tool inputs, and other submissions as reasonably needed to respond, provide the requested feature, protect the site, and meet legal obligations.</p>
-      <p>Newsletter enrollment requires confirming a link sent to the submitted address; that link expires after 24 hours. Newsletter messages include an unsubscribe mechanism. You may unsubscribe at any time, and you must not subscribe another person without their permission or misuse subscription endpoints for spam, harassment, or automated testing.</p>
+      <p>Newsletter enrollment requires an explicit confirmation on the page linked from the submitted address’s inbox. That link expires after 24 hours and is single-use. Successful confirmation schedules a welcome email; delivery is subject to provider availability and mailbox filtering. You must not subscribe another person without their permission or misuse subscription endpoints for spam, harassment, or automated testing.</p>
+      <p>Newsletter and welcome messages provide a private unsubscribe link. The current preference flow is hosted at <strong>www.avrxt.dev/preference/mail/unsub/</strong>; older links may redirect there. Opening the page does not change your subscription. Confirming the unsubscribe stops newsletter broadcasts, and repeated use of a completed link does not resubscribe you. Keep these links private and use only links issued to you or that you are authorized to manage.</p>
+      <p>Unsubscribing is separate from requesting deletion of your data or revoking a provider login. A message already submitted for delivery may still arrive. Replies and requested service or security communications are separate from newsletter broadcasts; a newsletter subscription is not required to submit a privacy request. Contact <a href="mailto:support@avrxt.dev">support@avrxt.dev</a> if your unsubscribe link is unavailable or you want a separate data review.</p>
       <p>Authorized administrators may upload supported profile and site media. Those assets are delivered through the public CDN; the upload interface is not a private file vault. You must have permission to publish uploaded content and remove confidential information, embedded location data, or other sensitive metadata before uploading. File-type and size limits apply, and content may be removed to address abuse, security issues, or a valid rights complaint.</p>
       <p>Submit only content you have the right to share. Do not submit secrets, passwords, one-time codes, full card data, unlawful content, threats, malware, or another person’s confidential information without authorization.</p>
     </PolicySection>
@@ -57,6 +59,7 @@ export default function TermsPage() {
 
     <PolicySection id="services" number="07" title="Third-party services and links">
       <p>The site relies on or links to providers for hosting, analytics, DNS, identity, storage, email, fonts, media, music, network data, and quotes. Their availability, accuracy, policies, and acts are outside AVRXT’s direct control. Your use of a provider is also governed by that provider’s terms.</p>
+      <p>Newsletter delivery currently uses Resend. Amazon SES has been prepared for transactional email on notify.avrxt.dev and production access requested, but website delivery has not been switched to SES. Verifying a sending domain is not an approval, delivery guarantee, or commitment to offer a feature that is still being prepared. Infrastructure setup alone does not make a private storage manager or another planned service available to visitors.</p>
       <p>The public status page displays Better Stack monitoring and published reports. Updates can be delayed by check intervals, caching, and provider availability. Uptime reflects the monitored endpoint and measurement period, not every possible feature or user experience, and is not a service-level guarantee. Missing or unmonitored periods are not counted as confirmed availability. Manually reported services do not carry measured uptime. The independent hosted status page may remain available when this website cannot be reached.</p>
       <p>Public search is supplied by Algolia. Results can lag a publication, edit, deletion, or privacy change while updates and daily reconciliation run. Search excerpts do not grant access to restricted content. Provider outages or plan quotas may temporarily limit note search; local page shortcuts remain available.</p>
       <p>Public pages and API responses may be cached in Redis or delivery infrastructure and can briefly show an earlier version. Rate limits may apply across instances and may temporarily block a request when abuse-protection dependencies are unavailable. The public APIs do not carry an uptime, freshness, or unlimited-access commitment.</p>
