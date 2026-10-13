@@ -29,7 +29,9 @@ const nextConfig: NextConfig = {
     return [
       { source: '/preferance/mail/unsub/:path*', destination: '/preference/mail/unsub/:path*', permanent: true },
       { source: '/home', destination: '/', permanent: true },
-      { source: '/portfolio', destination: '/gallery', permanent: true },
+      { source: '/portfolio', destination: '/', permanent: true },
+      { source: '/gallery/:path*', destination: '/', permanent: true },
+      { source: '/galleery/:path*', destination: '/', permanent: true },
       { source: '/hireme', destination: '/contact', permanent: true },
       { source: '/guestbook', destination: '/', permanent: true },
       { source: '/privacy', destination: '/legal/privacy', permanent: true },

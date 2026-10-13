@@ -105,7 +105,6 @@ export const defaultMeConfig: MeConfig = {
     ],
     gallery: [],
     resources: [
-        { id: 'r1', title: 'Visual Gallery', url: '/gallery', type: 'gallery' },
         { id: 'r2', title: 'Documentation Portal', url: '/docs', type: 'doc' },
         { id: 'r3', title: 'Browse Technical Writing', url: '/docs', type: 'doc' }
     ],

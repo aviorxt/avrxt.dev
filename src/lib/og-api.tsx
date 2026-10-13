@@ -21,7 +21,6 @@ const ROUTES: Record<string, OgCard> = {
   '/me': card('Digital profile', '@avrxt', 'Selected links, live status and the shortest route to everything avrxt.', 'identity', '02', ['AVIORXT', 'ONLINE', 'LINKS']),
   '/signature': card('Digital mark · 2026', 'The avrxt signature.', 'A motion-crafted personal signature, drawn one deliberate stroke at a time.', 'signature', '03', ['MOTION', 'IDENTITY', 'HAND-DRAWN']),
   '/contact': card('Open channel', 'Start a thoughtful conversation.', 'Questions, collaborations and meaningful ideas are always welcome.', 'contact', '04', ['CONTACT', 'COLLABORATE', 'CONNECT']),
-  '/gallery': card('Visual archive', 'Frames from the journey.', 'A curated gallery of moments, details and visual experiments.', 'gallery', '05', ['ARCHIVE', 'FRAMES', 'STORIES']),
   '/uses': card('Working system', 'The tools behind the work.', 'Hardware, software and everyday instruments that make the process possible.', 'tools', '06', ['HARDWARE', 'SOFTWARE', 'WORKFLOW']),
   '/tools': card('Public utilities · 08', 'Small tools. Serious utility.', 'Fast, privacy-conscious browser tools designed with the same care as the rest of avrxt.dev.', 'tools', '07', ['NETWORK', 'TYPE', 'DIAGNOSTICS']),
   '/muzix/chart': card('Listening intelligence', 'Muzix chart.', 'Now playing, top artists, repeat signals and monthly listening patterns in one live capsule.', 'music', '08', ['SPOTIFY', 'NOW PLAYING', 'CHARTS']),

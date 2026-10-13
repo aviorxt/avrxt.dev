@@ -6,7 +6,6 @@ export const TERMINAL_PAGES: TerminalPage[] = [
   { command: 'about', title: 'About', description: 'The person behind AVRXT.', href: '/about', group: 'site' },
   { command: 'profile', title: 'Profile', description: 'Selected links, presence, and current frequency.', href: '/me', group: 'site' },
   { command: 'contact', title: 'Contact', description: 'Start a conversation or discuss a project.', href: '/contact', group: 'site' },
-  { command: 'gallery', title: 'Gallery', description: 'Frames, details, and visual experiments.', href: '/gallery', group: 'site' },
   { command: 'signature', title: 'Signature', description: 'The AVRXT digital mark.', href: '/signature', group: 'site' },
   { command: 'uses', title: 'Uses', description: 'Hardware, software, and everyday instruments.', href: '/uses', group: 'site' },
   { command: 'music', title: 'Muzix', description: 'Live Spotify listening chart.', href: '/muzix/chart', group: 'site' },

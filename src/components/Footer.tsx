@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { ArrowUpRight, Github, Instagram, Mail } from 'lucide-react';
 import { tools } from '@/lib/tool-catalog';
 import StatusBadge from './StatusBadge';
+import DmcaBadge from './DmcaBadge';
 
 const pageGroups = [
     {
@@ -14,7 +15,6 @@ const pageGroups = [
             { label: 'Home', href: '/' },
             { label: 'About', href: '/about' },
             { label: 'Profile', href: '/me' },
-            { label: 'Gallery', href: '/gallery' },
             { label: 'Signature', href: '/signature' },
             { label: 'Uses', href: '/uses' },
             { label: 'Contact', href: '/contact' },
@@ -106,6 +106,7 @@ export default function Footer() {
 
                 <div className="flex flex-col gap-6 border-t border-[#1F1F1F] pt-7 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+                        <DmcaBadge />
                         <p className="font-mono text-[9px] uppercase leading-5 tracking-[.14em] text-[#858585]">
                             &copy; avrxt.dev 2024&ndash;{year}. All rights reserved.
                         </p>

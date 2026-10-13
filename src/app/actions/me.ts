@@ -15,6 +15,7 @@ function safeUrl(value: unknown, media = false): string {
     try {
         const parsed = new URL(candidate, 'https://www.avrxt.dev');
         const isInternal = parsed.origin === 'https://www.avrxt.dev';
+        if (!media && isInternal && /^\/(?:gallery|galleery|portfolio)(?:\/|$)/i.test(parsed.pathname)) return '';
         if (isInternal && candidate.startsWith('/') && !candidate.startsWith('//')) {
             return `${parsed.pathname}${parsed.search}${parsed.hash}`;
         }
