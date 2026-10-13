@@ -12,6 +12,8 @@ export default function robots(): MetadataRoute.Robots {
                 '/auth/',
                 '/private/',
                 '/preferance/',
+                '/delete-request',
+                '/contact/confirm',
                 '/preference/',
             ],
         },

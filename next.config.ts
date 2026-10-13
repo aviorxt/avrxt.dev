@@ -59,6 +59,14 @@ const nextConfig: NextConfig = {
         headers: [{ key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' }],
       },
       {
+        source: '/(delete-request|contact/confirm)/:path*',
+        headers: [
+          { key: 'Referrer-Policy', value: 'same-origin' },
+          { key: 'Cache-Control', value: 'private, no-store' },
+          { key: 'X-Robots-Tag', value: 'noindex, nofollow, noarchive' },
+        ],
+      },
+      {
         source: '/subscribe/confirm',
         headers: [
           { key: 'Referrer-Policy', value: 'same-origin' },

@@ -4,7 +4,8 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { makeUnsubscribeUrl } from './unsubscribe-core';
 export { makeUnsubscribeUrl } from './unsubscribe-core';
 
-export const UNSUBSCRIBE_PROPERTY = 'UNSUBSCRIBE_URL';
+import { UNSUBSCRIBE_PROPERTY } from './newsletter-content';
+export { UNSUBSCRIBE_PROPERTY, appendUnsubscribeFooter, htmlToPlainText } from './newsletter-content';
 export const TEST_UNSUBSCRIBE_AUDIENCE_ID = '__avrxt_test__';
 
 export function createResendClient() {
@@ -57,7 +58,11 @@ export async function ensureUnsubscribeProperty(resend: Resend) {
     do {
         const result = await resend.contactProperties.list({ limit: 100, ...(after ? { after } : {}) });
         if (result.error) throw new Error(`Could not inspect Resend contact properties: ${result.error.message}`);
-        if (result.data?.data.some(property => property.key === UNSUBSCRIBE_PROPERTY)) return;
+        const property = result.data?.data.find(property => property.key === UNSUBSCRIBE_PROPERTY);
+        if (property) {
+            if (property.type !== 'string') throw new Error('The website unsubscribe contact property must be a string.');
+            return;
+        }
         after = result.data?.data.at(-1)?.id;
         if (!result.data?.has_more) break;
     } while (after);
@@ -126,28 +131,19 @@ export async function syncAudienceUnsubscribeLinks(resend: Resend, audienceId: s
             if (status.data.counts.failed > 0 || status.data.counts.skipped > 0 || status.data.counts.total !== contacts.length) {
                 throw new Error(`Resend provisioned ${status.data.counts.updated + status.data.counts.created} of ${contacts.length} unsubscribe links. No broadcast was sent.`);
             }
+            // Import completion alone does not prove the personalization property exists.
+            // Check the actual stored value for every intended recipient; never log it.
+            for (const contact of contacts) {
+                await new Promise(resolve => setTimeout(resolve, 550));
+                const saved = await resend.contacts.get({ email: contact.email });
+                if (saved.error || saved.data?.properties?.[UNSUBSCRIBE_PROPERTY]?.value !== contact.url) {
+                    throw new Error('A website unsubscribe link could not be verified. No broadcast was sent.');
+                }
+            }
             return contacts.length;
         }
     }
     throw new Error('Unsubscribe-link provisioning is still running. No broadcast was sent; retry after Resend finishes the contact import.');
-}
-
-export function appendUnsubscribeFooter(html: string, variant: 'broadcast' | 'test' = 'broadcast') {
-    // Remove footers from earlier versions, which contained both our custom
-    // unsubscribe link and Resend's link.
-    let content = html.replace(/<!--\s*avrxt-unsubscribe-footer\s*-->[\s\S]*?<\/div\s*>/gi, '');
-    content = content.replace(/<a\b[^>]*href=["']\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}["'][^>]*>[\s\S]*?<\/a\s*>/gi, '');
-    content = content.replace(/\{\{\{RESEND_UNSUBSCRIBE_URL\}\}\}/g, '');
-    if (content.includes(`{{{${UNSUBSCRIBE_PROPERTY}}}}`)) return content;
-
-    const message = variant === 'test'
-        ? 'This is a test message from avrxt. Use this link to verify the unsubscribe flow; it will not change newsletter membership.'
-        : 'You are receiving this email because you subscribed to avrxt updates.';
-    const linkText = variant === 'test' ? 'Verify unsubscribe link' : 'Unsubscribe from avrxt emails';
-    const footer = `<!-- avrxt-unsubscribe-footer --><div style="margin:32px auto 0;padding:20px 12px;border-top:1px solid #e5e7eb;text-align:center;font-family:Arial,sans-serif;font-size:12px;line-height:1.6;color:#6b7280">${message}<br><a href="{{{${UNSUBSCRIBE_PROPERTY}}}}" style="color:#4b5563;text-decoration:underline">${linkText}</a></div>`;
-    if (/<\/body\s*>/i.test(content)) return content.replace(/<\/body\s*>/i, `${footer}</body>`);
-    if (/<\/html\s*>/i.test(content)) return content.replace(/<\/html\s*>/i, `${footer}</html>`);
-    return `${content}\n${footer}`;
 }
 
 export function validateBroadcastFrom(from: string) {
@@ -166,20 +162,4 @@ export function validateBroadcastFrom(from: string) {
         throw new Error(`Sender domain ${domain} is not in RESEND_FROM_DOMAINS.`);
     }
     return value;
-}
-
-export function htmlToPlainText(html: string) {
-    return html
-        .replace(/<\s*br\s*\/?>/gi, '\n')
-        .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, '\n')
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/&nbsp;/gi, ' ')
-        .replace(/&amp;/gi, '&')
-        .replace(/&lt;/gi, '<')
-        .replace(/&gt;/gi, '>')
-        .replace(/&quot;/gi, '"')
-        .replace(/&#39;/gi, "'")
-        .replace(/[ \t]+/g, ' ')
-        .replace(/\n\s*\n+/g, '\n\n')
-        .trim();
 }

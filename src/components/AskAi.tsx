@@ -127,7 +127,7 @@ export default function AskAi() {
     copyPrompt();
   };
 
-  if (pathname === '/' || pathname === '/subscribe/confirm' || pathname.startsWith('/preference/mail/unsub') || pathname.startsWith('/preferance/mail/unsub')) return null;
+  if (pathname === '/' || (pathname === '/subscribe/confirm' || pathname.startsWith('/delete-request') || pathname === '/contact/confirm') || pathname.startsWith('/preference/mail/unsub') || pathname.startsWith('/preferance/mail/unsub')) return null;
 
   return (
     <>

@@ -10,6 +10,10 @@ const MAINTENANCE_BYPASS_PREFIXES = [
     '/auth',
     '/api',
     '/preferance/mail/unsub',
+    '/delete-request',
+    '/contact/confirm',
+    '/api/delete-request',
+    '/api/requests/confirm',
     '/preference/mail/unsub',
 ]
 

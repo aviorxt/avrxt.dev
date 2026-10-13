@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { PolicyCallout, PolicyList, PolicySection, PolicyShell } from '@/components/legal/PolicyShell';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
@@ -13,7 +14,7 @@ const nav = [
 ];
 
 export default function SecurityPage() {
-  return <PolicyShell eyebrow="Trust center" title="Security" description="How www.avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v5.3" lastUpdated="13 October 2026" nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Email links', value: 'Explicit confirmation' }]}>
+  return <PolicyShell eyebrow="Trust center" title="Security" description="How www.avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v5.4" lastUpdated="13 October 2026" nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Email links', value: 'Explicit confirmation' }]}>
     <PolicySection id="approach" number="01" title="Security approach">
       <p>Security is treated as an ongoing engineering process rather than a guarantee or certification. Controls are selected for the site’s actual risk: public forms and utilities, newsletter delivery, administrator-only features, GitHub, Discord and Spotify OAuth connections, public music data, and third-party infrastructure.</p>
       <p>No internet service is completely secure. This page describes controls visible in the current application and avoids claiming a specific audit result, cipher suite, recovery target, or compliance certification that has not been independently verified.</p>
@@ -31,7 +32,7 @@ export default function SecurityPage() {
 
     <PolicySection id="data" number="03" title="Data, identity, and privileged access">
       <p>Secrets, email credentials, OAuth client secrets, and Spotify access or refresh tokens are expected to remain in server-side environment configuration and are not intentionally exposed to client JavaScript. Authentication uses provider-backed OAuth flows, security-state checks, HTTP-only cookies where applicable, and server-side authorization for restricted routes.</p>
-      <p>Public Muzix responses contain selected listening information rather than credentials. Operational data is handled through providers such as Vercel, Cloudflare, Supabase, Resend, Gmail, GitHub, Discord, and Spotify. Those systems maintain their own infrastructure controls. Access should be limited to what is required to operate and support the site.</p>
+      <p>Public Muzix responses contain selected listening information rather than credentials. Operational data is handled through providers such as Vercel, Cloudflare, Supabase, Resend, Discord, GitHub, Discord, and Spotify. Those systems maintain their own infrastructure controls. Access should be limited to what is required to operate and support the site.</p>
       <PolicyList items={[
         <><strong>Discord administration:</strong> login uses OAuth state and PKCE. The application verifies signed sessions and their audience, then checks current server membership and the required role, or the configured owner identity. Provider errors deny access with a distinct verification error rather than proving a role is absent.</>,
         <><strong>Database access:</strong> Supabase row-level security separates published content from drafts and server-only integration, newsletter, and rate-limit records. Service credentials remain on the server; private admin reads do not use the public Redis cache.</>,
@@ -65,6 +66,7 @@ export default function SecurityPage() {
     <PolicySection id="report" number="05" title="Report a suspected vulnerability">
       <p>Send a private report to <a href="mailto:support@avrxt.dev?subject=Security%20report">support@avrxt.dev</a> with “Security report” in the subject. Include the affected www.avrxt.dev URL or feature, a concise description, reproducible steps, expected impact, and any safe proof-of-concept material.</p>
       <p>Do not include personal data copied from another user, active credentials, destructive payloads, or a public disclosure link. If sensitive evidence is necessary, first ask for a safer transfer method.</p>
+      <p>The <Link href="/delete-request">data-deletion request form</Link> and contact flow use random 24-hour verification tokens stored as hashes, explicit same-origin confirmation, bounded bodies, per-IP and per-email limits, and private database access. Webhook URLs stay server-side; mentions are disabled in Discord embeds. Verification pages exclude application analytics and Ask AI. Requests are reviewed manually; submitting the form does not run destructive database actions. Discord delivery uses a processing lease and request reference to reduce duplicate notifications; an uncertain network failure can still require operator reconciliation.</p>
       <p>For an email-link issue, redact the confirmation or unsubscribe token and provide the page path, approximate time, visible error, and steps instead. Never forward another person’s private link as evidence. Privacy, deletion, and newsletter-support requests can also be sent to support@avrxt.dev, but should be identified separately from a vulnerability report.</p>
     </PolicySection>
 

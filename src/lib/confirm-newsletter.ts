@@ -1,6 +1,6 @@
 import { confirmationHash } from './newsletter-confirmation';
 import { createAdminClient } from '../utils/supabase/admin';
-import { createResendClient, ensureUnsubscribeProperty, issueUnsubscribeLink, removeUnsubscribeLink } from './newsletter-broadcast';
+import { UNSUBSCRIBE_PROPERTY, createResendClient, ensureUnsubscribeProperty, issueUnsubscribeLink, removeUnsubscribeLink } from './newsletter-broadcast';
 import type { ConfirmationResult } from './newsletter-confirmation-request';
 import type { WelcomeDelivery } from './newsletter-welcome';
 import { confirmationLinkState, confirmNewsletterOnce } from './newsletter-confirmation-core';
@@ -27,8 +27,8 @@ export async function completeNewsletterConfirmation(token: string, scheduleWelc
       await ensureUnsubscribeProperty(resend);
       const link = await issueUnsubscribeLink(data.email, data.audience_id);
       const result = existing.data
-        ? await resend.contacts.update({ email: data.email, audienceId: data.audience_id, unsubscribed: false, properties: { UNSUBSCRIBE_URL: link.url } })
-        : await resend.contacts.create({ email: data.email, audienceId: data.audience_id, unsubscribed: false, properties: { UNSUBSCRIBE_URL: link.url } });
+        ? await resend.contacts.update({ email: data.email, audienceId: data.audience_id, unsubscribed: false, properties: { [UNSUBSCRIBE_PROPERTY]: link.url } })
+        : await resend.contacts.create({ email: data.email, audienceId: data.audience_id, unsubscribed: false, properties: { [UNSUBSCRIBE_PROPERTY]: link.url } });
       if (result.error) { await removeUnsubscribeLink(link.token); throw new Error('Subscriber update failed'); }
       return link.url;
     },

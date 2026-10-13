@@ -94,3 +94,14 @@ Manage public incidents and scheduled maintenance in Better Stack’s existing s
 ## License
 
 Source code is covered by the repository `LICENSE`. Brand assets, personal media, and third-party materials are not automatically licensed by that file.
+
+
+### Verified contact and deletion requests
+
+`/delete-request` is linked from the privacy, terms, and security pages only. It is not added to the footer or public search catalog. `/contact` now posts to the same-origin API instead of the external gateway. Both flows send verification through Resend, and forward details to separate Discord webhooks only after explicit email confirmation. Gmail is no longer used by the contact route.
+
+Set `DISCORD_DELETE_REQUEST_WEBHOOK_URL` and `DISCORD_CONTACT_WEBHOOK_URL` as server-only secrets. Existing `RESEND_API_KEY`, Supabase server credentials, and distributed rate-limiter configuration are required. Apply `supabase/migrations/202610130001_verified_requests.sql` with server privileges. It enables RLS and denies anonymous/authenticated table access. The webhook secrets and private table have been configured in the existing Vercel/Supabase projects; a new deployment is required to activate application changes.
+
+Deletion verification emails use security@avrxt.dev, contact verification emails use info@avrxt.dev, and receipt messages use the same respective senders. Verify both with the current email provider before launch. Confirmation tokens expire after 24 hours; expired unconfirmed rows are removed opportunistically on later submissions. Confirmation pages disable application analytics and Ask AI. The 72-hour response window begins after successful verified delivery to Discord. This is manual intake, not automatic deletion.
+
+Discord deliveries are leased for ten minutes to prevent simultaneous confirmation sends. After an ambiguous provider timeout or a database write failure after Discord accepted a message, an operator should reconcile the request reference with channel history before retrying; the lease is not a guarantee of exactly-once delivery. Completed links do not notify Discord again. Email receipts use provider idempotency and bounded retries. Review channel access and record retention operationally; channel copies are not automatically erased with the database record.
