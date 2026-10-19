@@ -139,30 +139,16 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const prepareGalleryVideo = useCallback(async (id: string, url: string) => {
         const video = galleryVideoRefs.current[id];
         if (!video || !isHlsStream(url) || galleryHlsRefs.current[id]) return;
-        // Safari supports HLS directly. Other browsers use hls.js. Wait for the
-        // manifest instead of calling play while MediaSource is still empty.
-        if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            galleryHlsRefs.current[id] = { destroy: () => undefined };
-            await new Promise<void>((resolve, reject) => {
-                const cleanup = () => {
-                    video.removeEventListener('loadedmetadata', onReady);
-                    video.removeEventListener('error', onError);
-                };
-                const onReady = () => { cleanup(); resolve(); };
-                const onError = () => { cleanup(); reject(new Error('The video could not be loaded.')); };
-                video.addEventListener('loadedmetadata', onReady, { once: true });
-                video.addEventListener('error', onError, { once: true });
-                video.src = url;
-                video.load();
-            });
-            return;
-        }
+        // Start with the platform player. Chrome on this device can play Mux HLS
+        // natively, and this avoids introducing MediaSource when it is unnecessary.
+        // hls.js is reserved for an actual native playback error below.
         const { default: Hls } = await import('hls.js');
         if (!Hls.isSupported()) {
-            video.src = url;
-            return;
+            throw new Error('HLS playback is not supported by this browser.');
         }
-        const player = new Hls({ enableWorker: true, lowLatencyMode: false, maxBufferLength: 20, maxMaxBufferLength: 40 });
+        video.removeAttribute('src');
+        video.load();
+        const player = new Hls({ enableWorker: false, lowLatencyMode: false, maxBufferLength: 20, maxMaxBufferLength: 40 });
         galleryHlsRefs.current[id] = player;
         await new Promise<void>((resolve, reject) => {
             const cleanup = () => {
@@ -198,26 +184,10 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 const observer = new IntersectionObserver(entries => {
                     for (const entry of entries) {
                         if (entry.isIntersecting) {
-                            void (async () => {
-                                try {
-                                    await prepareGalleryVideo(item.id, item.url);
-                                    setGalleryVideoErrors(current => {
-                                        const next = new Set(current); next.delete(item.id); return next;
-                                    });
-                                } catch {
-                                    setPlayingGalleryVideo(active => active === item.id ? null : active);
-                                    setGalleryVideoErrors(current => new Set(current).add(item.id));
-                                    return;
-                                }
-                                // Muted autoplay can still be declined by a browser's
-                                // user setting. That is not a stream failure: preserve
-                                // the thumbnail and let the explicit play button work.
-                                try {
-                                    await video.play();
-                                } catch {
-                                    setPlayingGalleryVideo(active => active === item.id ? null : active);
-                                }
-                            })();
+                            // Muted autoplay can still be declined by a browser's
+                            // user setting. That is not a stream failure: preserve
+                            // the thumbnail and let the explicit play button work.
+                            void video.play().catch(() => setPlayingGalleryVideo(active => active === item.id ? null : active));
                         } else {
                             video.pause();
                         }
@@ -1224,7 +1194,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                         {item.type === 'video' ? (
                                             <video
                                                 ref={element => { galleryVideoRefs.current[item.id] = element; }}
-                                                src={isHlsStream(item.url) ? undefined : item.url}
+                                                src={item.url}
                                                 poster={muxPosterUrl(item.url)}
                                                 aria-label={item.caption || 'Gallery video'}
                                                 className="w-full h-full object-cover"
@@ -1241,7 +1211,19 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                                 onContextMenu={event => event.preventDefault()}
                                                 onPlay={() => setPlayingGalleryVideo(item.id)}
                                                 onPause={() => setPlayingGalleryVideo(active => active === item.id ? null : active)}
-                                                onError={() => setGalleryVideoErrors(current => new Set(current).add(item.id))}
+                                                onError={() => {
+                                                    if (!isHlsStream(item.url) || galleryHlsRefs.current[item.id]) {
+                                                        setGalleryVideoErrors(current => new Set(current).add(item.id));
+                                                        return;
+                                                    }
+                                                    const video = galleryVideoRefs.current[item.id];
+                                                    void prepareGalleryVideo(item.id, item.url)
+                                                        .then(() => video?.play())
+                                                        .then(() => setGalleryVideoErrors(current => {
+                                                            const next = new Set(current); next.delete(item.id); return next;
+                                                        }))
+                                                        .catch(() => setGalleryVideoErrors(current => new Set(current).add(item.id)));
+                                                }}
                                             />
                                         ) : (
                                             <img src={item.url} alt={item.caption || 'Gallery Image'} loading="lazy" decoding="async" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
@@ -1284,7 +1266,11 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                                         const video = galleryVideoRefs.current[item.id];
                                                         if (!video) return;
                                                         if (video.paused) {
-                                                            try { await prepareGalleryVideo(item.id, item.url); await video.play(); } catch { setPlayingGalleryVideo(null); }
+                                                            try {
+                                                                await video.play();
+                                                            } catch {
+                                                                try { await prepareGalleryVideo(item.id, item.url); await video.play(); } catch { setPlayingGalleryVideo(null); }
+                                                            }
                                                         } else {
                                                             video.pause();
                                                         }
