@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
     Plus, Trash2, Save, LogOut,
@@ -27,6 +27,18 @@ interface MeAdminClientProps {
     isSpotifyConnected: boolean;
 }
 type AdminSection = 'profile' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
+const R2_CLEANUP_QUEUE_KEY = 'avrxt:admin:r2-cleanup:v1';
+const MUX_CLEANUP_QUEUE_KEY = 'avrxt:admin:mux-cleanup:v1';
+
+function readCleanupQueue(key: string): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+        const value: unknown = JSON.parse(window.sessionStorage.getItem(key) || '[]');
+        return new Set(Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : []);
+    } catch {
+        return new Set();
+    }
+}
 
 function AdminActivityBadge({ state }: { state: 'syncing' | 'updating' | 'processing' }) {
     const copy = state === 'syncing' ? 'Syncing' : state === 'updating' ? 'Updating' : 'Processing';
@@ -46,11 +58,39 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     const [ytError, setYtError] = useState('');
     const [saveStatus, setSaveStatus] = useState<string>('');
     const [isPending, setIsPending] = useState(false);
-    const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => new Set());
-    const [pendingMuxAssetCleanup, setPendingMuxAssetCleanup] = useState<Set<string>>(() => new Set());
+    const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(R2_CLEANUP_QUEUE_KEY));
+    const [pendingMuxAssetCleanup, setPendingMuxAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(MUX_CLEANUP_QUEUE_KEY));
     const [uploadingAsset, setUploadingAsset] = useState<{ name: string; size: number; target: string } | null>(null);
     const [activeSection, setActiveSection] = useState<AdminSection>('profile');
     const activityState = uploadingAsset ? 'processing' as const : isPending ? (saveStatus.startsWith('SYNCING') ? 'syncing' as const : 'updating' as const) : null;
+
+    useEffect(() => {
+        try { window.sessionStorage.setItem(R2_CLEANUP_QUEUE_KEY, JSON.stringify([...pendingAssetCleanup])); } catch { /* Session storage is optional. */ }
+    }, [pendingAssetCleanup]);
+
+    useEffect(() => {
+        try { window.sessionStorage.setItem(MUX_CLEANUP_QUEUE_KEY, JSON.stringify([...pendingMuxAssetCleanup])); } catch { /* Session storage is optional. */ }
+    }, [pendingMuxAssetCleanup]);
+
+    // A completed profile save must not be made to look like a failed upload
+    // because an object-store delete hit a short-lived network/provider error.
+    const deleteR2Asset = async (url: string) => {
+        let result = await deleteFromR2Action(url).catch(error => ({ error: error instanceof Error ? error.message : 'R2_DELETE_FAILED' }));
+        if ('error' in result) {
+            await new Promise(resolve => window.setTimeout(resolve, 700));
+            result = await deleteFromR2Action(url).catch(error => ({ error: error instanceof Error ? error.message : 'R2_DELETE_FAILED' }));
+        }
+        return result;
+    };
+
+    const deleteMuxAsset = async (assetId: string) => {
+        let result = await deleteMuxVideoAction(assetId);
+        if ('error' in result) {
+            await new Promise(resolve => window.setTimeout(resolve, 700));
+            result = await deleteMuxVideoAction(assetId);
+        }
+        return result;
+    };
 
     const handleSave = async () => {
         setIsPending(true);
@@ -75,14 +115,12 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             const cleanupUrls = [...pendingAssetCleanup].filter(url => !referencedUrls.has(url));
             const cleanupResults = await Promise.all(cleanupUrls.map(async url => ({
                 url,
-                result: await deleteFromR2Action(url).catch(error => ({
-                    error: error instanceof Error ? error.message : 'R2_DELETE_FAILED',
-                })),
+                result: await deleteR2Asset(url),
             })));
             const failedCleanupUrls = cleanupResults.filter(item => 'error' in item.result).map(item => item.url);
             const completedCleanupUrls = new Set(cleanupResults.filter(item => !('error' in item.result)).map(item => item.url));
             setPendingAssetCleanup(current => new Set([...current].filter(url => !completedCleanupUrls.has(url))));
-            const muxCleanupResults = await Promise.all([...pendingMuxAssetCleanup].map(async assetId => ({ assetId, result: await deleteMuxVideoAction(assetId) })));
+            const muxCleanupResults = await Promise.all([...pendingMuxAssetCleanup].map(async assetId => ({ assetId, result: await deleteMuxAsset(assetId) })));
             const completedMuxAssetIds = new Set(muxCleanupResults.filter(item => !('error' in item.result)).map(item => item.assetId));
             setPendingMuxAssetCleanup(current => new Set([...current].filter(assetId => !completedMuxAssetIds.has(assetId))));
 

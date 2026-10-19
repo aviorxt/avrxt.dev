@@ -119,23 +119,23 @@ export default function StatusBadge() {
             href="/status"
             prefetch={false}
             aria-label={`${statusLabel}. View the AVRXT system status page.`}
-            className="group flex w-full min-w-0 max-w-[18rem] touch-manipulation items-center gap-3 rounded-xl border border-white/10 bg-zinc-950/70 p-2.5 text-left shadow-[0_10px_30px_rgba(0,0,0,.24)] backdrop-blur-sm transition-[transform,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 active:translate-y-0 active:scale-[.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white motion-reduce:transform-none motion-reduce:transition-none sm:w-72"
+            className="group flex w-fit max-w-full touch-manipulation items-center gap-2 rounded-lg border border-white/10 bg-zinc-950/70 p-2 text-left shadow-[0_8px_22px_rgba(0,0,0,.2)] backdrop-blur-sm transition-[transform,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-zinc-900/90 active:translate-y-0 active:scale-[.99] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white motion-reduce:transform-none motion-reduce:transition-none sm:gap-3 sm:rounded-xl sm:p-2.5"
         >
-            <span className={`grid size-9 shrink-0 place-items-center rounded-lg border ${current.iconSurface} ${current.iconColor}`}>
-                <Icon size={16} strokeWidth={1.8} className={loading ? 'motion-safe:animate-spin' : ''} />
+            <span className={`grid size-8 shrink-0 place-items-center rounded-md border ${current.iconSurface} ${current.iconColor} sm:size-9 sm:rounded-lg`}>
+                <Icon size={15} strokeWidth={1.8} className={loading ? 'motion-safe:animate-spin' : ''} />
             </span>
 
             <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
-                    <span className="font-mono text-[8px] uppercase tracking-[.16em] text-zinc-500">System status</span>
+                    <span className="hidden font-mono text-[8px] uppercase tracking-[.16em] text-zinc-500 sm:inline">System status</span>
                     <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-1.5 py-0.5 font-mono text-[7px] uppercase tracking-[.1em] ${current.badgeSurface} ${current.iconColor}`}>
                         <span className={`size-1.5 rounded-full ${current.dot} ${loading ? 'motion-safe:animate-pulse' : ''}`} />
                         {current.badge}
                     </span>
                 </span>
                 <span className="mt-1 flex min-w-0 items-center gap-2">
-                    <span aria-live="polite" className="truncate text-xs font-medium tracking-[-.01em] text-zinc-100">{statusLabel}</span>
-                    <ArrowUpRight size={13} aria-hidden="true" className="shrink-0 text-zinc-600 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
+                    <span aria-live="polite" className="max-w-32 truncate text-[11px] font-medium tracking-[-.01em] text-zinc-100 sm:max-w-none sm:text-xs">{statusLabel}</span>
+                    <ArrowUpRight size={12} aria-hidden="true" className="shrink-0 text-zinc-600 transition-all duration-200 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white sm:size-[13px]" />
                 </span>
             </span>
         </Link>
