@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, HeadObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, DeleteObjectsCommand, HeadObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { validateR2UploadKey } from './upload-details';
 
@@ -89,6 +89,20 @@ export async function deleteFile(url: string) {
     if (!/^[iv]\/.+/.test(key)) return;
 
     const bucketName = requireEnv('R2_BUCKET_NAME');
+    // HLS media is a playlist plus many segment objects. Only delete a tightly
+    // validated generated prefix, never a visitor-provided arbitrary directory.
+    const hls = key.match(/^v\/(hls-[a-f0-9-]{36})\/index\.m3u8$/);
+    if (hls) {
+        const prefix = `v/${hls[1]}/`;
+        let continuationToken: string | undefined;
+        do {
+            const listed = await getR2Client().send(new ListObjectsV2Command({ Bucket: bucketName, Prefix: prefix, ContinuationToken: continuationToken }));
+            const objects = (listed.Contents || []).flatMap(object => object.Key ? [{ Key: object.Key }] : []);
+            if (objects.length) await getR2Client().send(new DeleteObjectsCommand({ Bucket: bucketName, Delete: { Objects: objects, Quiet: true } }));
+            continuationToken = listed.IsTruncated ? listed.NextContinuationToken : undefined;
+        } while (continuationToken);
+        return;
+    }
     await getR2Client().send(new DeleteObjectCommand({ Bucket: bucketName, Key: key }));
 }
 

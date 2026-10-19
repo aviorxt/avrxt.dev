@@ -72,7 +72,7 @@ export default function Navbar() {
                 <nav className="v7-navbar relative flex items-center bg-[#080808]/90 backdrop-blur-2xl border border-white/10 px-2 py-2 shadow-[0_20px_60px_rgba(0,0,0,0.7)] transition-all duration-500 hover:border-cyan-300/25 pointer-events-auto">
                     {/* Logo */}
                     <Magnetic>
-                        <Link href="/" className="px-4 py-2 transition-transform hover:scale-110 active:scale-95 flex items-center">
+                        <Link href="/" prefetch={false} className="px-4 py-2 transition-transform hover:scale-110 active:scale-95 flex items-center">
                             <img
                                 src="/assets/logo/avrxt-pure-white.png"
                                 alt="avrxt"
@@ -89,6 +89,7 @@ export default function Navbar() {
                                 <Link
                                     key={link.href}
                                     href={link.href}
+                                    prefetch={false}
                                     className={cn(
                                         "px-4 py-2 text-[11px] font-mono uppercase tracking-[0.16em] transition-colors relative z-10 border-l border-white/5",
                                         isActive ? "text-cyan-300 bg-cyan-300/[0.06]" : "text-zinc-500 hover:text-white hover:bg-white/[0.03]"
@@ -166,6 +167,7 @@ export default function Navbar() {
                             <Link
                                 key={link.href}
                                 href={link.href}
+                                prefetch={false}
                                 onClick={() => setIsOpen(false)}
                                 className="group block min-h-12 w-fit max-w-full py-1 text-[clamp(2.75rem,13vw,4rem)] font-black leading-none tracking-tighter text-zinc-500 transition-all hover:translate-x-2 hover:text-white active:scale-[.98] origin-left"
                                 style={{ transitionDelay: `${i * 50}ms` }}
@@ -177,6 +179,7 @@ export default function Navbar() {
                         ))}
                         <Link
                             href="/me"
+                            prefetch={false}
                             onClick={() => setIsOpen(false)}
                             className="group block min-h-12 w-fit max-w-full py-1 text-[clamp(2.75rem,13vw,4rem)] font-black leading-none tracking-tighter text-zinc-500 transition-all hover:translate-x-2 hover:text-white active:scale-[.98] origin-left"
                         >
@@ -187,6 +190,7 @@ export default function Navbar() {
                     <div className="relative z-10 mt-auto pt-10 pb-4 sm:pb-8">
                         <Link
                             href="/contact"
+                            prefetch={false}
                             onClick={() => setIsOpen(false)}
                             className="block min-h-12 w-full border border-white bg-white px-5 py-4 text-center text-xs font-black uppercase tracking-widest text-black shadow-[0_30px_60px_rgba(255,255,255,0.05)] transition-all active:scale-[.98] sm:py-6"
                         >

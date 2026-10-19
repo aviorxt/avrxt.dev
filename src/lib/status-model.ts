@@ -59,7 +59,7 @@ export function parseStatusSnapshot(input: unknown, now = new Date()): StatusSna
   const status = serviceState(raw.data.attributes.aggregate_state);
   return { status, label: STATUS_LABELS[status], available: true, checkedAt: now.toISOString(), announcement: text(raw.data.attributes.announcement, 2000), resources, reports };
 }
-export function historyWindow(history: HistoryDay[], days: 30 | 90, now: Date) {
+export function historyWindow(history: HistoryDay[], days: 7 | 30 | 90, now: Date) {
   const entries = new Map(history.map(day => [day.day, day]));
   return Array.from({ length: days }, (_, index) => {
     const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - days + index + 1)).toISOString().slice(0, 10);

@@ -47,6 +47,15 @@ When a user replaces or removes an asset in `/me/admin`, the old object stays av
 ### 4. Gallery Removal
 Removing a gallery item edits the pending profile draft. The R2 object is deleted only after that draft is saved successfully.
 
+### 5. Segmented gallery video (HLS)
+Gallery entries whose URL ends in `.m3u8` use HLS playback. The page loads the HLS player and requests the playlist/segments only after a visitor presses Play; existing MP4 uploads remain supported as a compatibility fallback. Build and upload a stream from a trusted workstation with `ffmpeg` and the R2 server credentials exported in its environment:
+
+```bash
+npm run media:hls -- /absolute/path/to/video.mp4
+```
+
+The script prints an immutable R2 manifest URL such as `https://cdn.avrxt.dev/v/hls-<uuid>/index.m3u8`. Paste that URL into the matching gallery video’s URL field in `/me/admin`, then save. The generated four-second segments are delivered directly from `cdn.avrxt.dev`, never through Vercel. Removing that gallery entry removes its generated HLS prefix after the configuration save. The R2 credential used for cleanup needs `s3:ListBucket` in addition to object read/write/delete permissions.
+
 ---
 
 ## 🛠️ Technical Fixes & Optimizations

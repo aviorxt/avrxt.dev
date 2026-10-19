@@ -8,7 +8,7 @@ import { getPresignedUploadUrl, getR2Client, verifyR2Upload } from '../src/lib/r
 import { putR2File } from '../src/lib/upload-transport';
 import { NextRequest } from 'next/server';
 import { GET as startLogin } from '../src/app/auth/start/route';
-import { GET as callbackLogin } from '../src/app/auth/callback/route';
+import { GET as callbackLogin } from '../src/app/auth/o1/dc/callback/route';
 import { clientAddress } from '../src/lib/client-address';
 import { createHmac } from 'node:crypto';
 
@@ -32,7 +32,9 @@ test('gateway IP forwarding accepts only fresh authenticated headers', () => {
   }
 });
 test('login emits a browser-bound PKCE transaction and rejects substituted callback state', async () => {
-  const response = await startLogin(new NextRequest('http://localhost:3000/auth/start?provider=github&next=%2F%5Cevil.example'));
+  const previous = process.env.DISCORD_CLIENT_ID;
+  process.env.DISCORD_CLIENT_ID = 'test-client';
+  const response = await startLogin(new NextRequest('http://localhost:3000/auth/start?provider=discord&next=%2F%5Cevil.example'));
   const location = new URL(response.headers.get('location')!);
   assert.equal(location.searchParams.get('code_challenge_method'), 'S256');
   assert.ok(location.searchParams.get('code_challenge'));
@@ -41,13 +43,15 @@ test('login emits a browser-bound PKCE transaction and rejects substituted callb
   assert.equal(transaction.next, '/');
   assert.equal(transaction.state, location.searchParams.get('state'));
   assert.ok(transaction.verifier);
-  const callback = await callbackLogin(new NextRequest('http://localhost:3000/auth/callback?code=unused&state=substituted&next=%2F', {
+  const callback = await callbackLogin(new NextRequest('http://localhost:3000/auth/o1/dc/callback?code=unused&state=substituted', {
     headers: { cookie: `avrxt_oauth_transaction=${encodeURIComponent(cookie.value)}` },
   }));
   assert.match(callback.headers.get('location')!, /oauth_callback_failed/);
   assert.equal(callback.cookies.get('avrxt_oauth_transaction')?.value, '');
-  const withoutCookie = await callbackLogin(new NextRequest('http://localhost:3000/auth/callback?code=unused&state=anything'));
+  const withoutCookie = await callbackLogin(new NextRequest('http://localhost:3000/auth/o1/dc/callback?code=unused&state=anything'));
   assert.match(withoutCookie.headers.get('location')!, /oauth_callback_failed/);
+  if (previous === undefined) delete process.env.DISCORD_CLIENT_ID;
+  else process.env.DISCORD_CLIENT_ID = previous;
 });
 test('uploads rewrite personal filenames, use MIME extensions and remain unique', () => {
   const first = uploadDetails('../../my personal photo.exe', 'image/jpeg', 42);

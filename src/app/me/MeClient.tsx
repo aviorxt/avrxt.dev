@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import React from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
@@ -49,6 +49,7 @@ const LOCAL_QUOTES = [
 ];
 
 const pickQuote = () => LOCAL_QUOTES[Math.floor(Math.random() * LOCAL_QUOTES.length)];
+const isHlsStream = (url: string) => /\.m3u8(?:$|[?#])/i.test(url);
 
 type WeatherSnapshot = {
     temperature_2m: number;
@@ -126,7 +127,58 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const spotifyProgressBarRef = useRef<HTMLDivElement>(null);
     const spotifyProgressLastStateUpdateRef = useRef<number>(0);
     const galleryVideoRefs = useRef<Record<string, HTMLVideoElement | null>>({});
+    const galleryHlsRefs = useRef<Record<string, { destroy: () => void }>>({});
     const [playingGalleryVideo, setPlayingGalleryVideo] = useState<string | null>(null);
+    const [unmutedGalleryVideos, setUnmutedGalleryVideos] = useState<Set<string>>(() => new Set());
+
+    const prepareGalleryVideo = useCallback(async (id: string, url: string) => {
+        const video = galleryVideoRefs.current[id];
+        if (!video || !isHlsStream(url) || galleryHlsRefs.current[id]) return;
+        // Safari supports HLS directly. Other browsers load hls.js only after a
+        // visitor presses play, so gallery browsing does not fetch player code or media.
+        if (video.canPlayType('application/vnd.apple.mpegurl')) {
+            video.src = url;
+            galleryHlsRefs.current[id] = { destroy: () => undefined };
+            return;
+        }
+        const { default: Hls } = await import('hls.js');
+        if (!Hls.isSupported()) {
+            video.src = url;
+            return;
+        }
+        const player = new Hls({ enableWorker: true, lowLatencyMode: false, maxBufferLength: 20, maxMaxBufferLength: 40 });
+        player.loadSource(url);
+        player.attachMedia(video);
+        galleryHlsRefs.current[id] = player;
+    }, []);
+
+    useEffect(() => () => {
+        Object.values(galleryHlsRefs.current).forEach(player => player.destroy());
+        galleryHlsRefs.current = {};
+    }, []);
+
+    useEffect(() => {
+        const observers = config.gallery
+            .filter(item => item.type === 'video')
+            .flatMap(item => {
+                const video = galleryVideoRefs.current[item.id];
+                if (!video) return [];
+                const observer = new IntersectionObserver(entries => {
+                    for (const entry of entries) {
+                        if (entry.isIntersecting) {
+                            void prepareGalleryVideo(item.id, item.url)
+                                .then(() => video.play())
+                                .catch(() => setPlayingGalleryVideo(active => active === item.id ? null : active));
+                        } else {
+                            video.pause();
+                        }
+                    }
+                }, { threshold: 0.15 });
+                observer.observe(video);
+                return [observer];
+            });
+        return () => observers.forEach(observer => observer.disconnect());
+    }, [config.gallery, prepareGalleryVideo]);
 
     useEffect(() => {
         setIsMounted(true);
@@ -971,19 +1023,21 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                         <Link
                                             href={link.url}
                                             target="_blank"
-                                            className="link-card flex items-center justify-between p-4 rounded-xl border border-white/5 bg-white/[0.02] hover:bg-white/[0.06] hover:border-white/20 transition-all group"
+                                            className="link-card group flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.02] p-3 transition-[transform,border-color,background-color] duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.055] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                            <div className="flex min-w-0 items-center gap-3">
+                                                <div className="icon-surface size-10 shrink-0 text-zinc-400 transition-[transform,border-color,color,background-color] duration-200 group-hover:scale-105 group-hover:border-white/20 group-hover:bg-white/[0.08] group-hover:text-white">
                                                     {isCustomIcon ? (
-                                                        <img src={link.icon} alt={link.name} className="w-4 h-4" />
+                                                        <img src={link.icon} alt="" className="size-4 object-contain" />
                                                     ) : (
-                                                        <Icon className="w-4 h-4 text-zinc-400 group-hover:text-white transition-colors" />
+                                                        <Icon className="size-[18px]" aria-hidden="true" />
                                                     )}
                                                 </div>
-                                                <span className="text-sm font-bold tracking-tight uppercase group-hover:translate-x-1 transition-transform">{link.name}</span>
+                                                <span className="truncate text-sm font-semibold tracking-tight uppercase transition-transform duration-200 group-hover:translate-x-0.5">{link.name}</span>
                                             </div>
-                                            <ChevronRight className="w-4 h-4 text-zinc-800 group-hover:text-white transition-all group-hover:translate-x-1" />
+                                            <span className="icon-surface grid size-8 shrink-0 place-items-center rounded-md text-zinc-600 transition-[transform,border-color,color,background-color] duration-200 group-hover:translate-x-0.5 group-hover:border-white/20 group-hover:bg-white/[0.08] group-hover:text-white">
+                                                <ChevronRight className="size-4" aria-hidden="true" />
+                                            </span>
                                         </Link>
                                     </Tilt>
                                 </Reveal>
@@ -1121,13 +1175,14 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                         {item.type === 'video' ? (
                                             <video
                                                 ref={element => { galleryVideoRefs.current[item.id] = element; }}
-                                                src={item.url}
+                                                src={isHlsStream(item.url) ? undefined : item.url}
                                                 aria-label={item.caption || 'Gallery video'}
                                                 className="w-full h-full object-cover"
-                                                muted
+                                                autoPlay
+                                                muted={!unmutedGalleryVideos.has(item.id)}
                                                 loop
                                                 playsInline
-                                                preload="none"
+                                                preload="metadata"
                                                 controls={false}
                                                 controlsList="nodownload noremoteplayback"
                                                 disablePictureInPicture
@@ -1146,28 +1201,47 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                             </div>
                                         )}
                                         {item.type === 'video' && (
-                                            <button
-                                                type="button"
-                                                className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-xl transition duration-300 hover:scale-110 hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                                                aria-label={playingGalleryVideo === item.id ? 'Pause gallery video' : 'Play gallery video'}
-                                                aria-pressed={playingGalleryVideo === item.id}
-                                                title={playingGalleryVideo === item.id ? 'Pause video' : 'Play video'}
-                                                onContextMenu={event => event.preventDefault()}
-                                                onClick={async () => {
-                                                    const video = galleryVideoRefs.current[item.id];
-                                                    if (!video) return;
-                                                    if (video.paused) {
-                                                        Object.entries(galleryVideoRefs.current).forEach(([id, otherVideo]) => {
-                                                            if (id !== item.id) otherVideo?.pause();
+                                            <div className="absolute right-3 top-3 flex gap-2">
+                                                <button
+                                                    type="button"
+                                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-xl transition duration-300 hover:scale-110 hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                                    aria-label={unmutedGalleryVideos.has(item.id) ? 'Mute gallery video' : 'Unmute gallery video'}
+                                                    aria-pressed={unmutedGalleryVideos.has(item.id)}
+                                                    title={unmutedGalleryVideos.has(item.id) ? 'Mute video' : 'Unmute video'}
+                                                    onContextMenu={event => event.preventDefault()}
+                                                    onClick={() => {
+                                                        const video = galleryVideoRefs.current[item.id];
+                                                        const shouldUnmute = !unmutedGalleryVideos.has(item.id);
+                                                        if (video) video.muted = !shouldUnmute;
+                                                        setUnmutedGalleryVideos(current => {
+                                                            const next = new Set(current);
+                                                            if (shouldUnmute) next.add(item.id); else next.delete(item.id);
+                                                            return next;
                                                         });
-                                                        try { await video.play(); } catch { setPlayingGalleryVideo(null); }
-                                                    } else {
-                                                        video.pause();
-                                                    }
-                                                }}
-                                            >
-                                                {playingGalleryVideo === item.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
-                                            </button>
+                                                    }}
+                                                >
+                                                    {unmutedGalleryVideos.has(item.id) ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/20 bg-black/55 text-white shadow-lg backdrop-blur-xl transition duration-300 hover:scale-110 hover:bg-white hover:text-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                                                    aria-label={playingGalleryVideo === item.id ? 'Pause gallery video' : 'Play gallery video'}
+                                                    aria-pressed={playingGalleryVideo === item.id}
+                                                    title={playingGalleryVideo === item.id ? 'Pause video' : 'Play video'}
+                                                    onContextMenu={event => event.preventDefault()}
+                                                    onClick={async () => {
+                                                        const video = galleryVideoRefs.current[item.id];
+                                                        if (!video) return;
+                                                        if (video.paused) {
+                                                            try { await prepareGalleryVideo(item.id, item.url); await video.play(); } catch { setPlayingGalleryVideo(null); }
+                                                        } else {
+                                                            video.pause();
+                                                        }
+                                                    }}
+                                                >
+                                                    {playingGalleryVideo === item.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
                                 </Reveal>

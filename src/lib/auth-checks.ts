@@ -1,4 +1,4 @@
-import { getAuthUser } from '@/lib/openauth';
+import { getAuthUser } from '@/lib/discord-auth';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import { getDiscordAccess } from '@/lib/discord-access';

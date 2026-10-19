@@ -4,7 +4,7 @@ import Reveal from '@/components/Reveal';
 
 export type PolicyNavItem = { id: string; label: string };
 
-export function PolicyShell({ eyebrow, title, description, version, lastUpdated, nav, highlights, children }: { eyebrow: string; title: string; description: string; version: string; lastUpdated: string; nav: PolicyNavItem[]; highlights: Array<{ label: string; value: string }>; children: React.ReactNode }) {
+export function PolicyShell({ eyebrow, title, description, version, lastUpdated, nav, highlights, reader = false, children }: { eyebrow: string; title: string; description: string; version: string; lastUpdated: string; nav: PolicyNavItem[]; highlights: Array<{ label: string; value: string }>; reader?: boolean; children: React.ReactNode }) {
   return <main className="mx-auto min-h-screen w-full max-w-6xl px-4 pb-24 pt-28 sm:px-6 sm:pt-36">
     <Reveal className="active">
       <header className="relative overflow-hidden border-b border-[#1F1F1F] pb-10 sm:pb-14">
@@ -17,8 +17,8 @@ export function PolicyShell({ eyebrow, title, description, version, lastUpdated,
 
       <section className="grid gap-px border-x border-b border-[#1F1F1F] bg-[#1F1F1F] sm:grid-cols-3">{highlights.map((item) => <div key={item.label} className="bg-black p-5"><p className="font-mono text-[9px] uppercase tracking-[.18em] text-[#666666]">{item.label}</p><p className="mt-2 text-sm font-medium text-[#E5E5E5]">{item.value}</p></div>)}</section>
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-start">
-        <aside className="lg:sticky lg:top-28"><div className="border border-[#1F1F1F] bg-black p-4"><p className="mb-3 font-mono text-[9px] uppercase tracking-[.2em] text-[#666666]">On this page</p><nav className="grid gap-1">{nav.map((item, index) => <a key={item.id} href={`#${item.id}`} className="group flex min-h-10 items-center gap-3 border border-transparent px-2 text-xs text-[#858585] transition-colors hover:border-[#292929] hover:bg-[#080808] hover:text-white"><span className="font-mono text-[8px] text-[#484848]">{String(index + 1).padStart(2, '0')}</span><span>{item.label}</span></a>)}</nav></div><div className="mt-3 flex items-start gap-3 border border-[#1F1F1F] bg-[#080808] p-4"><ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#858585]" /><p className="text-[11px] leading-5 text-[#686868]">Plain-language summaries help navigation. The full section text controls.</p></div></aside>
+      <div className={`mt-8 grid gap-8 ${reader ? '' : 'lg:grid-cols-[14rem_minmax(0,1fr)] lg:items-start'}`}>
+        {!reader && <aside className="lg:sticky lg:top-28"><div className="border border-[#1F1F1F] bg-black p-4"><p className="mb-3 font-mono text-[9px] uppercase tracking-[.2em] text-[#666666]">On this page</p><nav className="grid gap-1">{nav.map((item, index) => <a key={item.id} href={`#${item.id}`} className="group flex min-h-10 items-center gap-3 border border-transparent px-2 text-xs text-[#858585] transition-colors hover:border-[#292929] hover:bg-[#080808] hover:text-white"><span className="font-mono text-[8px] text-[#484848]">{String(index + 1).padStart(2, '0')}</span><span>{item.label}</span></a>)}</nav></div><div className="mt-3 flex items-start gap-3 border border-[#1F1F1F] bg-[#080808] p-4"><ShieldCheck size={15} className="mt-0.5 shrink-0 text-[#858585]" /><p className="text-[11px] leading-5 text-[#686868]">Plain-language summaries help navigation. The full section text controls.</p></div></aside>}
         <div className="space-y-4">{children}</div>
       </div>
 

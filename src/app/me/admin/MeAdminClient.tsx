@@ -7,7 +7,7 @@ import {
     Music, Link as LinkIcon, Book,
     Check, ArrowUp, ArrowDown,
     User, Eye, AlertCircle, Camera, Upload, Activity,
-    Search, Youtube, Wrench
+    Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MeConfig } from '@/lib/me-config';
@@ -25,6 +25,17 @@ interface MeAdminClientProps {
     initialConfig: MeConfig;
     isSpotifyConnected: boolean;
 }
+type AdminSection = 'profile' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
+
+function AdminActivityBadge({ state }: { state: 'syncing' | 'updating' | 'processing' }) {
+    const copy = state === 'syncing' ? 'Syncing' : state === 'updating' ? 'Updating' : 'Processing';
+    const tone = state === 'syncing'
+        ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+        : state === 'updating'
+            ? 'border-sky-400/20 bg-sky-400/10 text-sky-200'
+            : 'border-amber-400/20 bg-amber-400/10 text-amber-100';
+    return <span role="status" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[.12em] ${tone}`}><LoaderCircle size={11} className="animate-spin" />{copy}</span>;
+}
 
 export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeAdminClientProps) {
     const [config, setConfig] = useState<MeConfig>(initialConfig);
@@ -35,6 +46,9 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     const [saveStatus, setSaveStatus] = useState<string>('');
     const [isPending, setIsPending] = useState(false);
     const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => new Set());
+    const [uploadingAsset, setUploadingAsset] = useState<{ name: string; size: number; target: string } | null>(null);
+    const [activeSection, setActiveSection] = useState<AdminSection>('profile');
+    const activityState = uploadingAsset ? 'processing' as const : isPending ? (saveStatus.startsWith('SYNCING') ? 'syncing' as const : 'updating' as const) : null;
 
     const handleSave = async () => {
         setIsPending(true);
@@ -85,6 +99,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
 
         let uploadFailed = false;
         setIsPending(true);
+        setUploadingAsset({ name: file.name, size: file.size, target });
         setSaveStatus('UPLOADING...');
 
         try {
@@ -140,6 +155,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             setSaveStatus(`ERROR: ${error.message || 'UPLOAD_FAILED'}`);
         } finally {
             setIsPending(false);
+            setUploadingAsset(null);
             input.value = '';
             // Keep error messages visible longer (8 seconds)
             // but clear success messages faster (2 seconds)
@@ -163,7 +179,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             <h1 className="text-3xl font-bold tracking-tighter uppercase mb-2 font-mono italic">Me_Dashboard</h1>
                             <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Connected_To_Node: avrxt-core-01</span>
+                                <span className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Connected_To_Node: avrxt-core-01 {activityState && <AdminActivityBadge state={activityState} />}</span>
                             </div>
                         </div>
                         <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto">
@@ -281,11 +297,13 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
+                        <aside className="lg:sticky lg:top-24 lg:h-fit"><p className="mb-3 hidden font-mono text-[9px] uppercase tracking-[.18em] text-zinc-600 lg:block">Studio sections</p><nav aria-label="Admin sections" className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">{([{ id: 'profile', label: 'Profile', Icon: User }, { id: 'presence', label: 'Presence', Icon: Activity }, { id: 'music', label: 'Music', Icon: Music }, { id: 'widgets', label: 'Widgets', Icon: SlidersHorizontal }, { id: 'links', label: 'Links', Icon: LinkIcon }, { id: 'resources', label: 'Resources', Icon: Book }, { id: 'gallery', label: 'Visual feed', Icon: Camera }, { id: 'settings', label: 'Settings', Icon: Settings }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} aria-pressed={activeSection === id} className={cn('flex min-h-10 shrink-0 items-center gap-3 rounded-lg border px-3 text-left text-xs transition-colors lg:w-full', activeSection === id ? 'border-white/20 bg-white/[.08] text-white' : 'border-transparent text-zinc-500 hover:bg-white/[.04] hover:text-zinc-200')}><Icon size={15} />{label}</button>)}</nav></aside>
+                        <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
                         {/* Left Column */}
                         <div className="space-y-6">
                             {/* Profile Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'profile' && 'hidden')}>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                     <User size={16} className="text-zinc-500" /> Profile_Data
                                 </h2>
@@ -407,7 +425,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Presence Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'presence' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Activity size={16} className="text-zinc-500" /> Presence_System
@@ -691,7 +709,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Music Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'music' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Music size={16} className="text-zinc-500" /> Current_Freq
@@ -920,7 +938,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         {/* Right Column */}
                         <div className="space-y-6">
                             {/* Widget Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'widgets' && 'hidden')}>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                     <Activity size={16} className="text-zinc-500" /> Widget_Control
                                 </h2>
@@ -1025,7 +1043,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Links Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'links' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <LinkIcon size={16} className="text-zinc-500" /> Connections
@@ -1159,7 +1177,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Resources Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'resources' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Book size={16} className="text-zinc-500" /> Resources
@@ -1280,22 +1298,33 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Gallery Settings (New) */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
-                                <div className="flex justify-between items-center">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'gallery' && 'hidden')}>
+                                <div>
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Camera size={16} className="text-zinc-500" /> Gallery
                                     </h2>
-                                    <div className="flex gap-2">
-                                        <label className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-all font-bold border border-white/10 uppercase tracking-tighter cursor-pointer flex items-center gap-2">
-                                            <Upload size={10} /> ADD_IMG
-                                            <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" onChange={(e) => handleFileUpload(e, 'gallery', 'image')} />
-                                        </label>
-                                        <label className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-all font-bold border border-white/10 uppercase tracking-tighter cursor-pointer flex items-center gap-2">
-                                            <Upload size={10} /> ADD_VID
-                                            <input type="file" className="hidden" accept="video/mp4,video/webm,video/ogg" onChange={(e) => handleFileUpload(e, 'gallery', 'video')} />
-                                        </label>
-                                    </div>
+                                    <p className="mt-1 text-[10px] text-zinc-500">Add media directly to R2. Save changes to publish the updated gallery.</p>
                                 </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.035]">
+                                        <span className="icon-surface size-10 shrink-0 text-zinc-400 transition-colors group-hover:text-white"><FileImage size={18} /></span>
+                                        <span className="min-w-0 flex-1"><span className="block text-xs font-medium text-zinc-200">Upload image</span><span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[.1em] text-zinc-500">PNG · JPG · WebP · AVIF</span></span>
+                                        <Upload size={15} className="shrink-0 text-zinc-600 transition-colors group-hover:text-white" />
+                                        <input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" onChange={(e) => handleFileUpload(e, 'gallery', 'image')} />
+                                    </label>
+                                    <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.035]">
+                                        <span className="icon-surface size-10 shrink-0 text-zinc-400 transition-colors group-hover:text-white"><FileVideo size={18} /></span>
+                                        <span className="min-w-0 flex-1"><span className="block text-xs font-medium text-zinc-200">Upload MP4</span><span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[.1em] text-zinc-500">MP4 · WebM · OGG</span></span>
+                                        <Upload size={15} className="shrink-0 text-zinc-600 transition-colors group-hover:text-white" />
+                                        <input type="file" className="sr-only" accept="video/mp4,video/webm,video/ogg" onChange={(e) => handleFileUpload(e, 'gallery', 'video')} />
+                                    </label>
+                                </div>
+                                {uploadingAsset?.target === 'gallery' && (
+                                    <div className="flex items-center gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3" role="status">
+                                        <span className="icon-surface grid size-10 shrink-0 place-items-center border-emerald-400/20 bg-emerald-400/10 text-emerald-300"><LoaderCircle size={17} className="animate-spin" /></span>
+                                        <span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-zinc-100">{uploadingAsset.name}</span><span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[.1em] text-emerald-300">Uploading to R2 · {(uploadingAsset.size / 1024 / 1024).toFixed(2)} MB</span></span>
+                                    </div>
+                                )}
                                 <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                                     {(config.gallery || []).map((item, idx) => (
                                         <div key={item.id} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-3 group hover:border-white/20 transition-all">
@@ -1359,12 +1388,13 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                 }}
                                                 placeholder="URL"
                                             />
+                                            {item.type === 'video' && <p className="text-[9px] leading-4 text-zinc-600">Paste an R2 <code>.m3u8</code> playlist URL for segmented HLS playback. Direct MP4 uploads remain a compatibility fallback.</p>}
                                         </div>
                                     ))}
                                 </div>
                             </div>
                         </div>
-                    </div>
+                    </div></div>
                 </div>
 
                     <div className="sticky bottom-3 z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/90 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/75">
@@ -1375,6 +1405,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             <Save size={14} /> {isPending ? 'Saving…' : 'Save changes'}
                         </button>
                     </div>
+                </div>
 
                 <style jsx global>{`
            .admin-input {

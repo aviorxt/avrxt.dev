@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { PolicyCallout, PolicyList, PolicySection, PolicyShell } from '@/components/legal/PolicyShell';
+import { PolicyReader } from '@/components/legal/PolicyReader';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
@@ -14,7 +15,7 @@ const nav = [
 ];
 
 export default function TermsPage() {
-  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using www.avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.4" lastUpdated="13 October 2026" nav={nav} highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}>
+  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using www.avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.4" lastUpdated="13 October 2026" nav={nav} reader highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}><PolicyReader nav={nav}>
     <PolicySection id="agreement" number="01" title="Agreement and scope">
       <p>By accessing or using www.avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the site. These terms cover public pages, forms, tools, APIs, newsletter features, Ask AI handoffs, the Muzix dashboard, account features, and integrations operated through this website.</p>
       <p>The site may change, experience downtime, or discontinue a feature. No promise is made that every feature will remain available, error-free, or compatible with every device.</p>
@@ -86,5 +87,5 @@ export default function TermsPage() {
       <p>These terms are governed by the laws of India, subject to mandatory consumer or other protections that apply to you. A dispute may be brought before a court that has jurisdiction under applicable law.</p>
       <p>Questions can be sent to <a href="mailto:support@avrxt.dev">support@avrxt.dev</a>. Information about data handling appears in the <Link href="/legal/privacy">Privacy Policy</Link>, and vulnerability reports belong on the <Link href="/legal/security">Security page</Link>.</p>
     </PolicySection>
-  </PolicyShell>;
+  </PolicyReader></PolicyShell>;
 }

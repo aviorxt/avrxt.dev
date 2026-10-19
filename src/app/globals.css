@@ -110,6 +110,14 @@
 
   :focus-visible { outline: 2px solid #e5e5e5; outline-offset: 3px; }
 
+  /* One visual language for every shadcn/Lucide interface icon. Brand SVGs keep
+     their own filled artwork, while system icons use the quieter rounded stroke. */
+  svg.lucide {
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
   /* Parallax Background Layers */
   .parallax-bg {
     position: fixed;
@@ -196,6 +204,15 @@
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+
+  .icon-surface {
+    display: grid;
+    place-items: center;
+    border: 1px solid rgb(255 255 255 / 0.1);
+    border-radius: 0.625rem;
+    background: rgb(255 255 255 / 0.045);
+    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.035);
   }
 }
 

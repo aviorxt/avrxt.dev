@@ -24,7 +24,7 @@ export default function ToolsPage() {
           {tools.map((tool, index) => {
             const Icon = tool.icon;
             return (
-              <Link key={tool.slug} href={`/tools/${tool.slug}`} className="tool-card group relative min-h-64 overflow-hidden border border-[#1F1F1F] bg-[#080808] p-5 sm:p-6">
+              <Link key={tool.slug} href={`/tools/${tool.slug}`} prefetch={false} className="tool-card group relative min-h-64 overflow-hidden border border-[#1F1F1F] bg-[#080808] p-5 sm:p-6">
                 <div className="flex items-start justify-between">
                   <span className="font-mono text-[10px] tracking-[.24em] text-[#666666]">0{index + 1}</span>
                   <Icon size={18} className="text-[#858585] transition-all duration-300 group-hover:rotate-6 group-hover:text-white" />

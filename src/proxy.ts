@@ -1,6 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getOpenAuthClient } from '@/lib/openauth'
-import { authSubjects } from '../auth-worker/subjects'
 
 const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
@@ -34,28 +32,7 @@ async function isMaintenanceModeEnabled() {
 export default async function proxy(request: NextRequest) {
     const url = request.nextUrl
 
-    const requestHeaders = new Headers(request.headers)
-    let refreshedTokens: { access: string; refresh: string } | undefined
-    const access = request.cookies.get('avrxt_access')?.value
-    const refresh = request.cookies.get('avrxt_refresh')?.value
-    if (access && refresh && (url.pathname.startsWith('/me/admin') || url.pathname.startsWith('/docs/admin'))) {
-        try {
-            const verified = await getOpenAuthClient().verify(authSubjects, access, { refresh })
-            if (!verified.err && verified.aud === 'avrxt-web' && verified.tokens) {
-                refreshedTokens = verified.tokens
-                request.cookies.set('avrxt_access', verified.tokens.access)
-                request.cookies.set('avrxt_refresh', verified.tokens.refresh)
-                requestHeaders.set('cookie', request.cookies.toString())
-            }
-        } catch { /* Authorization checks will reject an invalid session. */ }
-    }
-
-    const sessionResponse = NextResponse.next({ request: { headers: requestHeaders } })
-    if (refreshedTokens) {
-        const options = { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax' as const, path: '/', maxAge: 2592000 }
-        sessionResponse.cookies.set('avrxt_access', refreshedTokens.access, options)
-        sessionResponse.cookies.set('avrxt_refresh', refreshedTokens.refresh, options)
-    }
+    const sessionResponse = NextResponse.next()
 
     const bypassesMaintenance = MAINTENANCE_BYPASS_PREFIXES.some(prefix =>
         url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)
