@@ -22,15 +22,20 @@ function isMeRoute(pathname: string) {
 }
 
 function isFooterHidden(pathname: string) {
-    return FOOTER_HIDDEN_ROUTES.has(pathname) || isMeRoute(pathname);
+    return FOOTER_HIDDEN_ROUTES.has(pathname) || isMeRoute(pathname) || pathname.startsWith('/auth/');
 }
 
 function isNavHidden(pathname: string) {
-    return NAV_HIDDEN_ROUTES.has(pathname) || isMeRoute(pathname);
+    return NAV_HIDDEN_ROUTES.has(pathname) || isMeRoute(pathname) || pathname.startsWith('/auth/');
 }
 
 export default function SiteChrome({ position }: { position: 'before' | 'after' }) {
     const pathname = usePathname();
+
+    // Authentication is intentionally a self-contained surface. Rendering any
+    // site chrome here creates overflowing menus on small screens and distracts
+    // from the OAuth flow.
+    if (pathname.startsWith('/auth/')) return null;
 
     if (position === 'before') {
         if (isNavHidden(pathname)) return null;

@@ -1,7 +1,7 @@
 'use server';
 
 import { verifyAdmin } from '@/lib/auth-checks';
-import { copyStorageEntry, createStorageFolder, deleteStorageEntry, listStorage, readStorageText, signedStorageUpload, storagePreview, writeStorageText } from '@/lib/s3-storage';
+import { copyStorageEntry, createStorageFolder, createStorageShareLink, deleteStorageEntry, listStorage, readStorageText, setStorageVisibility, signedStorageUpload, storagePreview, writeStorageText } from '@/lib/s3-storage';
 
 async function guarded<T>(work: () => Promise<T>) {
   const auth = await verifyAdmin();
@@ -19,3 +19,5 @@ export async function getStorageUploadAction(key: string, contentType: string) {
 export async function previewStorageAction(key: string) { return guarded(() => storagePreview(key)); }
 export async function readStorageTextAction(key: string) { return guarded(() => readStorageText(key)); }
 export async function writeStorageTextAction(key: string, content: string, contentType: string) { return guarded(async () => { await writeStorageText(key, content, contentType); }); }
+export async function setStorageVisibilityAction(key: string, visibility: 'private' | 'public') { return guarded(async () => { await setStorageVisibility(key, visibility); }); }
+export async function createStorageShareAction(key: string) { return guarded(() => createStorageShareLink(key)); }

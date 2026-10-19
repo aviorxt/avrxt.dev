@@ -4,7 +4,10 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-export type StorageEntry = { key: string; name: string; type: 'file' | 'folder'; size?: number; updatedAt?: string; contentType?: string };
+export type StorageEntry = { key: string; name: string; type: 'file' | 'folder'; size?: number; updatedAt?: string; contentType?: string; visibility?: 'private' | 'public' };
+const INTERNAL_PREFIX = '__avrxt-storage/';
+const visibilityKey = (key: string) => `${INTERNAL_PREFIX}visibility/${Buffer.from(key).toString('base64url')}.json`;
+const shareKey = (token: string) => `${INTERNAL_PREFIX}shares/${token}.json`;
 
 function required(name: string) {
   const value = process.env[name]?.trim();
@@ -37,10 +40,18 @@ function fileName(key: string) { return key.split('/').filter(Boolean).at(-1) ||
 export async function listStorage(prefix = ''): Promise<StorageEntry[]> {
   const safePrefix = prefix ? normalizeStorageKey(prefix, { folder: true }) : '';
   const result = await client().send(new ListObjectsV2Command({ Bucket: bucket(), Prefix: safePrefix, Delimiter: '/', MaxKeys: 200 }));
-  const folders = (result.CommonPrefixes || []).flatMap(({ Prefix }) => Prefix ? [{ key: Prefix, name: fileName(Prefix.slice(0, -1)), type: 'folder' as const }] : []);
+  const visibility = new Set<string>();
+  const markers = await client().send(new ListObjectsV2Command({ Bucket: bucket(), Prefix: `${INTERNAL_PREFIX}visibility/`, MaxKeys: 1000 }));
+  for (const marker of markers.Contents || []) {
+    const encoded = marker.Key?.split('/').at(-1)?.replace(/\.json$/, '');
+    if (!encoded) continue;
+    try { visibility.add(Buffer.from(encoded, 'base64url').toString()); } catch { /* Ignore malformed internal metadata. */ }
+  }
+  const folders = (result.CommonPrefixes || []).flatMap(({ Prefix }) => Prefix && !Prefix.startsWith(INTERNAL_PREFIX) ? [{ key: Prefix, name: fileName(Prefix.slice(0, -1)), type: 'folder' as const }] : []);
   const files = (result.Contents || []).flatMap(object => {
     if (!object.Key || object.Key === safePrefix) return [];
-    return [{ key: object.Key, name: fileName(object.Key), type: 'file' as const, size: object.Size || 0, updatedAt: object.LastModified?.toISOString(), contentType: undefined }];
+    if (object.Key.startsWith(INTERNAL_PREFIX)) return [];
+    return [{ key: object.Key, name: fileName(object.Key), type: 'file' as const, size: object.Size || 0, updatedAt: object.LastModified?.toISOString(), contentType: undefined, visibility: visibility.has(object.Key) ? 'public' as const : 'private' as const }];
   });
   return [...folders, ...files].sort((a, b) => a.type === b.type ? a.name.localeCompare(b.name) : a.type === 'folder' ? -1 : 1);
 }
@@ -100,6 +111,32 @@ export async function storagePreview(key: string) {
   const head = await client().send(new HeadObjectCommand({ Bucket: bucket(), Key: safeKey }));
   const url = await getSignedUrl(client(), new GetObjectCommand({ Bucket: bucket(), Key: safeKey, ResponseContentDisposition: 'inline' }), { expiresIn: 600 });
   return { url, contentType: head.ContentType || 'application/octet-stream', size: head.ContentLength || 0 };
+}
+
+export async function setStorageVisibility(key: string, visibility: 'private' | 'public') {
+  const safeKey = normalizeStorageKey(key);
+  if (visibility === 'private') { await client().send(new DeleteObjectCommand({ Bucket: bucket(), Key: visibilityKey(safeKey) })); return; }
+  await client().send(new PutObjectCommand({ Bucket: bucket(), Key: visibilityKey(safeKey), Body: JSON.stringify({ key: safeKey, visibility: 'public' }), ContentType: 'application/json' }));
+}
+
+export async function createStorageShareLink(key: string, expiresIn = 86_400) {
+  const safeKey = normalizeStorageKey(key);
+  await client().send(new HeadObjectCommand({ Bucket: bucket(), Key: safeKey }));
+  const token = crypto.randomUUID().replace(/-/g, '');
+  const expiresAt = Date.now() + expiresIn * 1000;
+  await client().send(new PutObjectCommand({ Bucket: bucket(), Key: shareKey(token), Body: JSON.stringify({ key: safeKey, expiresAt }), ContentType: 'application/json' }));
+  return { token, expiresAt };
+}
+
+export async function publicStorageLink(token: string) {
+  if (!/^[a-f0-9]{32}$/.test(token)) throw new Error('Invalid share link.');
+  const marker = await client().send(new GetObjectCommand({ Bucket: bucket(), Key: shareKey(token) }));
+  const parsed = JSON.parse(await marker.Body?.transformToString() || '{}') as { key?: string; expiresAt?: number };
+  if (!parsed.key || !parsed.expiresAt || parsed.expiresAt < Date.now()) throw new Error('This share link has expired.');
+  const safeKey = normalizeStorageKey(parsed.key);
+  const head = await client().send(new HeadObjectCommand({ Bucket: bucket(), Key: safeKey }));
+  const url = await getSignedUrl(client(), new GetObjectCommand({ Bucket: bucket(), Key: safeKey, ResponseContentDisposition: 'inline' }), { expiresIn: 600 });
+  return { url, contentType: head.ContentType || 'application/octet-stream' };
 }
 
 export async function readStorageText(key: string) {
