@@ -402,7 +402,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg text-[10px] font-bold font-mono transition-all border border-white/5">
                             <Eye size={11} /> PREVIEW
                         </Link>
-                        <Link href="/me/admin" prefetch={false}
+                        <Link href="/dashboard" prefetch={false}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/20 hover:bg-purple-900/40 text-purple-400 rounded-lg text-[10px] font-bold font-mono transition-all border border-purple-500/20">
                             PROFILE
                         </Link>

@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { getSpotifyRedirectUri } from '@/lib/spotify-oauth';
+import { getAdminDashboardPath } from '@/lib/admin-dashboard';
 
 export async function GET(request: Request) {
   const { authorized } = await verifyAdmin();
@@ -22,7 +23,7 @@ export async function GET(request: Request) {
   ].join(' ');
 
   if (!clientId) {
-    return NextResponse.redirect(new URL('/me/admin?error=spotify_env_missing', request.url));
+    return NextResponse.redirect(new URL(`${await getAdminDashboardPath()}?error=spotify_env_missing`, request.url));
   }
 
   const state = crypto.randomBytes(24).toString('hex');

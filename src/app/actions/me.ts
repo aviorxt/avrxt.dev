@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { MeConfig, defaultMeConfig } from '@/lib/me-config';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { getAdminDashboardPath } from '@/lib/admin-dashboard';
 
 function safeUrl(value: unknown, media = false): string {
     if (typeof value !== 'string') return '';
@@ -130,7 +131,7 @@ export async function saveMeConfigAction(config: MeConfig) {
 
     const cacheInvalidated = await invalidatePublicCache('profile');
     revalidatePath('/me');
-    revalidatePath('/me/admin');
+    revalidatePath(await getAdminDashboardPath());
     revalidatePath('/maintenance');
     return { success: true, ...(!cacheInvalidated ? { warning: 'Saved, but Redis cache invalidation failed. Public data may take up to two minutes to refresh.' } : {}) };
 }

@@ -17,7 +17,7 @@ function LoginContent() {
     const [isDiscordLoading, setIsDiscordLoading] = useState(false);
     const [clientError, setClientError] = useState<string | null>(null);
     const source = searchParams.get('source');
-    const next = searchParams.get('next') || (source === 'admin' ? '/me/admin' : '/docs/admin');
+    const next = searchParams.get('next') || (source === 'admin' ? '/dashboard' : '/docs/admin');
 
     useEffect(() => {
         if (!source) {

@@ -4,6 +4,7 @@ import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getSpotifyRedirectUri } from '@/lib/spotify-oauth';
 import { invalidatePublicCache } from '@/lib/public-cache';
+import { getAdminDashboardPath } from '@/lib/admin-dashboard';
 
 const TOKEN_ENDPOINT = 'https://accounts.spotify.com/api/token';
 
@@ -28,9 +29,10 @@ export async function GET(request: Request) {
   const clientId = process.env.SPOTIFY_CLIENT_ID;
   const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
   const redirectUri = getSpotifyRedirectUri(request.url);
+  const dashboardPath = await getAdminDashboardPath();
 
   if (!clientId || !clientSecret) {
-    return NextResponse.redirect(new URL('/me/admin?error=spotify_env_missing', request.url));
+    return NextResponse.redirect(new URL(`${dashboardPath}?error=spotify_env_missing`, request.url));
   }
 
   const { searchParams } = new URL(request.url);
@@ -41,11 +43,11 @@ export async function GET(request: Request) {
   const storedState = cookieStore.get('spotify_oauth_state')?.value;
 
   if (!code) {
-    return redirectWithStateCleanup(request, '/me/admin?error=no_code');
+    return redirectWithStateCleanup(request, `${dashboardPath}?error=no_code`);
   }
 
   if (!returnedState || !storedState || returnedState !== storedState) {
-    return redirectWithStateCleanup(request, '/me/admin?error=state_mismatch');
+    return redirectWithStateCleanup(request, `${dashboardPath}?error=state_mismatch`);
   }
 
   const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
@@ -73,7 +75,7 @@ export async function GET(request: Request) {
 
   if (!tokenResponse.ok || !tokenData.access_token || !tokenData.expires_in) {
     console.error('[SPOTIFY_TOKEN_EXCHANGE_FAILED]', tokenResponse.status, tokenData.error, tokenData.error_description);
-    return redirectWithStateCleanup(request, '/me/admin?error=token_fetch_failed');
+    return redirectWithStateCleanup(request, `${dashboardPath}?error=token_fetch_failed`);
   }
 
   const supabase = createAdminClient();
@@ -86,7 +88,7 @@ export async function GET(request: Request) {
 
   const refreshToken = tokenData.refresh_token || existing?.refresh_token;
   if (!refreshToken) {
-    return redirectWithStateCleanup(request, '/me/admin?error=refresh_token_missing');
+    return redirectWithStateCleanup(request, `${dashboardPath}?error=refresh_token_missing`);
   }
 
   await supabase.from('spotify_tokens').delete().neq('id', '00000000-0000-0000-0000-000000000000');
@@ -99,9 +101,9 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error('SPOTIFY DB SAVE ERROR:', error);
-    return redirectWithStateCleanup(request, `/me/admin?error=db_save_failed&msg=${encodeURIComponent(error.message)}`);
+    return redirectWithStateCleanup(request, `${dashboardPath}?error=db_save_failed&msg=${encodeURIComponent(error.message)}`);
   }
 
   await invalidatePublicCache('spotify');
-  return redirectWithStateCleanup(request, '/me/admin?success=spotify_connected');
+  return redirectWithStateCleanup(request, `${dashboardPath}?success=spotify_connected`);
 }

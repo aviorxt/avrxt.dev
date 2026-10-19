@@ -13,7 +13,7 @@ export default function Navbar() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const pathname = usePathname();
 
-    const isHiddenRoute = pathname.startsWith('/me') || pathname.startsWith('/docs/admin');
+    const isHiddenRoute = pathname.startsWith('/me') || pathname.startsWith('/dashboard') || pathname.startsWith('/docs/admin');
 
     const navLinks = [
         { name: 'Home', href: '/' },

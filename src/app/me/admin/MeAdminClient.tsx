@@ -25,6 +25,7 @@ import { DISCORD_BADGES } from '@/lib/discord-badges';
 interface MeAdminClientProps {
     initialConfig: MeConfig;
     isSpotifyConnected: boolean;
+    dashboardPath: string;
 }
 type AdminSection = 'profile' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
 const R2_CLEANUP_QUEUE_KEY = 'avrxt:admin:r2-cleanup:v1';
@@ -50,7 +51,7 @@ function AdminActivityBadge({ state }: { state: 'syncing' | 'updating' | 'proces
     return <span role="status" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[.12em] ${tone}`}><LoaderCircle size={11} className="animate-spin" />{copy}</span>;
 }
 
-export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeAdminClientProps) {
+export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashboardPath }: MeAdminClientProps) {
     const [config, setConfig] = useState<MeConfig>(initialConfig);
     const [ytSearchQuery, setYtSearchQuery] = useState('');
     const [ytResults, setYtResults] = useState<any[]>([]);
@@ -265,7 +266,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                 DOCS
                             </Link>
                             <Link
-                                href="/me/admin/mail-broadcat"
+                                href={`${dashboardPath}/mail-broadcat`}
                                 prefetch={false}
                                 className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10"
                             >
@@ -555,7 +556,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                             </button>
                                         ) : (
                                             <Link
-                                                href="/auth/start?provider=discord&next=%2Fme%2Fadmin"
+                                                href="/auth/start?provider=discord&next=%2Fdashboard"
                                                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-bold font-mono rounded-md transition-all uppercase"
                                             >
                                                 Connect_Discord

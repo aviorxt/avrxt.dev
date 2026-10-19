@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
     '/me/admin',
+    '/dashboard',
     '/docs/admin',
     '/mail',
     '/auth',

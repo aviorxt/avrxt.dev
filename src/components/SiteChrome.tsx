@@ -18,7 +18,7 @@ const FOOTER_HIDDEN_ROUTES = new Set([
 ]);
 
 function isMeRoute(pathname: string) {
-    return pathname === '/me' || pathname.startsWith('/me/');
+    return pathname === '/me' || pathname.startsWith('/me/') || pathname.startsWith('/dashboard');
 }
 
 function isFooterHidden(pathname: string) {

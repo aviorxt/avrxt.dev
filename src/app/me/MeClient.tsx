@@ -1399,7 +1399,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                     <div className="flex items-center justify-center gap-4 text-[10px] text-zinc-700 font-mono uppercase tracking-widest mt-2">
                         <span>&copy; {isMounted ? new Date().getFullYear() : '2026'} avrxt.dev</span>
                         <span className="text-zinc-800">|</span>
-                        <Link href="/me/admin" className="text-zinc-800 hover:text-zinc-500 transition-colors">
+                        <Link href="/dashboard" className="text-zinc-800 hover:text-zinc-500 transition-colors">
                             ADMIN
                         </Link>
                     </div>
