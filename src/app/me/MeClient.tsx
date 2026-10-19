@@ -50,6 +50,10 @@ const LOCAL_QUOTES = [
 
 const pickQuote = () => LOCAL_QUOTES[Math.floor(Math.random() * LOCAL_QUOTES.length)];
 const isHlsStream = (url: string) => /\.m3u8(?:$|[?#])/i.test(url);
+const muxPosterUrl = (url: string) => {
+    const playbackId = url.match(/^https:\/\/stream\.mux\.com\/([^/?#]+)\.m3u8(?:[?#].*)?$/i)?.[1];
+    return playbackId ? `https://image.mux.com/${playbackId}/thumbnail.jpg?width=720&height=720&fit_mode=preserve&time=0` : undefined;
+};
 
 type WeatherSnapshot = {
     temperature_2m: number;
@@ -130,15 +134,27 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const galleryHlsRefs = useRef<Record<string, { destroy: () => void }>>({});
     const [playingGalleryVideo, setPlayingGalleryVideo] = useState<string | null>(null);
     const [unmutedGalleryVideos, setUnmutedGalleryVideos] = useState<Set<string>>(() => new Set());
+    const [galleryVideoErrors, setGalleryVideoErrors] = useState<Set<string>>(() => new Set());
 
     const prepareGalleryVideo = useCallback(async (id: string, url: string) => {
         const video = galleryVideoRefs.current[id];
         if (!video || !isHlsStream(url) || galleryHlsRefs.current[id]) return;
-        // Safari supports HLS directly. Other browsers load hls.js only after a
-        // visitor presses play, so gallery browsing does not fetch player code or media.
+        // Safari supports HLS directly. Other browsers use hls.js. Wait for the
+        // manifest instead of calling play while MediaSource is still empty.
         if (video.canPlayType('application/vnd.apple.mpegurl')) {
-            video.src = url;
             galleryHlsRefs.current[id] = { destroy: () => undefined };
+            await new Promise<void>((resolve, reject) => {
+                const cleanup = () => {
+                    video.removeEventListener('loadedmetadata', onReady);
+                    video.removeEventListener('error', onError);
+                };
+                const onReady = () => { cleanup(); resolve(); };
+                const onError = () => { cleanup(); reject(new Error('The video could not be loaded.')); };
+                video.addEventListener('loadedmetadata', onReady, { once: true });
+                video.addEventListener('error', onError, { once: true });
+                video.src = url;
+                video.load();
+            });
             return;
         }
         const { default: Hls } = await import('hls.js');
@@ -147,9 +163,25 @@ export default function MeClient({ config }: { config: MeConfig }) {
             return;
         }
         const player = new Hls({ enableWorker: true, lowLatencyMode: false, maxBufferLength: 20, maxMaxBufferLength: 40 });
-        player.loadSource(url);
-        player.attachMedia(video);
         galleryHlsRefs.current[id] = player;
+        await new Promise<void>((resolve, reject) => {
+            const cleanup = () => {
+                player.off(Hls.Events.MANIFEST_PARSED, onManifestParsed);
+                player.off(Hls.Events.ERROR, onHlsError);
+            };
+            const onManifestParsed = () => { cleanup(); resolve(); };
+            const onHlsError = (_event: string, data: { fatal?: boolean; details?: string }) => {
+                if (!data.fatal) return;
+                cleanup();
+                player.destroy();
+                delete galleryHlsRefs.current[id];
+                reject(new Error(data.details || 'The video stream could not be loaded.'));
+            };
+            player.on(Hls.Events.MANIFEST_PARSED, onManifestParsed);
+            player.on(Hls.Events.ERROR, onHlsError);
+            player.loadSource(url);
+            player.attachMedia(video);
+        });
     }, []);
 
     useEffect(() => () => {
@@ -168,7 +200,13 @@ export default function MeClient({ config }: { config: MeConfig }) {
                         if (entry.isIntersecting) {
                             void prepareGalleryVideo(item.id, item.url)
                                 .then(() => video.play())
-                                .catch(() => setPlayingGalleryVideo(active => active === item.id ? null : active));
+                                .then(() => setGalleryVideoErrors(current => {
+                                    const next = new Set(current); next.delete(item.id); return next;
+                                }))
+                                .catch(() => {
+                                    setPlayingGalleryVideo(active => active === item.id ? null : active);
+                                    setGalleryVideoErrors(current => new Set(current).add(item.id));
+                                });
                         } else {
                             video.pause();
                         }
@@ -1176,6 +1214,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                             <video
                                                 ref={element => { galleryVideoRefs.current[item.id] = element; }}
                                                 src={isHlsStream(item.url) ? undefined : item.url}
+                                                poster={muxPosterUrl(item.url)}
                                                 aria-label={item.caption || 'Gallery video'}
                                                 className="w-full h-full object-cover"
                                                 autoPlay
@@ -1191,6 +1230,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                                 onContextMenu={event => event.preventDefault()}
                                                 onPlay={() => setPlayingGalleryVideo(item.id)}
                                                 onPause={() => setPlayingGalleryVideo(active => active === item.id ? null : active)}
+                                                onError={() => setGalleryVideoErrors(current => new Set(current).add(item.id))}
                                             />
                                         ) : (
                                             <img src={item.url} alt={item.caption || 'Gallery Image'} loading="lazy" decoding="async" className="w-full h-full object-cover grayscale-[20%] group-hover:grayscale-0 transition-all duration-500 group-hover:scale-110" />
@@ -1241,6 +1281,11 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                                 >
                                                     {playingGalleryVideo === item.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
                                                 </button>
+                                            </div>
+                                        )}
+                                        {item.type === 'video' && galleryVideoErrors.has(item.id) && (
+                                            <div className="absolute inset-x-3 bottom-3 rounded-lg border border-amber-300/30 bg-black/75 px-3 py-2 text-center text-[10px] text-amber-100 backdrop-blur" role="status">
+                                                Video could not start. Refresh once, or replace it in Me Admin.
                                             </div>
                                         )}
                                     </div>
