@@ -272,6 +272,13 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                             >
                                 MAIL BROADCAST
                             </Link>
+                            <Link
+                                href={`${dashboardPath}/storage`}
+                                prefetch={false}
+                                className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10"
+                            >
+                                <FileImage size={13} /> STORAGE
+                            </Link>
                             <button
                                 onClick={handleSave}
                                 disabled={isPending}
