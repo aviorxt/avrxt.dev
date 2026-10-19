@@ -1,6 +1,6 @@
 'use client';
 
-import { ChangeEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { Check, ChevronDown, ChevronRight, Copy, Download, File, Folder, FolderPlus, Globe2, Link2, LoaderCircle, LockKeyhole, Pause, Pencil, Play, RefreshCw, Share2, Trash2, Upload, Volume2, VolumeX, X } from 'lucide-react';
 import { copyStorageAction, createFolderAction, createStorageShareAction, deleteStorageAction, getStorageUploadAction, listStorageAction, moveStorageAction, previewStorageAction, setStorageVisibilityAction } from '@/app/actions/storage';
@@ -75,6 +75,7 @@ export default function StorageClient({ dashboardPath }: { dashboardPath: string
   const [preview, setPreview] = useState<Preview | null>(null);
   const [tree, setTree] = useState<Record<string, StorageEntry[]>>({});
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [dragActive, setDragActive] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(async () => {
@@ -96,8 +97,8 @@ export default function StorageClient({ dashboardPath }: { dashboardPath: string
     if ('error' in result) setStatus(result.error || 'Preview unavailable.');
     else setPreview({ key: entry.key, name: entry.name, url: result.data.url, type: result.data.contentType });
   };
-  const upload = async (event: ChangeEvent<HTMLInputElement>) => {
-    const files = [...(event.target.files || [])];
+  const uploadFiles = async (files: File[]) => {
+    if (!files.length || busy) return;
     setBusy(true);
     for (const file of files) {
       const prepared = await getStorageUploadAction(`${prefix}${file.name}`, file.type || 'application/octet-stream');
@@ -106,7 +107,16 @@ export default function StorageClient({ dashboardPath }: { dashboardPath: string
       if (!response.ok) { setStatus(`Upload failed for ${file.name}.`); break; }
       setStatus(`Uploaded ${file.name}`);
     }
-    event.target.value = ''; setBusy(false); await refresh();
+    setBusy(false); await refresh();
+  };
+  const upload = async (event: ChangeEvent<HTMLInputElement>) => {
+    await uploadFiles([...(event.target.files || [])]);
+    event.target.value = '';
+  };
+  const dropFiles = (event: DragEvent<HTMLElement>) => {
+    event.preventDefault();
+    setDragActive(false);
+    void uploadFiles([...event.dataTransfer.files]);
   };
   const submit = () => {
     if (!modal) return;
@@ -135,10 +145,10 @@ export default function StorageClient({ dashboardPath }: { dashboardPath: string
 
   return <main className="min-h-screen bg-[#050505] p-4 text-zinc-100 sm:p-7 lg:p-10"><div className="mx-auto max-w-6xl">
     <header className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-white/10 pb-5"><div><p className="font-mono text-[10px] uppercase tracking-[.2em] text-zinc-500">Dashboard / secure storage</p><h1 className="mt-2 text-2xl font-black">Personal file storage</h1><p className="mt-1 text-sm text-zinc-500">Private S3 storage with controlled visibility and expiring share links.</p></div><Link href={dashboardPath} className="border border-white/10 px-3 py-2 text-xs text-zinc-300 hover:bg-white/5">Back to dashboard</Link></header>
-    <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]"><FileTree tree={tree} expanded={expanded} selected={prefix} onToggle={toggleTree} onSelect={entry => void open(entry)} /><section className="overflow-hidden border border-white/10 bg-zinc-950"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-3"><div className="flex min-w-0 items-center gap-1 text-xs text-zinc-500"><button onClick={() => setPrefix('')} className="hover:text-white">root</button>{crumbs.map((part, index) => <span key={`${part}-${index}`} className="flex min-w-0 items-center gap-1"><ChevronRight size={12}/><button className="truncate hover:text-white" onClick={() => setPrefix(`${crumbs.slice(0, index + 1).join('/')}/`)}>{part}</button></span>)}</div><div className="flex gap-2"><button onClick={() => setModal({ kind: 'folder', value: '' })} className="grid size-9 place-items-center border border-white/10 hover:bg-white/5" aria-label="Create folder"><FolderPlus size={16}/></button><button onClick={() => fileInput.current?.click()} className="bg-white px-3 text-xs font-bold text-black"><Upload size={14} className="mr-1 inline"/>Upload</button><input ref={fileInput} onChange={upload} type="file" multiple className="hidden"/></div></div>
+    <div className="grid gap-4 lg:grid-cols-[15rem_minmax(0,1fr)]"><FileTree tree={tree} expanded={expanded} selected={prefix} onToggle={toggleTree} onSelect={entry => void open(entry)} /><section onDragEnter={event => { event.preventDefault(); setDragActive(true); }} onDragOver={event => event.preventDefault()} onDragLeave={event => { if (event.currentTarget === event.target) setDragActive(false); }} onDrop={dropFiles} className={`relative overflow-hidden border bg-zinc-950 transition-colors ${dragActive ? 'border-white bg-white/[.04]' : 'border-white/10'}`}><div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-3"><div className="flex min-w-0 items-center gap-1 text-xs text-zinc-500"><button onClick={() => setPrefix('')} className="hover:text-white">root</button>{crumbs.map((part, index) => <span key={`${part}-${index}`} className="flex min-w-0 items-center gap-1"><ChevronRight size={12}/><button className="truncate hover:text-white" onClick={() => setPrefix(`${crumbs.slice(0, index + 1).join('/')}/`)}>{part}</button></span>)}</div><div className="flex gap-2"><button onClick={() => setModal({ kind: 'folder', value: '' })} className="grid size-9 place-items-center border border-white/10 hover:bg-white/5" aria-label="Create folder"><FolderPlus size={16}/></button><button onClick={() => fileInput.current?.click()} className="bg-white px-3 text-xs font-bold text-black"><Upload size={14} className="mr-1 inline"/>Upload</button><input ref={fileInput} onChange={upload} type="file" multiple className="hidden"/></div></div>
       <div className="p-3"><p role="status" className="mb-3 flex items-center gap-2 text-xs text-zinc-500">{busy && <LoaderCircle size={13} className="animate-spin"/>}{status}<button onClick={() => void refresh()} className="ml-auto p-1 hover:text-white" aria-label="Refresh"><RefreshCw size={14}/></button></p>
       {entries.length === 0 && !busy ? <p className="py-16 text-center text-sm text-zinc-600">This folder is empty.</p> : <div className="divide-y divide-white/5">{entries.map(entry => <div key={entry.key} className="flex items-center gap-2 py-3 sm:gap-3"><button onClick={() => void open(entry)} className="flex min-w-0 flex-1 items-center gap-3 text-left"><span className="text-amber-300">{entry.type === 'folder' ? <Folder size={18}/> : <File size={18}/>}</span><span className="min-w-0"><b className="block truncate text-sm font-medium">{entry.name}</b><small className="text-zinc-600">{entry.type === 'folder' ? 'Folder' : size(entry.size)}</small>{entry.type === 'file' && <span className={`ml-2 inline-flex items-center gap-1 border px-1.5 py-0.5 font-mono text-[8px] uppercase ${entry.visibility === 'public' ? 'border-emerald-300/20 text-emerald-200' : 'border-white/10 text-zinc-500'}`}>{entry.visibility === 'public' ? <Globe2 size={10}/> : <LockKeyhole size={10}/>} {entry.visibility || 'private'}</span>}</span></button><div className="flex shrink-0 gap-0.5 sm:gap-1">{entry.type === 'file' && <><button onClick={() => void run(() => setStorageVisibilityAction(entry.key, entry.visibility === 'public' ? 'private' : 'public'))} className="grid size-8 place-items-center text-zinc-400 hover:bg-white/5" aria-label="Toggle public visibility">{entry.visibility === 'public' ? <LockKeyhole size={15}/> : <Globe2 size={15}/>}</button><button onClick={() => makeShare(entry)} className="grid size-8 place-items-center text-zinc-400 hover:bg-white/5" aria-label="Create share link"><Share2 size={15}/></button><button onClick={() => void open(entry)} className="hidden sm:grid size-8 place-items-center text-zinc-400 hover:bg-white/5" aria-label="Preview"><Download size={15}/></button></>}<button onClick={() => setModal({ kind: 'copy', entry, value: `copy-${entry.name}` })} className="hidden sm:grid size-8 place-items-center text-zinc-400 hover:bg-white/5" aria-label="Copy"><Copy size={15}/></button><button onClick={() => setModal({ kind: 'rename', entry, value: entry.name })} className="grid size-8 place-items-center text-zinc-400 hover:bg-white/5" aria-label="Rename"><Pencil size={15}/></button><button onClick={() => setModal({ kind: 'delete', entry })} className="grid size-8 place-items-center text-red-400 hover:bg-red-400/10" aria-label="Delete"><Trash2 size={15}/></button></div></div>)}</div>}</div>
-    </section></div>
+    {dragActive && <div className="pointer-events-none absolute inset-2 z-10 grid place-items-center border border-dashed border-white bg-black/80"><div className="text-center"><Upload size={24} className="mx-auto mb-2"/><p className="font-mono text-[10px] uppercase tracking-[.18em]">Drop files to upload</p><p className="mt-1 text-xs text-zinc-400">They will be saved in {prefix || 'root'}</p></div></div>}</section></div>
   </div>
   {modal && <div className="fixed inset-0 z-[60] grid place-items-center bg-black/80 p-4 backdrop-blur-sm"><form onSubmit={(event: FormEvent) => { event.preventDefault(); submit(); }} className="w-full max-w-md border border-white/15 bg-[#101010] p-5"><div className="flex justify-between gap-3"><h2 className="text-lg font-semibold">{modal.kind === 'folder' ? 'Create folder' : modal.kind === 'delete' ? 'Delete item' : modal.kind === 'copy' ? 'Duplicate item' : 'Rename item'}</h2><button type="button" onClick={() => setModal(null)}><X size={17}/></button></div><p className="mt-3 text-sm text-zinc-400">{modal.kind === 'delete' ? `Delete ${modal.entry.name}? This cannot be undone.` : 'Choose a name for this storage item.'}</p>{modal.kind !== 'delete' && <input autoFocus value={modal.value} onChange={event => setModal({ ...modal, value: event.target.value } as Modal)} className="mt-4 h-11 w-full border border-white/15 bg-black px-3 text-sm outline-none focus:border-white/45"/>}<div className="mt-5 flex justify-end gap-2"><button type="button" onClick={() => setModal(null)} className="border border-white/10 px-4 py-2 text-sm">Cancel</button><button className="inline-flex items-center gap-2 bg-white px-4 py-2 text-sm font-semibold text-black"><Check size={14}/>Confirm</button></div></form></div>}
   {share && <div className="fixed inset-0 z-[60] grid place-items-center bg-black/80 p-4 backdrop-blur-sm"><section className="w-full max-w-lg border border-white/15 bg-[#101010] p-5"><div className="flex justify-between gap-3"><h2 className="truncate text-lg font-semibold">Share {share.name}</h2><button onClick={() => setShare(null)}><X size={17}/></button></div><p className="mt-3 text-sm text-zinc-400">This private link expires {new Date(share.expiresAt).toLocaleString()}.</p><div className="mt-4 flex gap-2"><input readOnly value={share.url} className="min-w-0 flex-1 border border-white/15 bg-black px-3 py-2 font-mono text-xs"/><button onClick={() => void navigator.clipboard.writeText(share.url)} className="grid size-10 place-items-center bg-white text-black" aria-label="Copy link"><Link2 size={15}/></button></div></section></div>}
