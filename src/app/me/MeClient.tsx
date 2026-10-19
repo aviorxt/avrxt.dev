@@ -198,15 +198,26 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 const observer = new IntersectionObserver(entries => {
                     for (const entry of entries) {
                         if (entry.isIntersecting) {
-                            void prepareGalleryVideo(item.id, item.url)
-                                .then(() => video.play())
-                                .then(() => setGalleryVideoErrors(current => {
-                                    const next = new Set(current); next.delete(item.id); return next;
-                                }))
-                                .catch(() => {
+                            void (async () => {
+                                try {
+                                    await prepareGalleryVideo(item.id, item.url);
+                                    setGalleryVideoErrors(current => {
+                                        const next = new Set(current); next.delete(item.id); return next;
+                                    });
+                                } catch {
                                     setPlayingGalleryVideo(active => active === item.id ? null : active);
                                     setGalleryVideoErrors(current => new Set(current).add(item.id));
-                                });
+                                    return;
+                                }
+                                // Muted autoplay can still be declined by a browser's
+                                // user setting. That is not a stream failure: preserve
+                                // the thumbnail and let the explicit play button work.
+                                try {
+                                    await video.play();
+                                } catch {
+                                    setPlayingGalleryVideo(active => active === item.id ? null : active);
+                                }
+                            })();
                         } else {
                             video.pause();
                         }

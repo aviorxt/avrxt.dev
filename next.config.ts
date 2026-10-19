@@ -16,6 +16,7 @@ const contentSecurityPolicy = [
   `script-src-elem 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com${previewScriptSources}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' data: https://fonts.gstatic.com",
+  "worker-src 'self' blob:",
   "img-src 'self' data: blob: https:",
   "media-src 'self' blob: https:",
   `connect-src 'self' https:${process.env.NEXT_PUBLIC_SUPABASE_URL ? ` ${new URL(process.env.NEXT_PUBLIC_SUPABASE_URL).origin.replace(/^https:/, 'wss:')}` : ''}`,
