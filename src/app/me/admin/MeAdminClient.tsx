@@ -16,6 +16,7 @@ import { logout } from '@/app/actions/auth';
 import { disconnectSpotifyAction } from '@/app/actions/spotify';
 import { searchYouTubeAction } from '@/app/actions/youtube';
 import { deleteFromR2Action } from '@/app/actions/r2';
+import { createMuxVideoUploadAction, deleteMuxVideoAction, getMuxVideoUploadAction } from '@/app/actions/mux';
 import { uploadToR2 } from '@/lib/upload-client';
 import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
@@ -46,6 +47,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     const [saveStatus, setSaveStatus] = useState<string>('');
     const [isPending, setIsPending] = useState(false);
     const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => new Set());
+    const [pendingMuxAssetCleanup, setPendingMuxAssetCleanup] = useState<Set<string>>(() => new Set());
     const [uploadingAsset, setUploadingAsset] = useState<{ name: string; size: number; target: string } | null>(null);
     const [activeSection, setActiveSection] = useState<AdminSection>('profile');
     const activityState = uploadingAsset ? 'processing' as const : isPending ? (saveStatus.startsWith('SYNCING') ? 'syncing' as const : 'updating' as const) : null;
@@ -80,11 +82,15 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             const failedCleanupUrls = cleanupResults.filter(item => 'error' in item.result).map(item => item.url);
             const completedCleanupUrls = new Set(cleanupResults.filter(item => !('error' in item.result)).map(item => item.url));
             setPendingAssetCleanup(current => new Set([...current].filter(url => !completedCleanupUrls.has(url))));
+            const muxCleanupResults = await Promise.all([...pendingMuxAssetCleanup].map(async assetId => ({ assetId, result: await deleteMuxVideoAction(assetId) })));
+            const completedMuxAssetIds = new Set(muxCleanupResults.filter(item => !('error' in item.result)).map(item => item.assetId));
+            setPendingMuxAssetCleanup(current => new Set([...current].filter(assetId => !completedMuxAssetIds.has(assetId))));
 
-            setSaveStatus(failedCleanupUrls.length
-                ? `SAVED: R2_CLEANUP_FAILED (${failedCleanupUrls.length}); SAVE_AGAIN_TO_RETRY`
+            const failedMuxAssetIds = muxCleanupResults.filter(item => 'error' in item.result).map(item => item.assetId);
+            setSaveStatus(failedCleanupUrls.length || failedMuxAssetIds.length
+                ? `SAVED: MEDIA_CLEANUP_FAILED (${failedCleanupUrls.length + failedMuxAssetIds.length}); SAVE_AGAIN_TO_RETRY`
                 : result.warning || 'SUCCESS: CONFIG_SYNCED');
-            if (!failedCleanupUrls.length && !result.warning) setTimeout(() => setSaveStatus(''), 3000);
+            if (!failedCleanupUrls.length && !failedMuxAssetIds.length && !result.warning) setTimeout(() => setSaveStatus(''), 3000);
         } catch (error) {
             setSaveStatus(`ERROR: ${error instanceof Error ? error.message : 'SAVE_FAILED'}`);
         } finally {
@@ -116,6 +122,23 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             }
 
             setSaveStatus(`UPLOADING (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+            if (target === 'gallery' && (galleryType === 'video' || file.type.startsWith('video/'))) {
+                const prepared = await createMuxVideoUploadAction(file.name, file.type, file.size);
+                if ('error' in prepared) throw new Error(prepared.error);
+                const uploadResponse = await fetch(prepared.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+                if (!uploadResponse.ok) throw new Error(`Mux rejected the video upload (${uploadResponse.status}).`);
+                setSaveStatus('MUX IS ENCODING YOUR VIDEO...');
+                for (let attempt = 0; attempt < 60; attempt += 1) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    const status = await getMuxVideoUploadAction(prepared.uploadId);
+                    if ('error' in status) throw new Error(status.error);
+                    if (status.state !== 'ready') continue;
+                    setConfig(current => ({ ...current, gallery: [...(current.gallery || []), { id: Date.now().toString(), type: 'video', url: status.url, muxAssetId: status.assetId, caption: 'New Upload' }] }));
+                    setSaveStatus('MUX VIDEO READY: SAVE TO PUBLISH');
+                    return;
+                }
+                throw new Error('Mux is still encoding. Try again shortly; no gallery item was published.');
+            }
             const { publicUrl } = await uploadToR2(file);
 
             // Step 3: Success! Update UI state
@@ -164,9 +187,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     };
 
     const handleDeleteGalleryItem = (id: string, url: string) => {
-        if (!confirm('Remove this item from your profile? Its R2 file will be deleted after you save.')) return;
+        const item = config.gallery.find(entry => entry.id === id);
+        if (!confirm(`Remove this item from your profile? Its ${item?.muxAssetId ? 'Mux' : 'R2'} file will be deleted after you save.`)) return;
         setConfig(current => ({ ...current, gallery: current.gallery?.filter(item => item.id !== id) }));
-        if (/^https?:\/\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url));
+        if (item?.muxAssetId) setPendingMuxAssetCleanup(current => new Set(current).add(item.muxAssetId!));
+        else if (/^https:\/\/cdn\.avrxt\.dev\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url));
         setSaveStatus('REMOVED_FROM_DRAFT: SAVE_TO_APPLY');
     };
 
@@ -1303,7 +1328,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Camera size={16} className="text-zinc-500" /> Gallery
                                     </h2>
-                                    <p className="mt-1 text-[10px] text-zinc-500">Add media directly to R2. Save changes to publish the updated gallery.</p>
+                                    <p className="mt-1 text-[10px] text-zinc-500">Images upload to R2. Videos upload to Mux, encode as adaptive HLS, then are ready to publish.</p>
                                 </div>
                                 <div className="grid gap-3 sm:grid-cols-2">
                                     <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.035]">
@@ -1322,7 +1347,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                 {uploadingAsset?.target === 'gallery' && (
                                     <div className="flex items-center gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3" role="status">
                                         <span className="icon-surface grid size-10 shrink-0 place-items-center border-emerald-400/20 bg-emerald-400/10 text-emerald-300"><LoaderCircle size={17} className="animate-spin" /></span>
-                                        <span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-zinc-100">{uploadingAsset.name}</span><span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[.1em] text-emerald-300">Uploading to R2 · {(uploadingAsset.size / 1024 / 1024).toFixed(2)} MB</span></span>
+                                        <span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-zinc-100">{uploadingAsset.name}</span><span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[.1em] text-emerald-300">{uploadingAsset.target === 'gallery' ? 'Uploading to Mux' : 'Uploading to R2'} · {(uploadingAsset.size / 1024 / 1024).toFixed(2)} MB</span></span>
                                     </div>
                                 )}
                                 <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
@@ -1388,7 +1413,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                 }}
                                                 placeholder="URL"
                                             />
-                                            {item.type === 'video' && <p className="text-[9px] leading-4 text-zinc-600">Paste an R2 <code>.m3u8</code> playlist URL for segmented HLS playback. Direct MP4 uploads remain a compatibility fallback.</p>}
+                                            {item.type === 'video' && <p className="text-[9px] leading-4 text-zinc-600">Mux videos use an adaptive <code>.m3u8</code> HLS playlist automatically. Existing direct MP4 and R2 HLS URLs remain supported.</p>}
                                         </div>
                                     ))}
                                 </div>

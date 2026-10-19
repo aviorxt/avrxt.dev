@@ -47,6 +47,7 @@ export interface MeConfig {
         id: string;
         type: 'image' | 'video';
         url: string;
+        muxAssetId?: string;
         caption?: string;
     }[];
     resources: {
