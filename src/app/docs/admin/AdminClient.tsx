@@ -14,6 +14,8 @@ import { DocArticle } from '@/lib/docs-config';
 import { createDocAction, updateDocAction, deleteDocAction } from '@/app/actions/docs';
 import { uploadToR2 } from '@/lib/upload-client';
 import { logout } from '@/app/actions/auth';
+import { SelectMenu } from '@/components/ui/SelectMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface AdminClientProps {
     initialDocs: DocArticle[];
@@ -215,6 +217,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>('all');
     const [isPending, setIsPending] = useState(false);
     const [modal, setModal] = useState<null | 'image' | 'link' | 'embed'>(null);
+    const [deleteCandidate, setDeleteCandidate] = useState<string | null>(null);
     const [authors] = useState(['avrxt', 'guest', 'team']);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -312,13 +315,13 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this document? THIS CANNOT BE UNDONE.')) return;
         setIsPending(true);
         try {
             const result = await deleteDocAction(id);
             if ('error' in result) { setSaveOk(false); setSaveStatus(`ERROR: ${result.error}`); return; }
             setDocs(docs.filter(d => d.id !== id));
             setSelectedDoc(null);
+            setDeleteCandidate(null);
             setSaveOk(true);
             setSaveStatus(result.warning || '✓ DELETED');
         } catch { setSaveOk(false); setSaveStatus('DELETE_FAILED'); }
@@ -380,6 +383,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                     onClose={() => setModal(null)}
                 />
             )}
+            <ConfirmDialog open={Boolean(deleteCandidate)} title="Delete document" description="This permanently removes the document. This action cannot be undone." confirmLabel="Delete document" danger busy={isPending} onCancel={() => setDeleteCandidate(null)} onConfirm={() => { if (deleteCandidate) void handleDelete(deleteCandidate); }}/>
 
             {/* ── Header ─────────────────────────────────────────────────────── */}
             <header className="sticky top-0 z-50 border-b border-white/5 bg-[#080808]/90 backdrop-blur-xl">
@@ -510,20 +514,12 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                     {/* Author */}
                                     <div>
                                         <label className="editor-label">Author</label>
-                                        <select id="doc-author" value={selectedDoc.author || authors[0]}
-                                            onChange={e => setSelectedDoc(p => ({ ...p, author: e.target.value }))}
-                                            className="editor-input bg-black">
-                                            {authors.map(a => <option key={a} value={a}>{a}</option>)}
-                                        </select>
+                                        <SelectMenu label="Author" value={selectedDoc.author || authors[0]} onValueChange={author => setSelectedDoc(p => ({ ...p, author }))} options={authors.map(author => ({ value: author, label: author }))}/>
                                     </div>
                                     {/* Color */}
                                     <div>
                                         <label className="editor-label">Color Theme</label>
-                                        <select id="doc-color" value={selectedDoc.color || 'blue'}
-                                            onChange={e => setSelectedDoc(p => ({ ...p, color: e.target.value as DocArticle['color'] }))}
-                                            className="editor-input bg-black">
-                                            {['blue', 'cyan', 'purple', 'green', 'orange', 'pink'].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-                                        </select>
+                                        <SelectMenu label="Color theme" value={selectedDoc.color || 'blue'} onValueChange={color => setSelectedDoc(p => ({ ...p, color: color as DocArticle['color'] }))} options={['blue', 'cyan', 'purple', 'green', 'orange', 'pink'].map(color => ({ value: color, label: color.charAt(0).toUpperCase() + color.slice(1) }))}/>
                                     </div>
                                     {/* Tags */}
                                     <div>
@@ -581,7 +577,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             {selectedDoc.id && (
-                                                <button onClick={() => handleDelete(selectedDoc.id!)}
+                                                <button onClick={() => setDeleteCandidate(selectedDoc.id!)}
                                                     disabled={isPending}
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg text-[10px] font-mono uppercase transition-all border border-red-500/20">
                                                     <Trash2 size={10} /> Delete

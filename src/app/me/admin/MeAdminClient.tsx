@@ -21,6 +21,8 @@ import { uploadToR2 } from '@/lib/upload-client';
 import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
+import { SelectMenu } from '@/components/ui/SelectMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface MeAdminClientProps {
     initialConfig: MeConfig;
@@ -63,6 +65,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
     const [pendingMuxAssetCleanup, setPendingMuxAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(MUX_CLEANUP_QUEUE_KEY));
     const [uploadingAsset, setUploadingAsset] = useState<{ name: string; size: number; target: string } | null>(null);
     const [activeSection, setActiveSection] = useState<AdminSection>('profile');
+    const [confirmation, setConfirmation] = useState<{ title: string; description: string; danger?: boolean; confirmLabel: string; action: () => void | Promise<void> } | null>(null);
     const activityState = uploadingAsset ? 'processing' as const : isPending ? (saveStatus.startsWith('SYNCING') ? 'syncing' as const : 'updating' as const) : null;
 
     useEffect(() => {
@@ -227,15 +230,12 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
 
     const handleDeleteGalleryItem = (id: string, url: string) => {
         const item = config.gallery.find(entry => entry.id === id);
-        if (!confirm(`Remove this item from your profile? Its ${item?.muxAssetId ? 'Mux' : 'R2'} file will be deleted after you save.`)) return;
-        setConfig(current => ({ ...current, gallery: current.gallery?.filter(item => item.id !== id) }));
-        if (item?.muxAssetId) setPendingMuxAssetCleanup(current => new Set(current).add(item.muxAssetId!));
-        else if (/^https:\/\/cdn\.avrxt\.dev\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url));
-        setSaveStatus('REMOVED_FROM_DRAFT: SAVE_TO_APPLY');
+        setConfirmation({ title: 'Remove gallery item', description: `Remove this item from your profile? Its ${item?.muxAssetId ? 'Mux' : 'R2'} file will be deleted only after you save changes.`, danger: true, confirmLabel: 'Remove item', action: () => { setConfig(current => ({ ...current, gallery: current.gallery?.filter(item => item.id !== id) })); if (item?.muxAssetId) setPendingMuxAssetCleanup(current => new Set(current).add(item.muxAssetId!)); else if (/^https:\/\/cdn\.avrxt\.dev\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url)); setSaveStatus('REMOVED_FROM_DRAFT: SAVE_TO_APPLY'); } });
     };
 
     return (
         <>
+            <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title || ''} description={confirmation?.description || ''} confirmLabel={confirmation?.confirmLabel || 'Confirm'} danger={confirmation?.danger} onCancel={() => setConfirmation(null)} onConfirm={() => { const action = confirmation?.action; setConfirmation(null); void action?.(); }}/>
             <main className="me-admin-page page-enter min-h-screen bg-black text-white p-5 sm:p-7 md:p-12 selection:bg-white/10">
                 <div className="max-w-4xl mx-auto">
                     <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -754,26 +754,16 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                                 className="admin-input flex-1"
                                                 placeholder="Status (e.g. Coding)"
                                             />
-                                            <select
-                                                value={config.profile.status?.color || 'green'}
-                                                onChange={(e) => setConfig({
+                                            <SelectMenu label="Status color" className="w-28" value={config.profile.status?.color || 'green'} onValueChange={(color) => setConfig({
                                                     ...config,
                                                     profile: {
                                                         ...config.profile,
                                                         status: {
                                                             text: config.profile.status?.text || '',
-                                                            color: e.target.value as any
+                                                            color: color as any
                                                         }
                                                     }
-                                                })}
-                                                className="bg-zinc-900 border border-white/5 rounded-lg px-2 text-xs font-mono text-zinc-300 outline-none"
-                                            >
-                                                <option value="green">Green</option>
-                                                <option value="yellow">Yellow</option>
-                                                <option value="red">Red</option>
-                                                <option value="blue">Blue</option>
-                                                <option value="purple">Purple</option>
-                                            </select>
+                                                })} options={['green', 'yellow', 'red', 'blue', 'purple'].map(value => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))}/>
                                         </div>
                                     </div>
                                 )}
@@ -857,12 +847,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
 
                                         {isSpotifyConnected ? (
                                             <button
-                                                onClick={async () => {
-                                                    if (confirm('Disconnect Spotify?')) {
-                                                        const res = await disconnectSpotifyAction();
-                                                        if (res.success) window.location.reload();
-                                                    }
-                                                }}
+                                                onClick={() => setConfirmation({ title: 'Disconnect Spotify', description: 'Disconnect the current Spotify account from this dashboard.', confirmLabel: 'Disconnect', danger: true, action: async () => { const res = await disconnectSpotifyAction(); if (res.success) window.location.reload(); } })}
                                                 className="text-[9px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase"
                                             >
                                                 [DISCONNECT]
@@ -1181,11 +1166,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                                 </button>
                                             </div>
                                             <div className="flex gap-2">
-                                                <select
-                                                    value={link.icon?.startsWith('http') ? 'Image' : (link.icon || 'ExternalLink')}
-                                                    onChange={(e) => {
+                                                <SelectMenu label="Link icon" className="w-32" value={link.icon?.startsWith('http') ? 'Image' : (link.icon || 'ExternalLink')} onValueChange={(val) => {
                                                         const newLinks = [...config.links];
-                                                        const val = e.target.value;
                                                         // If switching to Image, current val might be a name. If switching away, set to name.
                                                         if (val === 'Image') {
                                                             // Keep current if it is a URL, else empty
@@ -1194,19 +1176,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                                             newLinks[idx] = { ...newLinks[idx], icon: val };
                                                         }
                                                         setConfig({ ...config, links: newLinks });
-                                                    }}
-                                                    className="bg-zinc-900 border border-white/5 rounded-lg px-2 py-1 text-[10px] font-mono text-zinc-400 outline-none focus:border-white/20"
-                                                >
-                                                    <option value="Instagram">Instagram</option>
-                                                    <option value="Github">Github</option>
-                                                    <option value="Mail">Mail</option>
-                                                    <option value="Discord">Discord</option>
-                                                    <option value="Camera">Camera</option>
-                                                    <option value="BookOpen">BookOpen</option>
-                                                    <option value="ExternalLink">External</option>
-                                                    <option value="Share2">Share</option>
-                                                    <option value="Image">CUSTOM IMG</option>
-                                                </select>
+                                                    }} options={[['Instagram', 'Instagram'], ['Github', 'Github'], ['Mail', 'Mail'], ['Discord', 'Discord'], ['Camera', 'Camera'], ['BookOpen', 'BookOpen'], ['ExternalLink', 'External'], ['Share2', 'Share'], ['Image', 'Custom image']].map(([value, label]) => ({ value, label }))}/>
 
                                                 {(link.icon === 'Image' || link.icon?.startsWith('http') || link.icon === '' && config.links[idx].icon === '') && (
                                                     <div className="flex items-center gap-1">
@@ -1296,19 +1266,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                                             <ArrowDown size={10} />
                                                         </button>
                                                     </div>
-                                                    <select
-                                                        value={res.type}
-                                                        onChange={(e) => {
+                                                    <SelectMenu label="Resource type" className="w-28" value={res.type} onValueChange={(type) => {
                                                             const newRes = [...config.resources];
-                                                            newRes[idx] = { ...newRes[idx], type: e.target.value as any };
+                                                            newRes[idx] = { ...newRes[idx], type: type as any };
                                                             setConfig({ ...config, resources: newRes });
-                                                        }}
-                                                        className="bg-zinc-800 text-[10px] px-2 py-1 rounded-md outline-none border border-white/5 font-mono uppercase text-zinc-400 hover:text-white transition-all cursor-pointer"
-                                                    >
-                                                        <option value="gallery">Gallery</option>
-                                                        <option value="doc">Doc</option>
-                                                        <option value="post">Post</option>
-                                                    </select>
+                                                        }} options={[{ value: 'gallery', label: 'Gallery' }, { value: 'doc', label: 'Doc' }, { value: 'post', label: 'Post' }]}/>
                                                 </div>
                                                 <button
                                                     onClick={() => setConfig({ ...config, resources: config.resources.filter(r => r.id !== res.id) })}

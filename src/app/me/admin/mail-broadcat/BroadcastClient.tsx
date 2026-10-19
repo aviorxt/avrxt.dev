@@ -3,6 +3,8 @@
 import { useMemo, useRef, useState } from 'react';
 import { AlertCircle, Check, Code2, Eye, FilePlus2, Mail, Monitor, Send, Smartphone, Sparkles, WandSparkles } from 'lucide-react';
 import { createNewsletterBroadcastAction, generateNewsletterEmailAction, getNewsletterBroadcastAction, getRecentNewsletterBroadcastsAction, sendNewsletterTestAction } from '@/app/actions/mail-broadcast';
+import { SelectMenu } from '@/components/ui/SelectMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 import { appendUnsubscribeFooter, campaignChecks, htmlToPlainText, PREVIEW_UNSUBSCRIBE_URL, UNSUBSCRIBE_VARIABLE } from '@/lib/newsletter-content';
 
@@ -62,6 +64,7 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
     const htmlRef = useRef<HTMLTextAreaElement>(null);
     const inFlight = useRef(false);
     const [showText, setShowText] = useState(false);
+    const [pendingSendMode, setPendingSendMode] = useState<'send' | 'schedule' | null>(null);
     const checks = useMemo(() => campaignChecks(html, subject, previewText), [html, subject, previewText]);
 
     const previewHtml = useMemo(() => appendUnsubscribeFooter(html)
@@ -85,13 +88,15 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
         });
     };
 
-    const saveOrSend = async (mode: 'draft' | 'send' | 'schedule') => {
+    const saveOrSend = async (mode: 'draft' | 'send' | 'schedule', confirmed = false) => {
         if (inFlight.current) return;
         if (mode !== 'draft' && checks.errors.length) { setStatus(`ERROR: ${checks.errors.join(' ')}`); return; }
         if (mode === 'schedule' && (!Number.isFinite(new Date(scheduleLocal).getTime()) || new Date(scheduleLocal).getTime() < Date.now() + 300000)) { setStatus('ERROR: Schedule at least five minutes from now.'); return; }
-        if (mode !== 'draft') {
+        if (mode !== 'draft' && !confirmed) {
             const planned = mode === 'schedule' ? ` for ${new Date(scheduleLocal).toLocaleString()}` : ' now';
-            if (!confirm(`Send “${subject}” to the active Resend newsletter audience${planned}?`)) return;
+            setPendingSendMode(mode);
+            setStatus(`CONFIRM_SEND: ${subject}${planned}`);
+            return;
         }
         inFlight.current = true;
         setBusy(true);
@@ -187,6 +192,7 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
 
     return (
         <div className="space-y-6">
+            <ConfirmDialog open={Boolean(pendingSendMode)} title={pendingSendMode === 'schedule' ? 'Schedule broadcast' : 'Send broadcast'} description={`Send “${subject}” to the active Resend newsletter audience${pendingSendMode === 'schedule' ? ` at ${new Date(scheduleLocal).toLocaleString()}` : ' now'}?`} confirmLabel={pendingSendMode === 'schedule' ? 'Schedule broadcast' : 'Send now'} onCancel={() => setPendingSendMode(null)} onConfirm={() => { const mode = pendingSendMode; setPendingSendMode(null); if (mode) void saveOrSend(mode, true); }}/>
             <header className="flex flex-col gap-4 border-b border-white/10 pb-6 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                     <div className="mb-2 flex items-center gap-2 text-[10px] font-mono uppercase tracking-[0.28em] text-zinc-500"><Sparkles size={13} /> Resend / Campaign Studio</div>
@@ -229,7 +235,7 @@ export default function BroadcastClient({ initialBroadcasts, defaultFrom }: { in
                     <div className="overflow-hidden rounded-2xl border border-white/10 bg-[#0d0d0d]">
                         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 p-3">
                             <div className="flex items-center gap-2 text-xs font-semibold"><Code2 size={15} className="text-zinc-400" /> HTML source</div>
-                            <select aria-label="Email starter template" onChange={event => setHtml(templates[event.target.value as keyof typeof templates])} className="rounded-lg border border-white/10 bg-black px-3 py-2 text-xs text-zinc-300"><option>Clean note</option><option>Product update</option><option>Plain text style</option></select>
+                            <SelectMenu label="Email starter template" className="min-w-44" value="Clean note" onValueChange={template => setHtml(templates[template as keyof typeof templates])} options={Object.keys(templates).map(template => ({ value: template, label: template }))}/>
                         </div>
                         <div className="flex flex-wrap gap-2 border-b border-white/10 p-3">
                             <button type="button" onClick={() => insertHtml('<h2 style="font-size:24px;line-height:1.25;margin:20px 0">Heading</h2>')} className="mail-tool">Heading</button>

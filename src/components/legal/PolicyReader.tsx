@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Children, isValidElement, useEffect, useMemo, useState, type ReactNode } from 'react';
 import type { PolicyNavItem } from '@/components/legal/PolicyShell';
+import { SelectMenu } from '@/components/ui/SelectMenu';
 
 type SectionElement = React.ReactElement<{ id?: string }>;
 
@@ -30,12 +31,7 @@ export function PolicyReader({ nav, children }: { nav: PolicyNavItem[]; children
           <p className="font-mono text-[9px] uppercase tracking-[.2em] text-[#666666]">Choose a topic</p>
           <p className="mt-2 text-sm leading-6 text-[#A3A3A3]">Read one section at a time. Your selection is saved in the page link.</p>
         </div>
-        <label className="grid gap-2 text-xs text-[#A3A3A3] sm:w-72">
-          <span className="sr-only">Policy topic</span>
-          <select value={activeId} onChange={(event) => choose(event.target.value)} className="min-h-11 w-full appearance-none border border-[#292929] bg-[#080808] px-3 text-sm text-white outline-none transition-colors focus:border-[#858585]">
-            {nav.map((item, index) => <option key={item.id} value={item.id}>{String(index + 1).padStart(2, '0')} — {item.label}</option>)}
-          </select>
-        </label>
+        <SelectMenu label="Policy topic" className="w-full sm:w-72" value={activeId} onValueChange={choose} options={nav.map((item, index) => ({ value: item.id, label: `${String(index + 1).padStart(2, '0')} — ${item.label}` }))}/>
       </div>
       <div className="mt-6">
         <div className="mb-2 flex items-center justify-between font-mono text-[9px] uppercase tracking-[.16em] text-[#666666]"><span>Reading progress</span><span>{activeIndex + 1} / {nav.length}</span></div>

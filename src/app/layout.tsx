@@ -4,7 +4,6 @@ import OptionalAnalytics from '@/components/OptionalAnalytics';
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
-import AskAiLauncher from "@/components/AskAiLauncher";
 import { ogSize } from "@/lib/og-image";
 
 const inter = Inter({
@@ -130,7 +129,6 @@ export default function RootLayout({
         </main>
         <SiteChrome position="after" />
         <CookieBanner />
-        <AskAiLauncher />
         <OptionalAnalytics />
       </body>
     </html>
