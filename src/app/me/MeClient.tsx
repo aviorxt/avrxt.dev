@@ -910,12 +910,12 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
             </div>
 
-            <div className="relative z-20 w-full max-w-2xl flex-1 px-5 sm:px-8 flex flex-col items-center [perspective:1000px]">
-                <nav aria-label="Profile navigation" className="mb-8 flex w-full items-center justify-between border-b border-white/10 pb-4 font-mono text-[9px] uppercase tracking-[.2em] text-zinc-600">
+            <div className="me-content relative z-20 w-full max-w-2xl flex-1 px-5 sm:px-8 flex flex-col items-center [perspective:1000px]">
+                <nav aria-label="Profile navigation" data-me-section="nav" className="mb-8 flex w-full items-center justify-between border-b border-white/10 pb-4 font-mono text-[9px] uppercase tracking-[.2em] text-zinc-600">
                     <Link href="/" className="transition-colors hover:text-white">AVRXT <span className="text-zinc-800">/ HOME</span></Link>
                 </nav>
                 {/* Profile Header */}
-                <Reveal className="me-profile-header w-full border-l border-white/20 py-7 pl-5 text-left mb-10 sm:py-10 sm:pl-8" direction="down" delay={0.1}>
+                <Reveal className="me-profile-header w-full border-l border-white/20 py-7 pl-5 text-left mb-10 sm:py-10 sm:pl-8" data-me-section="header" direction="down" delay={0.1}>
                     <div className="mb-6 relative inline-block">
                         <div className="absolute inset-0 animate-pulse bg-emerald-500/20 blur-2xl rounded-full scale-110 opacity-30"></div>
                         <img
@@ -1019,7 +1019,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
                 {/* Status/Quote Widget */}
                 {config.widgets?.quotesEnabled && (
-                    <Reveal className="w-full mb-8" direction="up" delay={0.2}>
+                    <Reveal className="w-full mb-8" data-me-section="quote" direction="up" delay={0.2}>
                         <div className="card-3d p-4 rounded-xl bg-white/[0.03] border border-white/10 backdrop-blur-xl group">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -1038,7 +1038,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 )}
 
                 {/* Links Section */}
-                <div className="w-full mb-8">
+                <div className="w-full mb-8" data-me-section="links">
                     <span className="me-section-label text-[10px] font-mono text-cyan-400 uppercase tracking-[0.3em] mb-3 ml-1 block">Social_Connections</span>
                     <div className="space-y-3">
                         {config.links.map((link, idx) => {
@@ -1075,7 +1075,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 </div>
 
                 {/* Music Player Section */}
-                <div className="w-full mb-8">
+                <div className="w-full mb-8" data-me-section="music">
                     <div className="flex items-center justify-between mb-3 ml-1">
                         <span className="me-section-label text-[10px] font-mono text-blue-400 uppercase tracking-[0.3em] block">Audio_Terminal</span>
                         <div className="flex items-center gap-3">
@@ -1194,7 +1194,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
                 {/* Gallery Section */}
                 {config.gallery && config.gallery.length > 0 && (
-                    <div className="w-full mb-10">
+                    <div className="w-full mb-10" data-me-section="gallery">
                         <span className="me-section-label text-[10px] font-mono text-violet-400 uppercase tracking-[0.3em] mb-3 ml-1 block">Visual_Feed</span>
                         <div className="grid grid-cols-2 gap-3">
                             {config.gallery.map((item) => (
@@ -1302,7 +1302,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 )}
 
                 {/* Newsletter Card */}
-                <Reveal className="w-full mb-10" direction="up" delay={0.6}>
+                <Reveal className="w-full mb-10" data-me-section="newsletter" direction="up" delay={0.6}>
                     <Tilt intensity={5}>
                         <div className="sub-card p-6 rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-3xl relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
@@ -1343,7 +1343,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 </Reveal>
 
                 {/* Resources */}
-                <div className="w-full mb-10">
+                <div className="w-full mb-10" data-me-section="resources">
                     <span className="me-section-label text-[10px] font-mono text-blue-400 uppercase tracking-[0.3em] mb-3 ml-1 block">Resources_&_Visuals</span>
                     <div className="space-y-3">
                         {config.resources.map((res, i) => (
@@ -1399,7 +1399,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 </div>
 
                 {/* Footer Section */}
-                <Reveal className="mt-auto pt-8 text-center" direction="up" delay={0.7}>
+                <Reveal className="mt-auto pt-8 text-center" data-me-section="footer" direction="up" delay={0.7}>
                     <div className="flex items-center justify-center mb-4">
                         <Magnetic>
                             <StatusBadge />

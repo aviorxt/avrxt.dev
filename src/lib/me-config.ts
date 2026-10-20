@@ -14,7 +14,7 @@ export interface MeConfig {
         handle: string;
         bio: string;
         fontTheme?: 'outfit' | 'geist-sans' | 'geist-mono' | 'geist-pixel' | 'inter' | 'space-mono' | 'instrument-serif';
-        visualTheme?: 'primary' | 'lunar' | 'editorial' | 'sunset' | 'signal' | 'ocean' | 'botanical' | 'neon' | 'christmas' | 'new-year';
+        visualTheme?: 'primary' | 'lunar' | 'editorial' | 'sunset' | 'signal' | 'ocean' | 'botanical' | 'neon' | 'christmas' | 'new-year' | 'gallery' | 'orbit' | 'brutalist' | 'studio' | 'kinetic';
         avatarUrl: string;
         logoUrl?: string; // nav logo
         bannerUrl?: string; // for gallery card
