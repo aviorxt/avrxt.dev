@@ -5,7 +5,7 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 import MeClient from './MeClient';
 
 type PageProps = {
-    searchParams?: Promise<Record<string, string | string[] | undefined>> | Record<string, string | string[] | undefined>;
+    searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export async function generateMetadata({ searchParams }: PageProps): Promise<Metadata> {

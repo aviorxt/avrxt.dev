@@ -2,6 +2,9 @@
   "name": "avrxt-next",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20 <25"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -30,7 +33,7 @@
     "hls.js": "^1.7.3",
     "lru-cache": "^11.2.6",
     "lucide-react": "^0.562.0",
-    "next": "^16.3.1",
+    "next": "15.5.28",
     "nodemailer": "^10.0.15",
     "razorpay": "^2.9.6",
     "react": "19.2.3",
@@ -58,7 +61,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "^16.3.1",
+    "eslint-config-next": "15.5.28",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5",

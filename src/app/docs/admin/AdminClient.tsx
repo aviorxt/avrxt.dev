@@ -596,7 +596,6 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                     {activeTab !== 'preview' && (
                                         <div className="flex items-center gap-0.5 px-3 py-1.5 overflow-x-auto border-t border-white/5 scrollbar-hide">
                                             {/* Actions only read the editor ref from click handlers, never during render. */}
-                                            {/* eslint-disable-next-line react-hooks/refs */}
                                             {toolbarActions.map((a, i) => (
                                                 <ToolbarBtn key={i} icon={a.icon} label={a.label} onClick={a.action} />
                                             ))}
