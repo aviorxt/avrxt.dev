@@ -13,8 +13,8 @@ export interface MeConfig {
     profile: {
         handle: string;
         bio: string;
-        fontTheme?: 'outfit' | 'geist-sans' | 'geist-mono' | 'geist-pixel';
-        visualTheme?: 'primary' | 'lunar' | 'editorial' | 'sunset' | 'signal';
+        fontTheme?: 'outfit' | 'geist-sans' | 'geist-mono' | 'geist-pixel' | 'inter' | 'space-mono' | 'instrument-serif';
+        visualTheme?: 'primary' | 'lunar' | 'editorial' | 'sunset' | 'signal' | 'ocean' | 'botanical' | 'neon' | 'christmas' | 'new-year';
         avatarUrl: string;
         logoUrl?: string; // nav logo
         bannerUrl?: string; // for gallery card

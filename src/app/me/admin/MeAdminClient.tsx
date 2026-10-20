@@ -7,7 +7,7 @@ import {
     Music, Link as LinkIcon, Book,
     Check, ArrowUp, ArrowDown,
     User, Eye, AlertCircle, Camera, Upload, Activity,
-    Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal
+    Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal, Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MeConfig } from '@/lib/me-config';
@@ -31,7 +31,7 @@ interface MeAdminClientProps {
     isSpotifyConnected: boolean;
     dashboardPath: string;
 }
-type AdminSection = 'profile' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
+type AdminSection = 'profile' | 'themes' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
 const R2_CLEANUP_QUEUE_KEY = 'avrxt:admin:r2-cleanup:v1';
 const MUX_CLEANUP_QUEUE_KEY = 'avrxt:admin:mux-cleanup:v1';
 
@@ -365,7 +365,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                     </div>
 
                     <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-                        <aside className="lg:sticky lg:top-6 lg:h-fit"><p className="mb-3 hidden font-mono text-[9px] uppercase tracking-[.18em] text-zinc-600 lg:block">Studio sections</p><nav aria-label="Admin sections" className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:flex lg:flex-col">{([{ id: 'profile', label: 'Profile', Icon: User }, { id: 'presence', label: 'Presence', Icon: Activity }, { id: 'music', label: 'Music', Icon: Music }, { id: 'widgets', label: 'Widgets', Icon: SlidersHorizontal }, { id: 'links', label: 'Links', Icon: LinkIcon }, { id: 'resources', label: 'Resources', Icon: Book }, { id: 'gallery', label: 'Visual feed', Icon: Camera }, { id: 'settings', label: 'Settings', Icon: Settings }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} aria-pressed={activeSection === id} className={cn('flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-center text-[11px] transition-colors lg:w-full lg:justify-start lg:text-left', activeSection === id ? 'border-white/20 bg-white/[.08] text-white' : 'border-white/[.04] text-zinc-500 hover:bg-white/[.04] hover:text-zinc-200')}><Icon size={15} className="shrink-0" />{label}</button>)}</nav></aside>
+                        <aside className="lg:sticky lg:top-6 lg:h-fit"><p className="mb-3 hidden font-mono text-[9px] uppercase tracking-[.18em] text-zinc-600 lg:block">Studio sections</p><nav aria-label="Admin sections" className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:flex lg:flex-col">{([{ id: 'profile', label: 'Profile', Icon: User }, { id: 'themes', label: 'Themes', Icon: Palette }, { id: 'presence', label: 'Presence', Icon: Activity }, { id: 'music', label: 'Music', Icon: Music }, { id: 'widgets', label: 'Widgets', Icon: SlidersHorizontal }, { id: 'links', label: 'Links', Icon: LinkIcon }, { id: 'resources', label: 'Resources', Icon: Book }, { id: 'gallery', label: 'Visual feed', Icon: Camera }, { id: 'settings', label: 'Settings', Icon: Settings }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} aria-pressed={activeSection === id} className={cn('flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-center text-[11px] transition-colors lg:w-full lg:justify-start lg:text-left', activeSection === id ? 'border-white/20 bg-white/[.08] text-white' : 'border-white/[.04] text-zinc-500 hover:bg-white/[.04] hover:text-zinc-200')}><Icon size={15} className="shrink-0" />{label}</button>)}</nav></aside>
                         <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
                         {/* Left Column */}
                         <div className="space-y-6">
@@ -389,39 +389,6 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                         className="admin-input"
                                         placeholder="Bio"
                                     />
-                                    <div className="space-y-2 rounded-xl border border-white/5 bg-black/20 p-3">
-                                        <div>
-                                            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Profile display font</p>
-                                            <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Applied to the large profile name on <code>/me</code>.</p>
-                                        </div>
-                                        <SelectMenu
-                                            label="Profile display font"
-                                            value={config.profile.fontTheme || 'outfit'}
-                                            options={ME_FONT_OPTIONS.map((font) => ({ ...font }))}
-                                            onValueChange={(fontTheme) => {
-                                                if (!isMeFontId(fontTheme)) return;
-                                                setConfig({ ...config, profile: { ...config.profile, fontTheme } });
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="space-y-3 rounded-xl border border-white/5 bg-black/20 p-3">
-                                        <div>
-                                            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Profile visual theme</p>
-                                            <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Choose the complete layout, surface treatment, and colour system used on <code>/me</code>.</p>
-                                        </div>
-                                        <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Profile visual theme">
-                                            {ME_THEME_OPTIONS.map((theme) => {
-                                                const selected = (config.profile.visualTheme || 'primary') === theme.value;
-                                                return <button key={theme.value} type="button" role="radio" aria-checked={selected} onClick={() => {
-                                                    if (!isMeThemeId(theme.value)) return;
-                                                    setConfig({ ...config, profile: { ...config.profile, visualTheme: theme.value } });
-                                                }} className={cn('group flex min-h-20 items-start gap-3 rounded-xl border p-3 text-left transition-colors', selected ? 'border-white/35 bg-white/[.09] text-white' : 'border-white/[.08] bg-black/20 text-zinc-400 hover:border-white/20 hover:bg-white/[.04]')}>
-                                                    <span aria-hidden="true" className={cn('mt-0.5 h-9 w-9 shrink-0 rounded-lg border border-white/15', `me-theme-swatch-${theme.value}`)} />
-                                                    <span className="min-w-0"><span className="block text-[11px] font-semibold">{theme.label}</span><span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">{theme.description}</span></span>
-                                                </button>;
-                                            })}
-                                        </div>
-                                    </div>
                                     <input
                                         type="text"
                                         value={config.profile.avatarUrl}
@@ -520,6 +487,26 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                                 onChange={(e) => handleFileUpload(e, 'profile.bannerUrl')}
                                             />
                                         </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-5", activeSection !== 'themes' && 'hidden')}>
+                                <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono"><Palette size={16} className="text-zinc-500" /> Theme_Studio</h2>
+                                <div className="space-y-2 rounded-xl border border-white/5 bg-black/20 p-3">
+                                    <div><p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Profile display font</p><p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Choose a display family for the large profile name and theme-led headings on <code>/me</code>.</p></div>
+                                    <SelectMenu label="Profile display font" value={config.profile.fontTheme || 'outfit'} options={ME_FONT_OPTIONS.map((font) => ({ ...font }))} onValueChange={(fontTheme) => { if (!isMeFontId(fontTheme)) return; setConfig({ ...config, profile: { ...config.profile, fontTheme } }); }} />
+                                </div>
+                                <div className="space-y-3 rounded-xl border border-white/5 bg-black/20 p-3">
+                                    <div><p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Visual systems</p><p className="mt-1 text-[10px] leading-relaxed text-zinc-500">A saved theme controls the full <code>/me</code> visual system: palette, geometry, ambient effects, display treatment, and icon language.</p></div>
+                                    <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Profile visual theme">
+                                        {ME_THEME_OPTIONS.map((theme) => {
+                                            const selected = (config.profile.visualTheme || 'primary') === theme.value;
+                                            return <button key={theme.value} type="button" role="radio" aria-checked={selected} onClick={() => { if (!isMeThemeId(theme.value)) return; setConfig({ ...config, profile: { ...config.profile, visualTheme: theme.value } }); }} className={cn('group flex min-h-20 items-start gap-3 rounded-xl border p-3 text-left transition-colors', selected ? 'border-white/35 bg-white/[.09] text-white' : 'border-white/[.08] bg-black/20 text-zinc-400 hover:border-white/20 hover:bg-white/[.04]')}>
+                                                <span aria-hidden="true" className={cn('mt-0.5 h-9 w-9 shrink-0 rounded-lg border border-white/15', `me-theme-swatch-${theme.value}`)} />
+                                                <span className="min-w-0"><span className="block text-[11px] font-semibold">{theme.label}</span><span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">{theme.description}</span></span>
+                                            </button>;
+                                        })}
                                     </div>
                                 </div>
                             </div>
