@@ -459,6 +459,33 @@ button:active, a:active {
 .me-weather-widget { transition: border-color 240ms ease, background-color 240ms ease, transform 240ms ease, box-shadow 240ms ease; }
 .me-weather-widget:hover { border-color: rgba(255,255,255,.2); background-color: rgba(255,255,255,.055); box-shadow: 0 8px 30px rgba(255,255,255,.035); transform: translateY(-1px); }
 .me-v7 video { -webkit-user-drag: none; user-select: none; }
+.me-theme-swatch-primary { background: linear-gradient(135deg, #050505 45%, #eee 46% 49%, #171717 50%); }
+.me-theme-swatch-lunar { background: radial-gradient(circle at 70% 28%, #c4b5fd, transparent 24%), linear-gradient(135deg, #151335, #312e81); }
+.me-theme-swatch-editorial { background: linear-gradient(135deg, #f3ead9 54%, #1f2937 55%); }
+.me-theme-swatch-sunset { background: radial-gradient(circle at 30% 20%, #f59e0b, transparent 28%), linear-gradient(135deg, #3b1114, #6b2717); }
+.me-theme-swatch-signal { background: repeating-linear-gradient(90deg, #06191e 0 7px, #0a3038 7px 8px), linear-gradient(#22d3ee, #164e63); }
+.me-v7.me-theme-lunar { background: #0c0b1d; color: #f5f3ff; }
+.me-v7.me-theme-lunar > .fixed { filter: hue-rotate(218deg) saturate(1.5); }
+.me-v7.me-theme-lunar .link-card, .me-v7.me-theme-lunar .card-3d, .me-v7.me-theme-lunar .sub-card { border-radius: 24px !important; border-color: rgba(196,181,253,.27) !important; background: linear-gradient(135deg, rgba(139,92,246,.16), rgba(30,27,75,.42)) !important; box-shadow: 0 18px 55px rgba(49,46,129,.2); }
+.me-v7.me-theme-lunar .me-profile-header { border-color: rgba(196,181,253,.52); border-radius: 32px; background: rgba(49,46,129,.16); }
+.me-v7.me-theme-lunar .me-profile-header img { border-radius: 28%; }
+.me-v7.me-theme-editorial { background: #f4eddf; color: #1f2937; }
+.me-v7.me-theme-editorial > .fixed { opacity: .15; filter: invert(1); }
+.me-v7.me-theme-editorial .relative.z-20 { color: #1f2937; }
+.me-v7.me-theme-editorial .text-white, .me-v7.me-theme-editorial [class*="text-zinc-"] { color: #1f2937 !important; }
+.me-v7.me-theme-editorial .link-card, .me-v7.me-theme-editorial .card-3d, .me-v7.me-theme-editorial .sub-card { border-radius: 0 !important; border-color: rgba(31,41,55,.25) !important; background: rgba(255,252,245,.78) !important; box-shadow: 8px 8px 0 rgba(31,41,55,.12); }
+.me-v7.me-theme-editorial .me-profile-header { border-color: #1f2937; border-radius: 0; background: rgba(255,252,245,.62); }
+.me-v7.me-theme-editorial .me-profile-header::before, .me-v7.me-theme-editorial .me-profile-header::after { background: #1f2937; }
+.me-v7.me-theme-editorial .me-profile-title { font-family: Georgia, 'Times New Roman', serif !important; -webkit-text-stroke-color: #1f2937; }
+.me-v7.me-theme-sunset { background: #1a090a; color: #fff7ed; }
+.me-v7.me-theme-sunset > .fixed { filter: sepia(.4) saturate(2.4) hue-rotate(330deg); opacity: .78; }
+.me-v7.me-theme-sunset .link-card, .me-v7.me-theme-sunset .card-3d, .me-v7.me-theme-sunset .sub-card { border-radius: 20px 6px 20px 6px !important; border-color: rgba(251,146,60,.32) !important; background: linear-gradient(145deg, rgba(124,45,18,.48), rgba(67,20,7,.4)) !important; box-shadow: 0 20px 40px rgba(69,10,10,.25); }
+.me-v7.me-theme-sunset .me-profile-header { border-color: rgba(251,146,60,.55); background: linear-gradient(115deg, rgba(154,52,18,.35), transparent); }
+.me-v7.me-theme-signal { background: #031417; color: #cffafe; }
+.me-v7.me-theme-signal > .fixed { filter: hue-rotate(150deg) saturate(1.9); opacity: .68; }
+.me-v7.me-theme-signal .link-card, .me-v7.me-theme-signal .card-3d, .me-v7.me-theme-signal .sub-card { border-radius: 0 !important; border-color: rgba(34,211,238,.38) !important; background: rgba(8,47,73,.32) !important; box-shadow: inset 0 0 0 1px rgba(34,211,238,.08); }
+.me-v7.me-theme-signal .me-profile-header { border-radius: 0; border-color: rgba(34,211,238,.7); background: rgba(8,47,73,.34); }
+.me-v7.me-theme-signal .me-profile-title { text-transform: uppercase; letter-spacing: .02em; }
 .me-admin-page { background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.055), transparent 38rem), #050505 !important; overflow-x: clip; }
 .me-admin-page > div { max-width: 76rem; }
 .me-admin-page header { border-bottom: 1px solid rgba(255,255,255,.09); padding-bottom: 1.5rem; }
@@ -795,6 +822,11 @@ button:active, a:active {
 .status-tone-degraded { --status-color: #e7c377; }
 .status-tone-down { --status-color: #ec939a; }
 .status-tone-maintenance { --status-color: #a6b7e4; }
+.status-chart-legend { display: flex; flex-wrap: wrap; gap: .45rem .8rem; font-family: var(--font-geist-mono), monospace; font-size: 9px; color: #9ca3af; }
+.status-chart-legend > span { display: inline-flex; align-items: center; gap: .35rem; }
+.status-chart-legend > span > span { width: 1.1rem; height: 3px; border-radius: 999px; background: var(--status-color); box-shadow: 0 0 9px color-mix(in srgb, var(--status-color) 45%, transparent); }
+.status-chart-line { color: var(--status-color); }
+.status-chart-dot { fill: var(--status-color); }
 .status-tone-unknown { --status-color: #56606c; }
 .status-dot { width: 5px; height: 5px; display: inline-block; border-radius: 50%; background: var(--status-color); flex-shrink: 0; }
 .status-label { display: inline-flex; align-items: center; gap: 7px; color: var(--status-color); font-family: var(--font-mono); font-size: 9px; white-space: nowrap; }

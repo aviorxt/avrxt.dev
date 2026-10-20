@@ -58,7 +58,9 @@ function AvailabilityChart({ resources, checkedAt }: { resources: StatusResource
     const day = new Date(Date.UTC(new Date(checkedAt).getUTCFullYear(), new Date(checkedAt).getUTCMonth(), new Date(checkedAt).getUTCDate() - range + index + 1)).toISOString().slice(0, 10);
     const states = monitored.map(resource => resource.history.find(item => item.day === day)).filter((item): item is NonNullable<typeof item> => Boolean(item?.monitored));
     const availability = states.length ? Math.round((states.filter(item => item.status === 'operational').length / states.length) * 1000) / 10 : null;
-    return { day, availability, samples: states.length };
+    const severity: Record<ServiceState, number> = { unknown: 0, operational: 1, maintenance: 2, degraded: 3, down: 4 };
+    const state = states.reduce<ServiceState>((worst, item) => severity[item.status] > severity[worst] ? item.status : worst, 'unknown');
+    return { day, availability, samples: states.length, state };
   });
   const active = days.find(item => item.day === selected) || days[days.length - 1];
   const width = 720, height = 208, inset = 16;
@@ -70,27 +72,27 @@ function AvailabilityChart({ resources, checkedAt }: { resources: StatusResource
     if (points[index - 1]?.availability === null || segments.length === 0) segments.push([point]);
     else segments[segments.length - 1].push(point);
   });
-  const line = segments.map(segment => segment.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ')).join(' ');
-  const areas = segments.map(segment => {
-    const shape = segment.map((point, index) => `${index ? 'L' : 'M'}${point.x.toFixed(2)},${point.y.toFixed(2)}`).join(' ');
-    return `${shape} L${segment[segment.length - 1].x},${height - inset} L${segment[0].x},${height - inset} Z`;
+  const coloredLines = points.flatMap((point, index) => {
+    const previous = points[index - 1];
+    if (!previous || point.availability === null || previous.availability === null) return [];
+    return [{ state: point.state, d: `M${previous.x.toFixed(2)},${previous.y.toFixed(2)} L${point.x.toFixed(2)},${point.y.toFixed(2)}` }];
   });
   const rangeLabel = range === 7 ? 'Last 7 days' : range === 30 ? 'Last 30 days' : 'Last 90 days';
   return <section className="status-chart mt-7 overflow-hidden rounded-xl border border-white/10 bg-zinc-950/70 shadow-[0_16px_50px_rgba(0,0,0,.22)]" aria-labelledby="availability-chart-title">
     <div className="flex flex-wrap items-center gap-4 border-b border-white/10 px-5 py-4 sm:px-6">
-      <div className="min-w-0 flex-1"><p className="status-kicker">Live monitor history</p><h2 id="availability-chart-title" className="mt-1 text-base font-semibold tracking-tight text-zinc-100">Service availability</h2><p className="mt-1 text-xs text-zinc-500">Daily share of monitored services reporting operational.</p></div>
+      <div className="min-w-0 flex-1"><p className="status-kicker">Live monitor history</p><h2 id="availability-chart-title" className="mt-1 text-base font-semibold tracking-tight text-zinc-100">Service availability</h2><p className="mt-1 text-xs text-zinc-500">Daily share of monitored services reporting operational. Line colour reflects the most severe observed service state.</p><div className="status-chart-legend mt-3" aria-label="Availability colour legend">{(['operational', 'degraded', 'down', 'maintenance', 'unknown'] as const).map(status => <span key={status} className={`status-tone-${status}`}><span />{status === 'unknown' ? 'No data' : labels[status]}</span>)}</div></div>
       <div className="status-period" role="group" aria-label="Availability chart period">{([7, 30, 90] as const).map(period => <button key={period} aria-pressed={range === period} onClick={() => { setRange(period); setSelected(null); }}>{period}d</button>)}</div>
     </div>
     <div className="grid gap-4 p-4 sm:p-6 lg:grid-cols-[minmax(0,1fr)_10rem]">
       <div className="min-w-0"><div className="relative h-56 w-full" role="group" aria-label={`${rangeLabel} availability chart`}>
         <svg viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" className="h-full w-full overflow-visible" aria-hidden="true">
-          <defs><linearGradient id="status-availability-fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stopColor="currentColor" stopOpacity=".28" /><stop offset="100%" stopColor="currentColor" stopOpacity="0" /></linearGradient></defs>
           {[0, 50, 100].map(value => <line key={value} x1={inset} x2={width - inset} y1={inset + (1 - value / 100) * usableHeight} y2={inset + (1 - value / 100) * usableHeight} stroke="rgba(255,255,255,.10)" strokeDasharray="3 4" />)}
-          {segments.length > 0 && <>{areas.map((area, index) => <path key={index} d={area} fill="url(#status-availability-fill)" className="text-emerald-400" />)}<path d={line} fill="none" stroke="currentColor" strokeWidth="2" vectorEffect="non-scaling-stroke" className="text-emerald-300" /></>}
+          {segments.map((segment, index) => segment.length === 1 ? <circle key={`dot-${index}`} cx={segment[0].x} cy={segment[0].y} r="2.4" className={`status-chart-dot status-tone-${segment[0].state}`} /> : null)}
+          {coloredLines.map((line, index) => <path key={`${line.d}:${index}`} d={line.d} fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" vectorEffect="non-scaling-stroke" className={`status-chart-line status-tone-${line.state}`} />)}
         </svg>
         <div className="absolute inset-0 flex" aria-hidden="false">{points.map(point => <button key={point.day} type="button" onMouseEnter={() => setSelected(point.day)} onFocus={() => setSelected(point.day)} onClick={() => setSelected(point.day)} aria-label={`${point.day}: ${point.availability === null ? 'No monitoring data' : `${point.availability}% availability across ${point.samples} services`}`} className="h-full flex-1 rounded-sm focus-visible:outline focus-visible:outline-1 focus-visible:outline-emerald-300" />)}</div>
       </div><div className="flex justify-between px-1 font-mono text-[9px] text-zinc-600"><span>{days[0]?.day}</span><span>Today</span></div></div>
-      <aside className="rounded-lg border border-white/10 bg-white/[0.025] p-4"><p className="font-mono text-[9px] uppercase tracking-[.14em] text-zinc-500">Selected day</p><p className="mt-3 text-xl font-semibold tracking-tight text-zinc-100">{active?.availability === null ? '—' : `${active?.availability}%`}</p><p className="mt-1 text-xs text-zinc-500">{active?.availability === null ? 'No monitoring data' : `${active.samples} services observed`}</p><p className="mt-5 border-t border-white/10 pt-4 font-mono text-[10px] text-zinc-400">{active?.day || '—'}</p><p className="mt-2 text-[10px] leading-relaxed text-zinc-600">Gaps are not treated as uptime. Hover, focus, or tap the chart to inspect a day.</p></aside>
+      <aside className="rounded-lg border border-white/10 bg-white/[0.025] p-4"><p className="font-mono text-[9px] uppercase tracking-[.14em] text-zinc-500">Selected day</p><p className="mt-3 text-xl font-semibold tracking-tight text-zinc-100">{active?.availability === null ? '—' : `${active?.availability}%`}</p><p className="mt-1 text-xs text-zinc-500">{active?.availability === null ? 'No monitoring data' : `${active.samples} services observed`}</p>{active?.availability !== null && <StatusLabel status={active.state} />}<p className="mt-5 border-t border-white/10 pt-4 font-mono text-[10px] text-zinc-400">{active?.day || '—'}</p><p className="mt-2 text-[10px] leading-relaxed text-zinc-600">Gaps are not treated as uptime. Hover, focus, or tap the chart to inspect a day.</p></aside>
     </div>
   </section>;
 }

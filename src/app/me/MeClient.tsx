@@ -35,6 +35,7 @@ import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
 import { getMeDisplayFont } from '@/lib/me-fonts';
+import { isMeThemeId } from '@/lib/me-themes';
 
 const iconMap: Record<string, any> = {
     Github, Twitter, Instagram, Linkedin, LinkedinIcon, Youtube, ExternalLink, Mail
@@ -861,11 +862,14 @@ export default function MeClient({ config }: { config: MeConfig }) {
     const guildTagBadgeUrl =
         guildId && guildBadgeHash ? `https://cdn.discordapp.com/guild-tag-badges/${guildId}/${guildBadgeHash}?size=48` : '';
 
+    const visualTheme = isMeThemeId(config.profile.visualTheme) ? config.profile.visualTheme : 'primary';
+
     return (
         <main className={cn(
             "me-v7 min-h-[100svh] bg-[#050505] text-white relative flex flex-col items-center overflow-x-hidden px-1 pt-12 pb-12 sm:pt-16 selection:bg-white/20",
+            `me-theme-${visualTheme}`,
             isImmersive && "immersive-mode"
-        )} style={{ '--me-display-font': getMeDisplayFont(config.profile.fontTheme) } as CSSProperties}>
+        )} data-me-theme={visualTheme} style={{ '--me-display-font': getMeDisplayFont(config.profile.fontTheme) } as CSSProperties}>
             {/* Background Decor */}
             <div className={cn(
                 "fixed inset-0 z-0 transition-all duration-1000",

@@ -14,6 +14,7 @@ export interface MeConfig {
         handle: string;
         bio: string;
         fontTheme?: 'outfit' | 'geist-sans' | 'geist-mono' | 'geist-pixel';
+        visualTheme?: 'primary' | 'lunar' | 'editorial' | 'sunset' | 'signal';
         avatarUrl: string;
         logoUrl?: string; // nav logo
         bannerUrl?: string; // for gallery card
@@ -77,6 +78,7 @@ export const defaultMeConfig: MeConfig = {
         handle: "@aviorxt",
         bio: "Independent developer and aircraft maintenance engineer based in India.",
         fontTheme: 'outfit',
+        visualTheme: 'primary',
         avatarUrl: "https://cdn.avxt.qzz.io/assets/IMG_20251108_224641_264.webp",
         logoUrl: "/assets/logo/avrxt-pure-white.png",
         bannerUrl: "https://cdn.avxt.qzz.io/images/aviorxt_01.jpg",

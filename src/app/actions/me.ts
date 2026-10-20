@@ -5,6 +5,7 @@ import { invalidatePublicCache } from '@/lib/public-cache';
 import { revalidatePath } from 'next/cache';
 import { MeConfig, defaultMeConfig } from '@/lib/me-config';
 import { isMeFontId } from '@/lib/me-fonts';
+import { isMeThemeId } from '@/lib/me-themes';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getAdminDashboardPath } from '@/lib/admin-dashboard';
@@ -52,6 +53,7 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
     }
     normalized.profile.avatarUrl = safeUrl(normalized.profile.avatarUrl, true) || defaultMeConfig.profile.avatarUrl;
     normalized.profile.fontTheme = isMeFontId(normalized.profile.fontTheme) ? normalized.profile.fontTheme : 'outfit';
+    normalized.profile.visualTheme = isMeThemeId(normalized.profile.visualTheme) ? normalized.profile.visualTheme : 'primary';
     normalized.profile.themeColor = '#ffffff';
     normalized.profile.logoUrl = safeUrl(normalized.profile.logoUrl, true);
     normalized.profile.bannerUrl = safeUrl(normalized.profile.bannerUrl, true);

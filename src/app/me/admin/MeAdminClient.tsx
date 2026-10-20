@@ -24,6 +24,7 @@ import { DISCORD_BADGES } from '@/lib/discord-badges';
 import { SelectMenu } from '@/components/ui/SelectMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ME_FONT_OPTIONS, isMeFontId } from '@/lib/me-fonts';
+import { ME_THEME_OPTIONS, isMeThemeId } from '@/lib/me-themes';
 
 interface MeAdminClientProps {
     initialConfig: MeConfig;
@@ -402,6 +403,24 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                                 setConfig({ ...config, profile: { ...config.profile, fontTheme } });
                                             }}
                                         />
+                                    </div>
+                                    <div className="space-y-3 rounded-xl border border-white/5 bg-black/20 p-3">
+                                        <div>
+                                            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Profile visual theme</p>
+                                            <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Choose the complete layout, surface treatment, and colour system used on <code>/me</code>.</p>
+                                        </div>
+                                        <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Profile visual theme">
+                                            {ME_THEME_OPTIONS.map((theme) => {
+                                                const selected = (config.profile.visualTheme || 'primary') === theme.value;
+                                                return <button key={theme.value} type="button" role="radio" aria-checked={selected} onClick={() => {
+                                                    if (!isMeThemeId(theme.value)) return;
+                                                    setConfig({ ...config, profile: { ...config.profile, visualTheme: theme.value } });
+                                                }} className={cn('group flex min-h-20 items-start gap-3 rounded-xl border p-3 text-left transition-colors', selected ? 'border-white/35 bg-white/[.09] text-white' : 'border-white/[.08] bg-black/20 text-zinc-400 hover:border-white/20 hover:bg-white/[.04]')}>
+                                                    <span aria-hidden="true" className={cn('mt-0.5 h-9 w-9 shrink-0 rounded-lg border border-white/15', `me-theme-swatch-${theme.value}`)} />
+                                                    <span className="min-w-0"><span className="block text-[11px] font-semibold">{theme.label}</span><span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">{theme.description}</span></span>
+                                                </button>;
+                                            })}
+                                        </div>
                                     </div>
                                     <input
                                         type="text"
