@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Check, ChevronDown, ChevronRight, Copy, Download, File, Folder, FolderPlus, Globe2, Link2, LoaderCircle, LockKeyhole, MoreHorizontal, Pause, Pencil, Play, RefreshCw, Share2, Trash2, Upload, Volume2, VolumeX, X } from 'lucide-react';
 import { copyStorageAction, createFolderAction, createStorageShareAction, deleteStorageAction, getStorageUploadAction, listStorageAction, moveStorageAction, previewStorageAction, setStorageVisibilityAction } from '@/app/actions/storage';
 import type { StorageEntry } from '@/lib/s3-storage';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const size = (n = 0) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(1)} MB`;
 const mediaTime = (value = 0) => `${Math.floor(value / 60)}:${String(Math.floor(value % 60)).padStart(2, '0')}`;
@@ -63,7 +64,7 @@ function FileTree({ tree, expanded, selected, onToggle, onSelect }: { tree: Reco
       {isFolder && open && renderNodes(entry.key, depth + 1)}
     </div>;
   });
-  return <aside className="overflow-hidden border border-white/10 bg-zinc-950 lg:max-h-[calc(100svh-13rem)]"><button type="button" onClick={() => setIsOpen(value => !value)} className="flex min-h-12 w-full items-center justify-between border-b border-white/10 px-3 text-left lg:pointer-events-none"><span><span className="block font-mono text-[9px] uppercase tracking-[.18em] text-zinc-500">File tree</span><span className="mt-1 block text-xs text-zinc-400 lg:hidden">Browse folders and files</span></span><ChevronDown size={16} className={`text-zinc-500 transition-transform lg:hidden ${isOpen ? '' : '-rotate-90'}`}/></button><div className={`${isOpen ? 'block max-h-72 overflow-auto' : 'hidden'} lg:block lg:max-h-[calc(100svh-17rem)] lg:overflow-auto`}><div className="py-1"><button onClick={() => onSelect({ type: 'folder', name: 'root', key: '' })} className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${selected === '' ? 'bg-white/[.08] text-white' : 'text-zinc-400 hover:bg-white/[.04]'}`}><Folder size={14} className="text-amber-300"/> Root</button>{renderNodes('')}</div></div></aside>;
+  return <aside className="overflow-hidden border border-white/10 bg-zinc-950 lg:max-h-[calc(100svh-13rem)]"><button type="button" onClick={() => setIsOpen(value => !value)} className="flex min-h-12 w-full items-center justify-between border-b border-white/10 px-3 text-left lg:pointer-events-none"><span><span className="block font-mono text-[9px] uppercase tracking-[.18em] text-zinc-500">File tree</span><span className="mt-1 block text-xs text-zinc-400 lg:hidden">Browse folders and files</span></span><ChevronDown size={16} className={`text-zinc-500 transition-transform lg:hidden ${isOpen ? '' : '-rotate-90'}`}/></button><ScrollArea className={`${isOpen ? 'block max-h-72' : 'hidden'} lg:block lg:max-h-[calc(100svh-17rem)]`}><div className="py-1"><button onClick={() => onSelect({ type: 'folder', name: 'root', key: '' })} className={`flex w-full items-center gap-2 px-3 py-2 text-left text-xs ${selected === '' ? 'bg-white/[.08] text-white' : 'text-zinc-400 hover:bg-white/[.04]'}`}><Folder size={14} className="text-amber-300"/> Root</button>{renderNodes('')}</div></ScrollArea></aside>;
 }
 
 export default function StorageClient({ dashboardPath }: { dashboardPath: string }) {

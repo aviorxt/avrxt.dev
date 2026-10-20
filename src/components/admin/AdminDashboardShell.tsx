@@ -1,10 +1,13 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Database, FolderLock, LayoutDashboard, Mail, PanelLeft, ShieldCheck } from 'lucide-react';
+import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, Music, Palette, PanelLeft, Settings, ShieldCheck, SlidersHorizontal, User } from 'lucide-react';
+import { logout } from '@/app/actions/auth';
+import type { DashboardViewer } from '@/lib/dashboard-viewer';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Sidebar,
   SidebarContent,
@@ -24,13 +27,39 @@ import {
 
 const navigation = [
   { label: 'Profile editor', suffix: '', icon: LayoutDashboard },
+  { label: 'Docs admin', suffix: '/docs/admin', icon: FileText },
   { label: 'Personal storage', suffix: '/storage', icon: FolderLock },
   { label: 'Mail broadcast', suffix: '/mail-broadcat', icon: Mail },
 ] as const;
 
-export default function AdminDashboardShell({ dashboardPath, children }: { dashboardPath: string; children: ReactNode }) {
+export const profileSections = [
+  { id: 'profile', label: 'Profile', icon: User },
+  { id: 'themes', label: 'Themes', icon: Palette },
+  { id: 'presence', label: 'Presence', icon: Activity },
+  { id: 'music', label: 'Music', icon: Music },
+  { id: 'widgets', label: 'Widgets', icon: SlidersHorizontal },
+  { id: 'links', label: 'Links', icon: Link2 },
+  { id: 'resources', label: 'Resources', icon: BookOpen },
+  { id: 'gallery', label: 'Visual feed', icon: Camera },
+  { id: 'settings', label: 'Settings', icon: Settings },
+] as const;
+
+export type ProfileSection = (typeof profileSections)[number]['id'];
+
+const ProfileSectionContext = createContext<{ activeSection: ProfileSection; setActiveSection: (section: ProfileSection) => void } | null>(null);
+
+export function useAdminProfileSection() {
+  const context = useContext(ProfileSectionContext);
+  if (!context) throw new Error('useAdminProfileSection must be used within AdminDashboardShell.');
+  return context;
+}
+
+export default function AdminDashboardShell({ dashboardPath, viewer, children }: { dashboardPath: string; viewer: DashboardViewer; children: ReactNode }) {
   const pathname = usePathname();
+  const [activeSection, setActiveSection] = useState<ProfileSection>('profile');
+  const isProfileEditor = pathname === dashboardPath;
   return (
+    <ProfileSectionContext.Provider value={{ activeSection, setActiveSection }}>
     <SidebarProvider>
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader className="border-b border-sidebar-border p-3">
@@ -39,21 +68,51 @@ export default function AdminDashboardShell({ dashboardPath, children }: { dashb
             <span className="min-w-0 group-data-[collapsible=icon]:hidden"><strong className="block truncate text-xs tracking-wide">AVRXT</strong><small className="block truncate font-mono text-[9px] text-sidebar-foreground/60">ADMIN CONSOLE</small></span>
           </Link>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="overflow-hidden">
+          <ScrollArea className="h-full">
           <SidebarGroup>
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {navigation.map(({ label, suffix, icon: Icon }) => {
-                  const href = `${dashboardPath}${suffix}`;
+                  const href = suffix === '/docs/admin' ? '/docs/admin' : `${dashboardPath}${suffix}`;
                   return <SidebarMenuItem key={href}><SidebarMenuButton render={<Link href={href} />} isActive={pathname === href} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>;
                 })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
+          {isProfileEditor && <SidebarGroup>
+            <SidebarGroupLabel>Profile</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {profileSections.map(({ id, label, icon: Icon }) => <SidebarMenuItem key={id}>
+                  <SidebarMenuButton type="button" isActive={activeSection === id} onClick={() => setActiveSection(id)} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton>
+                </SidebarMenuItem>)}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>}
+          </ScrollArea>
         </SidebarContent>
-        <SidebarFooter className="border-t border-sidebar-border p-3 group-data-[collapsible=icon]:hidden">
-          <div className="flex items-center gap-2 rounded-md bg-sidebar-accent/60 px-2 py-2 text-[10px] text-sidebar-foreground/70"><Database size={13} /><span>Authenticated session</span></div>
+        <SidebarFooter className="relative border-t border-sidebar-border p-3 group-data-[collapsible=icon]:hidden">
+          <details className="group/account">
+            <summary className="flex cursor-pointer list-none items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-sidebar-accent [&::-webkit-details-marker]:hidden">
+              {viewer.avatarUrl ? <img src={viewer.avatarUrl} alt="" className="size-8 rounded-full border border-sidebar-border object-cover" /> : <span className="grid size-8 place-items-center rounded-full bg-sidebar-primary text-[11px] font-bold text-sidebar-primary-foreground">{viewer.displayName.slice(0, 1).toUpperCase()}</span>}
+              <span className="min-w-0 flex-1"><strong className="block truncate text-xs text-sidebar-foreground">{viewer.displayName}</strong><small className="block truncate font-mono text-[9px] text-sidebar-foreground/60">Logged in as @{viewer.username}</small></span>
+              <ChevronUp size={14} className="shrink-0 transition-transform group-open/account:rotate-180" />
+            </summary>
+            <div className="absolute bottom-[calc(100%+0.5rem)] left-2 right-2 z-30 overflow-hidden rounded-lg border border-sidebar-border bg-sidebar text-sidebar-foreground shadow-2xl shadow-black/50">
+              <div className="flex items-center gap-3 border-b border-sidebar-border px-3 py-3">
+                {viewer.avatarUrl ? <img src={viewer.avatarUrl} alt="" className="size-8 rounded-full border border-sidebar-border object-cover" /> : <span className="grid size-8 place-items-center rounded-full bg-sidebar-primary text-[11px] font-bold text-sidebar-primary-foreground">{viewer.displayName.slice(0, 1).toUpperCase()}</span>}
+                <span className="min-w-0"><strong className="block truncate text-sm">{viewer.displayName}</strong><small className="block truncate text-xs text-sidebar-foreground/60">@{viewer.username} · Discord</small></span>
+              </div>
+              <div className="p-1">
+                <Link href="/" className="flex min-h-9 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-sidebar-accent"><House size={15} /> AVRXT home</Link>
+                <Link href="/me" target="_blank" prefetch={false} className="flex min-h-9 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-sidebar-accent"><Eye size={15} /> Preview profile</Link>
+                <Link href="/docs/admin" prefetch={false} className="flex min-h-9 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-sidebar-accent"><BookOpen size={15} /> Documentation</Link>
+              </div>
+              <div className="border-t border-sidebar-border p-1"><button type="button" onClick={() => logout('/me')} className="flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent"><LogOut size={15} /> Log out</button></div>
+            </div>
+          </details>
         </SidebarFooter>
         <SidebarRail />
       </Sidebar>
@@ -65,5 +124,6 @@ export default function AdminDashboardShell({ dashboardPath, children }: { dashb
         {children}
       </SidebarInset>
     </SidebarProvider>
+    </ProfileSectionContext.Provider>
   );
 }

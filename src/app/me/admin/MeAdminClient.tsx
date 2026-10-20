@@ -3,16 +3,15 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-    Plus, Trash2, Save, LogOut,
+    Plus, Trash2, Save,
     Music, Link as LinkIcon, Book,
     Check, ArrowUp, ArrowDown,
-    User, Eye, AlertCircle, Camera, Upload, Activity,
+    User, AlertCircle, Camera, Upload, Activity,
     Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal, Palette
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MeConfig } from '@/lib/me-config';
 import { saveMeConfigAction } from '@/app/actions/me';
-import { logout } from '@/app/actions/auth';
 import { disconnectSpotifyAction } from '@/app/actions/spotify';
 import { searchYouTubeAction } from '@/app/actions/youtube';
 import { deleteFromR2Action } from '@/app/actions/r2';
@@ -25,11 +24,12 @@ import { SelectMenu } from '@/components/ui/SelectMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ME_FONT_OPTIONS, isMeFontId } from '@/lib/me-fonts';
 import { ME_THEME_OPTIONS, isMeThemeId } from '@/lib/me-themes';
+import { useAdminProfileSection } from '@/components/admin/AdminDashboardShell';
+import { Switch } from '@/components/ui/switch';
 
 interface MeAdminClientProps {
     initialConfig: MeConfig;
     isSpotifyConnected: boolean;
-    dashboardPath: string;
 }
 type AdminSection = 'profile' | 'themes' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
 const R2_CLEANUP_QUEUE_KEY = 'avrxt:admin:r2-cleanup:v1';
@@ -55,7 +55,7 @@ function AdminActivityBadge({ state }: { state: 'syncing' | 'updating' | 'proces
     return <span role="status" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[.12em] ${tone}`}><LoaderCircle size={11} className="animate-spin" />{copy}</span>;
 }
 
-export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashboardPath }: MeAdminClientProps) {
+export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeAdminClientProps) {
     const [config, setConfig] = useState<MeConfig>(initialConfig);
     const [ytSearchQuery, setYtSearchQuery] = useState('');
     const [ytResults, setYtResults] = useState<any[]>([]);
@@ -66,7 +66,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
     const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(R2_CLEANUP_QUEUE_KEY));
     const [pendingMuxAssetCleanup, setPendingMuxAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(MUX_CLEANUP_QUEUE_KEY));
     const [uploadingAsset, setUploadingAsset] = useState<{ name: string; size: number; target: string } | null>(null);
-    const [activeSection, setActiveSection] = useState<AdminSection>('profile');
+    const { activeSection } = useAdminProfileSection();
     const [confirmation, setConfirmation] = useState<{ title: string; description: string; danger?: boolean; confirmLabel: string; action: () => void | Promise<void> } | null>(null);
     const activityState = uploadingAsset ? 'processing' as const : isPending ? (saveStatus.startsWith('SYNCING') ? 'syncing' as const : 'updating' as const) : null;
 
@@ -249,43 +249,6 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                 <span className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Connected_To_Node: avrxt-core-01 {activityState && <AdminActivityBadge state={activityState} />}</span>
                             </div>
                         </div>
-                        <div className="grid w-full grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:justify-end md:gap-3 lg:w-auto">
-                            <Link href="/" className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold font-mono text-zinc-400 transition-all hover:bg-white/[0.08] hover:text-white md:rounded-full md:px-4">
-                                <span className="md:hidden">HOME</span><span className="hidden md:inline">AVRXT HOME</span>
-                            </Link>
-                            <Link
-                                href="/me"
-                                target="_blank"
-                                prefetch={false}
-                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/5 bg-zinc-800/50 px-3 py-2 text-[10px] font-bold font-mono text-zinc-400 transition-all hover:bg-zinc-700 hover:text-white md:rounded-full md:px-4"
-                            >
-                                <Eye size={12} /> PREVIEW
-                            </Link>
-                            <Link
-                                href="/docs/admin"
-                                prefetch={false}
-                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-900/20 px-3 py-2 text-[10px] font-bold font-mono text-blue-400 transition-all hover:bg-blue-900/40 hover:text-blue-300 md:rounded-full md:px-4"
-                            >
-                                DOCS
-                            </Link>
-                            <Link
-                                href={`${dashboardPath}/mail-broadcat`}
-                                prefetch={false}
-                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold font-mono text-zinc-300 transition-all hover:bg-white/[0.08] hover:text-white md:rounded-full md:px-4"
-                            >
-                                MAIL BROADCAST
-                            </Link>
-                            <Link
-                                href={`${dashboardPath}/storage`}
-                                prefetch={false}
-                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold font-mono text-zinc-300 transition-all hover:bg-white/[0.08] hover:text-white md:rounded-full md:px-4"
-                            >
-                                <FileImage size={13} /> STORAGE
-                            </Link>
-                            <button onClick={() => logout('/me')} className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-bold font-mono text-white transition-all hover:bg-zinc-700 md:col-span-1 md:rounded-full">
-                                <LogOut size={14} /> EXIT
-                            </button>
-                        </div>
                     </header>
 
                     {/* Quick Preview Card */}
@@ -339,34 +302,18 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                 </p>
                             </div>
                         </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={config.site?.maintenanceEnabled === true}
-                            onClick={() => setConfig(prev => ({
+                        <Switch
+                            checked={config.site?.maintenanceEnabled === true}
+                            onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({
                                 ...prev,
-                                site: { maintenanceEnabled: !prev.site?.maintenanceEnabled },
+                                site: { maintenanceEnabled },
                             }))}
-                            className={cn(
-                                "relative h-8 w-16 shrink-0 rounded-full border transition-colors",
-                                config.site?.maintenanceEnabled
-                                    ? "border-amber-400/50 bg-amber-500/30"
-                                    : "border-white/10 bg-zinc-800"
-                            )}
-                        >
-                            <span className={cn(
-                                "absolute top-1 h-6 w-6 rounded-full transition-all",
-                                config.site?.maintenanceEnabled
-                                    ? "left-9 bg-amber-300"
-                                    : "left-1 bg-zinc-500"
-                            )} />
-                            <span className="sr-only">Toggle maintenance mode</span>
-                        </button>
+                            aria-label="Toggle maintenance mode"
+                            className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800"
+                        />
                     </div>
 
-                    <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-                        <aside className="lg:sticky lg:top-6 lg:h-fit"><p className="mb-3 hidden font-mono text-[9px] uppercase tracking-[.18em] text-zinc-600 lg:block">Studio sections</p><nav aria-label="Admin sections" className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:flex lg:flex-col">{([{ id: 'profile', label: 'Profile', Icon: User }, { id: 'themes', label: 'Themes', Icon: Palette }, { id: 'presence', label: 'Presence', Icon: Activity }, { id: 'music', label: 'Music', Icon: Music }, { id: 'widgets', label: 'Widgets', Icon: SlidersHorizontal }, { id: 'links', label: 'Links', Icon: LinkIcon }, { id: 'resources', label: 'Resources', Icon: Book }, { id: 'gallery', label: 'Visual feed', Icon: Camera }, { id: 'settings', label: 'Settings', Icon: Settings }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} aria-pressed={activeSection === id} className={cn('flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-center text-[11px] transition-colors lg:w-full lg:justify-start lg:text-left', activeSection === id ? 'border-white/20 bg-white/[.08] text-white' : 'border-white/[.04] text-zinc-500 hover:bg-white/[.04] hover:text-zinc-200')}><Icon size={15} className="shrink-0" />{label}</button>)}</nav></aside>
-                        <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+                    <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
                         {/* Left Column */}
                         <div className="space-y-6">
                             {/* Profile Settings */}
@@ -1444,7 +1391,6 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                             </div>
                         </div>
                     </div></div>
-                </div>
 
                     <div className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/95 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/80 md:sticky md:inset-x-auto md:bottom-3">
                         <span className="min-w-0 truncate px-2 font-mono text-[9px] uppercase tracking-widest text-zinc-500 sm:text-[10px]" aria-live="polite">
