@@ -1,6 +1,7 @@
-import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import { cookies } from 'next/headers';
 import { cache } from 'react';
+import { configuredRedis } from '@/lib/redis-rest';
 
 const SESSION_COOKIE = 'avrxt_session';
 const CALLBACK_PATH = '/auth/o1/dc/callback';
@@ -12,10 +13,12 @@ export type AuthUser = {
   provider: 'discord';
   admin: boolean;
   user_metadata: { full_name?: string; user_name?: string; avatar_url?: string };
+  sessionId?: string;
 };
 
 type Transaction = { state: string; verifier: string; next: string };
 type Session = AuthUser & { exp: number };
+type DiscordExchange = { user: AuthUser; accessToken: string };
 
 function authSecret() {
   const value = process.env.AUTH_SESSION_SECRET;
@@ -29,6 +32,27 @@ function encode(value: unknown) {
 
 function sign(value: string) {
   return createHmac('sha256', authSecret()).update(value).digest('base64url');
+}
+
+function accessTokenKey(sessionId: string) {
+  return `${process.env.REDIS_CACHE_NAMESPACE || 'avrxt'}:auth:discord:${sessionId}`;
+}
+
+function encryptAccessToken(value: string) {
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', createHash('sha256').update(authSecret()).digest(), iv);
+  const encrypted = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+  return `${iv.toString('base64url')}.${cipher.getAuthTag().toString('base64url')}.${encrypted.toString('base64url')}`;
+}
+
+function decryptAccessToken(value: string) {
+  try {
+    const [iv, tag, encrypted] = value.split('.');
+    if (!iv || !tag || !encrypted) return null;
+    const decipher = createDecipheriv('aes-256-gcm', createHash('sha256').update(authSecret()).digest(), Buffer.from(iv, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tag, 'base64url'));
+    return Buffer.concat([decipher.update(Buffer.from(encrypted, 'base64url')), decipher.final()]).toString('utf8');
+  } catch { return null; }
 }
 
 function callbackOrigin(requestUrl: string) {
@@ -51,14 +75,16 @@ export function createDiscordAuthorization(requestUrl: string, next: string) {
   url.searchParams.set('client_id', clientId);
   url.searchParams.set('redirect_uri', getDiscordCallbackUrl(requestUrl).toString());
   url.searchParams.set('response_type', 'code');
-  url.searchParams.set('scope', 'identify');
+  // This user-consented scope lets AVRXT verify only the current user's role
+  // in the configured guild. No Discord bot account is required.
+  url.searchParams.set('scope', 'identify guilds.members.read');
   url.searchParams.set('state', state);
   url.searchParams.set('code_challenge', challenge);
   url.searchParams.set('code_challenge_method', 'S256');
   return { url, transaction: { state, verifier, next } satisfies Transaction };
 }
 
-export async function exchangeDiscordCode(code: string, verifier: string, requestUrl: string): Promise<AuthUser> {
+export async function exchangeDiscordCode(code: string, verifier: string, requestUrl: string): Promise<DiscordExchange> {
   const clientId = process.env.DISCORD_CLIENT_ID;
   const clientSecret = process.env.DISCORD_CLIENT_SECRET;
   if (!clientId || !clientSecret) throw new Error('Discord OAuth is not configured.');
@@ -80,11 +106,15 @@ export async function exchangeDiscordCode(code: string, verifier: string, reques
   if (typeof body.id !== 'string' || !/^\d{5,}$/.test(body.id)) throw new Error('Discord profile was invalid.');
   const name = typeof body.global_name === 'string' ? body.global_name : typeof body.username === 'string' ? body.username : undefined;
   const avatar = typeof body.avatar === 'string' ? `https://cdn.discordapp.com/avatars/${body.id}/${body.avatar}.png` : undefined;
-  return { id: body.id, provider: 'discord', admin: false, user_metadata: { full_name: name, user_name: typeof body.username === 'string' ? body.username : undefined, avatar_url: avatar } };
+  return { user: { id: body.id, provider: 'discord', admin: false, user_metadata: { full_name: name, user_name: typeof body.username === 'string' ? body.username : undefined, avatar_url: avatar } }, accessToken: tokenBody.access_token };
 }
 
-export async function setAuthSession(user: AuthUser) {
-  const payload: Session = { ...user, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS };
+export async function setAuthSession(user: AuthUser, accessToken: string) {
+  const sessionId = randomBytes(24).toString('base64url');
+  const redis = configuredRedis();
+  if (!redis) throw new Error('Discord authorization storage is unavailable.');
+  await redis.command('SET', accessTokenKey(sessionId), encryptAccessToken(accessToken), 'EX', SESSION_MAX_AGE_SECONDS);
+  const payload: Session = { ...user, sessionId, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS };
   const encoded = encode(payload);
   const store = await cookies();
   store.set(SESSION_COOKIE, `${encoded}.${sign(encoded)}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_MAX_AGE_SECONDS });
@@ -92,7 +122,20 @@ export async function setAuthSession(user: AuthUser) {
 
 export async function clearAuthSession() {
   const store = await cookies();
+  const user = verifyAuthSession(store.get(SESSION_COOKIE)?.value);
+  const redis = configuredRedis();
+  if (user?.sessionId && redis) await redis.command('DEL', accessTokenKey(user.sessionId)).catch(() => {});
   store.delete(SESSION_COOKIE);
+}
+
+export async function getDiscordSessionAccessToken(user: AuthUser) {
+  if (!user.sessionId) return undefined;
+  const redis = configuredRedis();
+  if (!redis) return undefined;
+  try {
+    const encrypted = await redis.command<string | null>('GET', accessTokenKey(user.sessionId));
+    return typeof encrypted === 'string' ? decryptAccessToken(encrypted) || undefined : undefined;
+  } catch { return undefined; }
 }
 
 export function verifyAuthSession(raw: string | undefined): AuthUser | null {
@@ -105,7 +148,7 @@ export function verifyAuthSession(raw: string | undefined): AuthUser | null {
     const value = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as Partial<Session>;
     if (value.provider !== 'discord' || typeof value.id !== 'string' || !/^\d{5,}$/.test(value.id) || typeof value.exp !== 'number' || value.exp <= Math.floor(Date.now() / 1000)) return null;
     const metadata = value.user_metadata && typeof value.user_metadata === 'object' ? value.user_metadata : {};
-    return { id: value.id, provider: 'discord', admin: false, user_metadata: { full_name: typeof metadata.full_name === 'string' ? metadata.full_name : undefined, user_name: typeof metadata.user_name === 'string' ? metadata.user_name : undefined, avatar_url: typeof metadata.avatar_url === 'string' ? metadata.avatar_url : undefined } };
+    return { id: value.id, provider: 'discord', admin: false, sessionId: typeof value.sessionId === 'string' && /^[A-Za-z0-9_-]{20,}$/.test(value.sessionId) ? value.sessionId : undefined, user_metadata: { full_name: typeof metadata.full_name === 'string' ? metadata.full_name : undefined, user_name: typeof metadata.user_name === 'string' ? metadata.user_name : undefined, avatar_url: typeof metadata.avatar_url === 'string' ? metadata.avatar_url : undefined } };
   } catch { return null; }
 }
 

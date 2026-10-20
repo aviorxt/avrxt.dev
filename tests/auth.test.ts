@@ -19,6 +19,14 @@ test('current membership accepts the exact role and observes role revocation wit
   assert.deepEqual(await lookupDiscordAccess(user, config, request), { status: 'denied', reason: 'role_missing' });
 });
 
+test('a user OAuth token can verify membership without a Discord bot token', async () => {
+  const request: typeof fetch = async (_url, options) => {
+    assert.equal(new Headers(options?.headers).get('authorization'), 'Bearer member-token');
+    return new Response(JSON.stringify({ roles: [config.roleId], user: { id: user } }));
+  };
+  assert.equal((await lookupDiscordAccess(user, { guildId: config.guildId, roleId: config.roleId, providerToken: 'member-token' }, request)).status, 'allowed');
+});
+
 test('provider errors never masquerade as a missing role and never grant access', async () => {
   for (const status of [401, 403, 429, 500, 503]) assert.equal((await lookupDiscordAccess(user, config, response(status, {}))).status, 'unavailable');
   assert.equal((await lookupDiscordAccess(user, config, response(200, { roles: 'invalid' }))).status, 'unavailable');
@@ -37,6 +45,7 @@ test('Discord OAuth uses the Vercel callback and PKCE', () => {
     const { url, transaction } = createDiscordAuthorization('https://www.avrxt.dev/auth/start', '/me/admin');
     assert.equal(url.origin, 'https://discord.com');
     assert.equal(url.searchParams.get('redirect_uri'), 'https://www.avrxt.dev/auth/o1/dc/callback');
+    assert.equal(url.searchParams.get('scope'), 'identify guilds.members.read');
     assert.equal(url.searchParams.get('code_challenge_method'), 'S256');
     assert.ok(url.searchParams.get('code_challenge'));
     assert.equal(transaction.next, '/me/admin');

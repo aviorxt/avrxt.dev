@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get('code');
   if (!code || !transaction.state || !transaction.verifier || transaction.state !== request.nextUrl.searchParams.get('state')) return fail();
   try {
-    const user = await exchangeDiscordCode(code, transaction.verifier, request.url);
-    await setAuthSession(user);
+    const { user, accessToken } = await exchangeDiscordCode(code, transaction.verifier, request.url);
+    await setAuthSession(user, accessToken);
     const response = NextResponse.redirect(new URL(safeReturnPath(transaction.next), request.url));
     response.cookies.set('avrxt_oauth_transaction', '', { path: '/auth', maxAge: 0 });
     return response;
