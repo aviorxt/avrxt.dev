@@ -251,8 +251,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>
                     </header>
 
-                    {/* Quick Preview Card */}
-                    <div className="group relative mb-8 overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/30 p-6 backdrop-blur-xl sm:mb-10 sm:rounded-3xl sm:p-8">
+                    {/* The live profile preview belongs only to the Profile editor. */}
+                    {activeSection === 'profile' && <div className="group relative mb-8 overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/30 p-6 backdrop-blur-xl sm:mb-10 sm:rounded-3xl sm:p-8">
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 opacity-50"></div>
                         <div className="relative z-10 flex flex-col items-center text-center">
                             <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] mb-6">// Live_Header_Preview</div>
@@ -268,7 +268,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             <h2 className="text-2xl font-bold font-mono tracking-[0.15em] uppercase text-white">{config.profile.handle || '@USERNAME'}</h2>
                             <p className="text-sm font-light tracking-[0.2em] text-zinc-400 mt-2 uppercase italic">{config.profile.bio || 'Your bio here...'}</p>
                         </div>
-                    </div>
+                    </div>}
 
                     {saveStatus && (
                         <div className={cn(
@@ -281,37 +281,6 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             <span className="text-[10px] font-mono uppercase tracking-widest">{saveStatus}</span>
                         </div>
                     )}
-
-                    <div className={cn(
-                        "mb-8 flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between",
-                        config.site?.maintenanceEnabled
-                            ? "border-amber-500/30 bg-amber-500/10"
-                            : "border-white/5 bg-zinc-900/40"
-                    )}>
-                        <div className="flex items-start gap-4">
-                            <div className={cn(
-                                "mt-0.5 rounded-xl p-2.5",
-                                config.site?.maintenanceEnabled ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-zinc-500"
-                            )}>
-                                <Wrench size={18} />
-                            </div>
-                            <div>
-                                <h2 className="font-mono text-sm font-bold uppercase tracking-widest">Maintenance_Mode</h2>
-                                <p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">
-                                    Redirect public pages to the maintenance screen. Admin, authentication, and API routes stay available. Press Save to apply.
-                                </p>
-                            </div>
-                        </div>
-                        <Switch
-                            checked={config.site?.maintenanceEnabled === true}
-                            onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({
-                                ...prev,
-                                site: { maintenanceEnabled },
-                            }))}
-                            aria-label="Toggle maintenance mode"
-                            className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800"
-                        />
-                    </div>
 
                     <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
                         {/* Left Column */}
@@ -1388,6 +1357,13 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                         </div>
                                     ))}
                                 </div>
+                            </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.maintenanceEnabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.maintenanceEnabled ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-zinc-500")}><Wrench size={18} /></div>
+                                    <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Maintenance_Mode</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Redirect public pages to the maintenance screen. Admin, authentication, and API routes stay available. Press Save to apply.</p></div>
+                                </div>
+                                <Switch checked={config.site?.maintenanceEnabled === true} onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({ ...prev, site: { maintenanceEnabled } }))} aria-label="Toggle maintenance mode" className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800" />
                             </div>
                         </div>
                     </div></div>
