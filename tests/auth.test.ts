@@ -44,12 +44,12 @@ test('Discord OAuth uses the Vercel callback and PKCE', () => {
   try {
     const { url, transaction } = createDiscordAuthorization('https://www.avrxt.dev/auth/start', '/me/admin');
     assert.equal(url.origin, 'https://discord.com');
-    assert.equal(url.searchParams.get('redirect_uri'), 'https://www.avrxt.dev/auth/o1/dc/callback');
+    assert.equal(url.searchParams.get('redirect_uri'), 'https://www.avrxt.dev/auth/discord/callback');
     assert.equal(url.searchParams.get('scope'), 'identify guilds.members.read');
     assert.equal(url.searchParams.get('code_challenge_method'), 'S256');
     assert.ok(url.searchParams.get('code_challenge'));
     assert.equal(transaction.next, '/me/admin');
-    assert.equal(getDiscordCallbackUrl('http://localhost:3000/auth/start').toString(), 'http://localhost:3000/auth/o1/dc/callback');
+    assert.equal(getDiscordCallbackUrl('http://localhost:3000/auth/start').toString(), 'http://localhost:3000/auth/discord/callback');
   } finally {
     if (previous === undefined) delete process.env.DISCORD_CLIENT_ID;
     else process.env.DISCORD_CLIENT_ID = previous;

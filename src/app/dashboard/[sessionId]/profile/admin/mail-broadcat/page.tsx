@@ -10,5 +10,5 @@ export default async function DashboardMailBroadcastPage({ params }: { params: P
   await protectAdminPage();
   const { sessionId } = await params;
   if (!await matchesAdminDashboardId(sessionId)) notFound();
-  return <MailBroadcastPage />;
+  return <MailBroadcastPage dashboardPath={`/dashboard/${sessionId}/profile/admin`} />;
 }

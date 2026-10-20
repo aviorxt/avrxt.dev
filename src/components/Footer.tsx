@@ -9,7 +9,7 @@ import Instagram from '@thesvg/react/instagram';
 import { tools } from '@/lib/tool-catalog';
 import StatusBadge from './StatusBadge';
 import DmcaBadge from './DmcaBadge';
-import { Tooltip } from './ui/Tooltip';
+import { SiteTooltip } from './ui/SiteTooltip';
 
 const pageGroups = [
     {
@@ -93,9 +93,9 @@ export default function Footer() {
                         </a>
                     </div>
                     <nav aria-label="Social links" className="flex items-center gap-2">
-                        <Tooltip label="GitHub"><a href="https://github.com/aviorxt" target="_blank" rel="noreferrer" aria-label="aviorxt on GitHub" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Github variant="mono" width={15} height={15} aria-hidden="true" /></a></Tooltip>
-                        <Tooltip label="Instagram"><a href="https://www.instagram.com/aviorxt/" target="_blank" rel="noreferrer" aria-label="@aviorxt on Instagram" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Instagram variant="mono" width={15} height={15} aria-hidden="true" /></a></Tooltip>
-                        <Tooltip label="Email support"><a href="mailto:support@avrxt.dev" aria-label="Email avrxt.dev support" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Mail size={15} aria-hidden="true" /></a></Tooltip>
+                        <SiteTooltip label="GitHub"><a href="https://github.com/aviorxt" target="_blank" rel="noreferrer" aria-label="aviorxt on GitHub" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Github variant="mono" width={15} height={15} aria-hidden="true" /></a></SiteTooltip>
+                        <SiteTooltip label="Instagram"><a href="https://www.instagram.com/aviorxt/" target="_blank" rel="noreferrer" aria-label="@aviorxt on Instagram" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Instagram variant="mono" width={15} height={15} aria-hidden="true" /></a></SiteTooltip>
+                        <SiteTooltip label="Email support"><a href="mailto:support@avrxt.dev" aria-label="Email avrxt.dev support" className="grid size-10 place-items-center border border-[#292929] text-[#858585] transition-colors hover:border-[#666666] hover:text-white"><Mail size={15} aria-hidden="true" /></a></SiteTooltip>
                     </nav>
                 </div>
             </div>

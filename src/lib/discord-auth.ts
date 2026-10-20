@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { configuredRedis } from '@/lib/redis-rest';
 
 const SESSION_COOKIE = 'avrxt_session';
-const CALLBACK_PATH = '/auth/o1/dc/callback';
+const CALLBACK_PATH = '/auth/discord/callback';
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 12;
 
 export type AuthUser = {

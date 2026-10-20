@@ -8,7 +8,7 @@ import { getPresignedUploadUrl, getR2Client, verifyR2Upload } from '../src/lib/r
 import { putR2File } from '../src/lib/upload-transport';
 import { NextRequest } from 'next/server';
 import { GET as startLogin } from '../src/app/auth/start/route';
-import { GET as callbackLogin } from '../src/app/auth/o1/dc/callback/route';
+import { GET as callbackLogin } from '../src/app/auth/discord/callback/route';
 import { clientAddress } from '../src/lib/client-address';
 import { createHmac } from 'node:crypto';
 
@@ -43,12 +43,12 @@ test('login emits a browser-bound PKCE transaction and rejects substituted callb
   assert.equal(transaction.next, '/');
   assert.equal(transaction.state, location.searchParams.get('state'));
   assert.ok(transaction.verifier);
-  const callback = await callbackLogin(new NextRequest('http://localhost:3000/auth/o1/dc/callback?code=unused&state=substituted', {
+  const callback = await callbackLogin(new NextRequest('http://localhost:3000/auth/discord/callback?code=unused&state=substituted', {
     headers: { cookie: `avrxt_oauth_transaction=${encodeURIComponent(cookie.value)}` },
   }));
   assert.match(callback.headers.get('location')!, /oauth_callback_failed/);
   assert.equal(callback.cookies.get('avrxt_oauth_transaction')?.value, '');
-  const withoutCookie = await callbackLogin(new NextRequest('http://localhost:3000/auth/o1/dc/callback?code=unused&state=anything'));
+  const withoutCookie = await callbackLogin(new NextRequest('http://localhost:3000/auth/discord/callback?code=unused&state=anything'));
   assert.match(withoutCookie.headers.get('location')!, /oauth_callback_failed/);
   if (previous === undefined) delete process.env.DISCORD_CLIENT_ID;
   else process.env.DISCORD_CLIENT_ID = previous;
