@@ -20,8 +20,8 @@ export default async function MailBroadcastPage({ dashboardPath: dashboardPathPr
     const viewer = await getDashboardViewer();
 
     return (
-        <AdminDashboardShell dashboardPath={dashboardPath} viewer={viewer}><main className="min-h-screen bg-[#070707] px-4 py-6 text-zinc-100 sm:px-7 sm:py-9 lg:px-10">
-            <div className="mx-auto max-w-[1500px]">
+        <AdminDashboardShell dashboardPath={dashboardPath} viewer={viewer}><main className="min-h-[calc(100svh-3rem)] bg-[#070707] px-4 py-6 text-zinc-100 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+            <div className="mx-auto w-full max-w-7xl">
                 <BroadcastClient initialBroadcasts={broadcasts} defaultFrom={process.env.RESEND_DEFAULT_FROM || 'avrxt Updates <news@avrxt.dev>'} />
             </div>
         </main></AdminDashboardShell>

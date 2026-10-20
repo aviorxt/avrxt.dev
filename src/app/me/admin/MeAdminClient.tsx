@@ -238,9 +238,9 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     return (
         <>
             <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title || ''} description={confirmation?.description || ''} confirmLabel={confirmation?.confirmLabel || 'Confirm'} danger={confirmation?.danger} onCancel={() => setConfirmation(null)} onConfirm={() => { const action = confirmation?.action; setConfirmation(null); void action?.(); }}/>
-            <main className="me-admin-page page-enter min-h-screen bg-black px-4 pb-28 pt-5 text-white selection:bg-white/10 sm:px-7 sm:pt-7 md:px-12 md:pb-8 md:pt-12">
-                <div className="mx-auto max-w-6xl">
-                    <header className="mb-8 flex flex-col justify-between gap-6 sm:mb-10 lg:flex-row lg:items-center">
+            <main className="me-admin-page page-enter min-h-[calc(100svh-3rem)] bg-black px-4 pb-10 pt-6 text-white selection:bg-white/10 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10">
+                <div className="mx-auto w-full max-w-7xl">
+                    <header className="mx-auto mb-8 w-full max-w-4xl border-b border-white/10 pb-6 sm:mb-10 sm:pb-7">
                         <div className="min-w-0">
                             <p className="mb-2 font-mono text-[9px] uppercase tracking-[.24em] text-zinc-600 sm:hidden">AVRXT / control room</p>
                             <h1 className="mb-2 text-[clamp(1.8rem,8vw,2.5rem)] font-bold italic tracking-tighter uppercase">Me_Dashboard</h1>
@@ -282,9 +282,9 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>
                     )}
 
-                    <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
+                    <div className="mx-auto min-w-0 w-full max-w-4xl"><div className="grid grid-cols-1 gap-6 sm:gap-8">
                         {/* Left Column */}
-                        <div className="space-y-6">
+                        <div className="w-full space-y-6">
                             {/* Profile Settings */}
                             <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'profile' && 'hidden')}>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
@@ -924,7 +924,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>{/* END Left Column */}
 
                         {/* Right Column */}
-                        <div className="space-y-6">
+                        <div className="w-full space-y-6">
                             {/* Widget Settings */}
                             <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'widgets' && 'hidden')}>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
@@ -1368,7 +1368,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>
                     </div></div>
 
-                    <div className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/95 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/80 md:sticky md:inset-x-auto md:bottom-3">
+                    <div className="sticky bottom-3 z-30 mx-auto mt-8 flex w-full max-w-4xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/95 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/80">
                         <span className="min-w-0 truncate px-2 font-mono text-[9px] uppercase tracking-widest text-zinc-500 sm:text-[10px]" aria-live="polite">
                             {saveStatus || 'Profile settings'}
                         </span>
