@@ -237,64 +237,58 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
     return (
         <>
             <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title || ''} description={confirmation?.description || ''} confirmLabel={confirmation?.confirmLabel || 'Confirm'} danger={confirmation?.danger} onCancel={() => setConfirmation(null)} onConfirm={() => { const action = confirmation?.action; setConfirmation(null); void action?.(); }}/>
-            <main className="me-admin-page page-enter min-h-screen bg-black text-white p-5 sm:p-7 md:p-12 selection:bg-white/10">
-                <div className="max-w-4xl mx-auto">
-                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tighter uppercase mb-2 font-mono italic">Me_Dashboard</h1>
+            <main className="me-admin-page page-enter min-h-screen bg-black px-4 pb-28 pt-5 text-white selection:bg-white/10 sm:px-7 sm:pt-7 md:px-12 md:pb-8 md:pt-12">
+                <div className="mx-auto max-w-6xl">
+                    <header className="mb-8 flex flex-col justify-between gap-6 sm:mb-10 lg:flex-row lg:items-center">
+                        <div className="min-w-0">
+                            <p className="mb-2 font-mono text-[9px] uppercase tracking-[.24em] text-zinc-600 sm:hidden">AVRXT / control room</p>
+                            <h1 className="mb-2 text-[clamp(1.8rem,8vw,2.5rem)] font-bold italic tracking-tighter uppercase">Me_Dashboard</h1>
                             <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
                                 <span className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Connected_To_Node: avrxt-core-01 {activityState && <AdminActivityBadge state={activityState} />}</span>
                             </div>
                         </div>
-                        <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto">
-                            <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10">
-                                AVRXT HOME
+                        <div className="grid w-full grid-cols-2 gap-2 md:flex md:flex-wrap md:items-center md:justify-end md:gap-3 lg:w-auto">
+                            <Link href="/" className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold font-mono text-zinc-400 transition-all hover:bg-white/[0.08] hover:text-white md:rounded-full md:px-4">
+                                <span className="md:hidden">HOME</span><span className="hidden md:inline">AVRXT HOME</span>
                             </Link>
                             <Link
                                 href="/me"
                                 target="_blank"
                                 prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/5"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/5 bg-zinc-800/50 px-3 py-2 text-[10px] font-bold font-mono text-zinc-400 transition-all hover:bg-zinc-700 hover:text-white md:rounded-full md:px-4"
                             >
                                 <Eye size={12} /> PREVIEW
                             </Link>
                             <Link
                                 href="/docs/admin"
                                 prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 rounded-full text-[10px] font-bold font-mono transition-all border border-blue-500/20"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-blue-500/20 bg-blue-900/20 px-3 py-2 text-[10px] font-bold font-mono text-blue-400 transition-all hover:bg-blue-900/40 hover:text-blue-300 md:rounded-full md:px-4"
                             >
                                 DOCS
                             </Link>
                             <Link
                                 href={`${dashboardPath}/mail-broadcat`}
                                 prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold font-mono text-zinc-300 transition-all hover:bg-white/[0.08] hover:text-white md:rounded-full md:px-4"
                             >
                                 MAIL BROADCAST
                             </Link>
                             <Link
                                 href={`${dashboardPath}/storage`}
                                 prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10"
+                                className="flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.035] px-3 py-2 text-[10px] font-bold font-mono text-zinc-300 transition-all hover:bg-white/[0.08] hover:text-white md:rounded-full md:px-4"
                             >
                                 <FileImage size={13} /> STORAGE
                             </Link>
-                            <button
-                                onClick={handleSave}
-                                disabled={isPending}
-                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold font-mono transition-all shadow-[0_0_20px_rgba(255,255,255,0.12)] disabled:opacity-50"
-                            >
-                                <Save size={14} /> {isPending ? 'SYNCING...' : 'SAVE'}
-                            </button>
-                            <button onClick={() => logout('/me')} className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full text-xs font-bold font-mono transition-all">
+                            <button onClick={() => logout('/me')} className="col-span-2 flex min-h-11 items-center justify-center gap-2 rounded-xl bg-zinc-800 px-3 py-2 text-xs font-bold font-mono text-white transition-all hover:bg-zinc-700 md:col-span-1 md:rounded-full">
                                 <LogOut size={14} /> EXIT
                             </button>
                         </div>
                     </header>
 
                     {/* Quick Preview Card */}
-                    <div className="mb-12 p-8 rounded-3xl bg-zinc-900/30 border border-white/5 backdrop-blur-xl relative overflow-hidden group">
+                    <div className="group relative mb-8 overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/30 p-6 backdrop-blur-xl sm:mb-10 sm:rounded-3xl sm:p-8">
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 opacity-50"></div>
                         <div className="relative z-10 flex flex-col items-center text-center">
                             <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] mb-6">// Live_Header_Preview</div>
@@ -370,7 +364,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                     </div>
 
                     <div className="grid gap-6 lg:grid-cols-[13rem_minmax(0,1fr)]">
-                        <aside className="lg:sticky lg:top-24 lg:h-fit"><p className="mb-3 hidden font-mono text-[9px] uppercase tracking-[.18em] text-zinc-600 lg:block">Studio sections</p><nav aria-label="Admin sections" className="flex gap-2 overflow-x-auto pb-2 lg:flex-col lg:overflow-visible">{([{ id: 'profile', label: 'Profile', Icon: User }, { id: 'presence', label: 'Presence', Icon: Activity }, { id: 'music', label: 'Music', Icon: Music }, { id: 'widgets', label: 'Widgets', Icon: SlidersHorizontal }, { id: 'links', label: 'Links', Icon: LinkIcon }, { id: 'resources', label: 'Resources', Icon: Book }, { id: 'gallery', label: 'Visual feed', Icon: Camera }, { id: 'settings', label: 'Settings', Icon: Settings }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} aria-pressed={activeSection === id} className={cn('flex min-h-10 shrink-0 items-center gap-3 rounded-lg border px-3 text-left text-xs transition-colors lg:w-full', activeSection === id ? 'border-white/20 bg-white/[.08] text-white' : 'border-transparent text-zinc-500 hover:bg-white/[.04] hover:text-zinc-200')}><Icon size={15} />{label}</button>)}</nav></aside>
+                        <aside className="lg:sticky lg:top-6 lg:h-fit"><p className="mb-3 hidden font-mono text-[9px] uppercase tracking-[.18em] text-zinc-600 lg:block">Studio sections</p><nav aria-label="Admin sections" className="grid grid-cols-2 gap-2 md:grid-cols-4 lg:flex lg:flex-col">{([{ id: 'profile', label: 'Profile', Icon: User }, { id: 'presence', label: 'Presence', Icon: Activity }, { id: 'music', label: 'Music', Icon: Music }, { id: 'widgets', label: 'Widgets', Icon: SlidersHorizontal }, { id: 'links', label: 'Links', Icon: LinkIcon }, { id: 'resources', label: 'Resources', Icon: Book }, { id: 'gallery', label: 'Visual feed', Icon: Camera }, { id: 'settings', label: 'Settings', Icon: Settings }] as const).map(({ id, label, Icon }) => <button key={id} type="button" onClick={() => setActiveSection(id)} aria-pressed={activeSection === id} className={cn('flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border px-3 text-center text-[11px] transition-colors lg:w-full lg:justify-start lg:text-left', activeSection === id ? 'border-white/20 bg-white/[.08] text-white' : 'border-white/[.04] text-zinc-500 hover:bg-white/[.04] hover:text-zinc-200')}><Icon size={15} className="shrink-0" />{label}</button>)}</nav></aside>
                         <div className="min-w-0"><div className="grid grid-cols-1 gap-8 xl:grid-cols-2">
                         {/* Left Column */}
                         <div className="space-y-6">
@@ -1446,11 +1440,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                     </div></div>
                 </div>
 
-                    <div className="sticky bottom-3 z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/90 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/75">
-                        <span className="min-w-0 truncate px-2 font-mono text-[10px] uppercase tracking-widest text-zinc-500" aria-live="polite">
+                    <div className="fixed inset-x-3 bottom-[max(.75rem,env(safe-area-inset-bottom))] z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/95 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/80 md:sticky md:inset-x-auto md:bottom-3">
+                        <span className="min-w-0 truncate px-2 font-mono text-[9px] uppercase tracking-widest text-zinc-500 sm:text-[10px]" aria-live="polite">
                             {saveStatus || 'Profile settings'}
                         </span>
-                        <button type="button" onClick={handleSave} disabled={isPending} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60">
+                        <button type="button" onClick={handleSave} disabled={isPending} className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60 sm:px-5">
                             <Save size={14} /> {isPending ? 'Saving…' : 'Save changes'}
                         </button>
                     </div>
@@ -1472,6 +1466,12 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
            .admin-input:focus {
              border-color: rgba(255,255,255,0.2);
              background: rgba(0,0,0,0.8);
+           }
+           @media (max-width: 767px) {
+             .admin-input {
+               min-height: 3.25rem;
+               font-size: 16px;
+             }
            }
            .custom-scrollbar::-webkit-scrollbar {
              width: 4px;

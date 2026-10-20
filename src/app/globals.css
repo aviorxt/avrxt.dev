@@ -459,10 +459,14 @@ button:active, a:active {
 .me-weather-widget { transition: border-color 240ms ease, background-color 240ms ease, transform 240ms ease, box-shadow 240ms ease; }
 .me-weather-widget:hover { border-color: rgba(255,255,255,.2); background-color: rgba(255,255,255,.055); box-shadow: 0 8px 30px rgba(255,255,255,.035); transform: translateY(-1px); }
 .me-v7 video { -webkit-user-drag: none; user-select: none; }
-.me-admin-page { background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.055), transparent 38rem), #050505 !important; }
+.me-admin-page { background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,.055), transparent 38rem), #050505 !important; overflow-x: clip; }
 .me-admin-page > div { max-width: 76rem; }
 .me-admin-page header { border-bottom: 1px solid rgba(255,255,255,.09); padding-bottom: 1.5rem; }
 .me-admin-page button:focus-visible, .me-admin-page a:focus-visible { outline-color: #fff; }
+@media (max-width: 767px) {
+  .me-admin-page header { padding-bottom: 1.25rem; }
+  .me-admin-page .admin-input { min-height: 3.25rem; font-size: 16px; }
+}
 
 .home-screen { isolation: isolate; background: #050505; }
 .home-screen::before { content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: .18; background-image: radial-gradient(#fff .55px, transparent .55px); background-size: 5px 5px; mask-image: linear-gradient(to bottom, #000, transparent 88%); }
