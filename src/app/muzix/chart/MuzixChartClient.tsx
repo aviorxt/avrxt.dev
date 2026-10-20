@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowUpRight, Disc3, Heart, History, ListMusic, LoaderCircle, Pause, Play, Radio, RefreshCw, Repeat2, Shuffle, Sparkles, TrendingUp, Waves } from 'lucide-react';
 import { SiSpotify } from 'react-icons/si';
 import type { ChartArtist, ChartTrack, MuzixChart } from '@/lib/spotify-chart';
+import { apiUrl } from '@/lib/api-gateway';
 
 function Art({ image, label, className = '' }: { image?: string; label: string; className?: string }) {
   return (
@@ -56,7 +57,7 @@ export default function MuzixChartClient() {
   const load = async (quiet = false) => {
     if (!quiet) setLoading(true);
     try {
-      const response = await fetch('/api/spotify/chart', { cache: 'no-store' });
+      const response = await fetch(apiUrl('/v1/spotify/chart', '/api/spotify/chart'), { cache: 'default' });
       const payload = await response.json() as MuzixChart & { error?: string };
       if (!response.ok) throw new Error(payload.error || 'Music data is temporarily unavailable.');
       setData(payload);
@@ -72,7 +73,9 @@ export default function MuzixChartClient() {
     setClock(Date.now());
     setCapsuleMonth(new Intl.DateTimeFormat('en', { month: 'long', year: 'numeric' }).format(new Date()));
     void load();
-    const refresh = window.setInterval(() => void load(true), 30_000);
+    const refresh = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load(true);
+    }, 2 * 60_000);
     const ticker = window.setInterval(() => setClock(Date.now()), 1_000);
     return () => { window.clearInterval(refresh); window.clearInterval(ticker); };
   }, []);

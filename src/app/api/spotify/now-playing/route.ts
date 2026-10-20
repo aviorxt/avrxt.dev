@@ -4,7 +4,7 @@ import { createAdminClient } from '@/utils/supabase/admin';
 import { cachedPublic } from '@/lib/public-cache';
 
 export const dynamic = 'force-dynamic';
-const cacheHeaders = { 'Cache-Control': 'public, s-maxage=15, stale-while-revalidate=15' };
+const cacheHeaders = { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=90' };
 function json(value: unknown) { return NextResponse.json(value, { headers: cacheHeaders }); }
 
 async function loadNowPlaying() {
@@ -45,7 +45,7 @@ async function loadNowPlaying() {
 
 export async function GET() {
     try {
-        const value = await cachedPublic('spotify:now-playing', { ttlSeconds: 15, tags: ['spotify'] }, loadNowPlaying);
+        const value = await cachedPublic('spotify:now-playing', { ttlSeconds: 30, tags: ['spotify'] }, loadNowPlaying);
         return json(value);
     } catch (error) {
         console.error('Error in now-playing API:', error);

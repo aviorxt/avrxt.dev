@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { GeistMono } from 'geist/font/mono';
+import { GeistPixelSquare } from 'geist/font/pixel';
+import { GeistSans } from 'geist/font/sans';
 
 export const metadata: Metadata = {
     icons: {
@@ -11,5 +14,5 @@ export default function MeLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
-    return <>{children}</>;
+    return <div className={`${GeistSans.variable} ${GeistMono.variable} ${GeistPixelSquare.variable}`}>{children}</div>;
 }

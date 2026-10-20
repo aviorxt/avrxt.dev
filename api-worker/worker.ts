@@ -18,10 +18,19 @@ const PUBLIC_PROXY_ROUTES: Record<string, string> = {
   '/v1/contact': '/api/contact',
   '/v1/subscribe': '/api/subscribe',
   '/v1/status': '/api/status',
+  '/v1/status/details': '/api/status/details',
   '/v1/health': '/api/health',
   '/v1/link-preview': '/api/link-preview',
   '/v1/og': '/api/og',
   '/v1/spotify/now-playing': '/api/spotify/now-playing',
+  '/v1/spotify/chart': '/api/spotify/chart',
+};
+
+const CACHEABLE_PROXY_ROUTES: Record<string, number> = {
+  '/v1/status': 60,
+  '/v1/status/details': 60,
+  '/v1/spotify/now-playing': 30,
+  '/v1/spotify/chart': 60,
 };
 
 function corsHeaders(request: Request) {
@@ -50,12 +59,13 @@ function withCors(request: Request, response: Response) {
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }
 
-async function proxyToSite(request: Request, env: Env, targetPath: string) {
+async function proxyToSite(request: Request, env: Env, targetPath: string, cacheTtl?: number) {
   const source = new URL(request.url);
   const target = new URL(targetPath, env.SITE_ORIGIN || 'https://www.avrxt.dev');
   target.search = source.search;
   const headers = new Headers(request.headers);
   headers.delete('host');
+  if (cacheTtl) headers.delete('cookie');
   headers.set('X-Forwarded-Host', source.host);
   headers.set('X-AVRXT-Gateway', 'api-v1');
   for (const name of ['x-avrxt-client-ip', 'x-avrxt-client-time', 'x-avrxt-client-signature']) headers.delete(name);
@@ -75,7 +85,8 @@ async function proxyToSite(request: Request, env: Env, targetPath: string) {
     headers,
     body: request.method === 'GET' || request.method === 'HEAD' ? undefined : request.body,
     redirect: 'manual',
-  });
+    ...(cacheTtl ? { cf: { cacheEverything: true, cacheTtl } } : {}),
+  } as RequestInit);
   return withCors(request, response);
 }
 
@@ -196,7 +207,7 @@ const worker = {
     }
 
     const target = PUBLIC_PROXY_ROUTES[url.pathname];
-    if (target) return proxyToSite(request, env, target);
+    if (target) return proxyToSite(request, env, target, request.method === 'GET' ? CACHEABLE_PROXY_ROUTES[url.pathname] : undefined);
 
     return json(request, { error: 'Not found', path: url.pathname }, 404);
   },

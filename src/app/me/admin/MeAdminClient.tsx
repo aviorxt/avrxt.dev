@@ -23,6 +23,7 @@ import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
 import { SelectMenu } from '@/components/ui/SelectMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ME_FONT_OPTIONS, isMeFontId } from '@/lib/me-fonts';
 
 interface MeAdminClientProps {
     initialConfig: MeConfig;
@@ -393,6 +394,21 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected, dashb
                                         className="admin-input"
                                         placeholder="Bio"
                                     />
+                                    <div className="space-y-2 rounded-xl border border-white/5 bg-black/20 p-3">
+                                        <div>
+                                            <p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Profile display font</p>
+                                            <p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Applied to the large profile name on <code>/me</code>.</p>
+                                        </div>
+                                        <SelectMenu
+                                            label="Profile display font"
+                                            value={config.profile.fontTheme || 'outfit'}
+                                            options={ME_FONT_OPTIONS.map((font) => ({ ...font }))}
+                                            onValueChange={(fontTheme) => {
+                                                if (!isMeFontId(fontTheme)) return;
+                                                setConfig({ ...config, profile: { ...config.profile, fontTheme } });
+                                            }}
+                                        />
+                                    </div>
                                     <input
                                         type="text"
                                         value={config.profile.avatarUrl}

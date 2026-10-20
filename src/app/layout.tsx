@@ -61,6 +61,10 @@ export const metadata: Metadata = {
     ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
     : undefined,
   alternates: { canonical: "/" },
+  manifest: "/manifest.webmanifest",
+  referrer: "origin-when-cross-origin",
+  formatDetection: { telephone: false, email: false, address: false },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "AVRXT" },
   robots: {
     index: true,
     follow: true,
@@ -113,13 +117,25 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{
             __html: JSON.stringify({
               '@context': 'https://schema.org',
-              '@type': 'WebSite',
-              '@id': `${siteUrl}/#website`,
-              url: `${siteUrl}/`,
-              name: 'AVRXT.DEV',
-              alternateName: ['avrxt', 'aviorxt'],
-              inLanguage: 'en-IN',
-              publisher: { '@id': `${siteUrl}/about#person` },
+              '@graph': [
+                {
+                  '@type': 'WebSite',
+                  '@id': `${siteUrl}/#website`,
+                  url: `${siteUrl}/`,
+                  name: 'AVRXT.DEV',
+                  alternateName: ['avrxt', 'aviorxt'],
+                  inLanguage: 'en-IN',
+                  publisher: { '@id': `${siteUrl}/about#person` },
+                },
+                {
+                  '@type': 'Person',
+                  '@id': `${siteUrl}/about#person`,
+                  name: 'avrxt',
+                  alternateName: 'aviorxt',
+                  url: `${siteUrl}/about`,
+                  jobTitle: 'Developer and Aircraft Maintenance Engineer',
+                },
+              ],
             }).replace(/</g, '\\u003c'),
           }}
         />

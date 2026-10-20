@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, ArrowUpRight, Check, Clock3, Radio, ShieldCheck, Wrench, AlertTriangle, ChevronDown, Globe2, Database, Server, KeyRound, Layers3, CircleCheck } from 'lucide-react';
 import Reveal from '@/components/Reveal';
 import { historyWindow, unavailableStatus, type ServiceState, type StatusSnapshot, type StatusResource, type StatusReport } from '@/lib/status-model';
+import { apiUrl } from '@/lib/api-gateway';
 
 const labels: Record<ServiceState, string> = { operational: 'Operational', degraded: 'Degraded', down: 'Disruption', maintenance: 'Maintenance', unknown: 'Unavailable' };
 function timestamp(value: string | null) {
@@ -109,7 +110,7 @@ export default function StatusClient({ initial }: { initial: StatusSnapshot }) {
     setRefreshing(true);
     const deadline = setTimeout(() => controller.abort(), 12000);
     try {
-      const response = await fetch('/api/status/details', { cache: 'no-store', credentials: 'omit', signal: controller.signal });
+      const response = await fetch(apiUrl('/v1/status/details', '/api/status/details'), { cache: 'default', credentials: 'omit', signal: controller.signal });
       if (!response.ok) throw new Error('Status source unavailable');
       const next = await response.json() as StatusSnapshot;
       if (!Array.isArray(next.resources) || !Array.isArray(next.reports) || !Number.isFinite(Date.parse(next.checkedAt)) || !Object.hasOwn(labels, next.status)) throw new Error('Invalid status response');
@@ -140,7 +141,7 @@ export default function StatusClient({ initial }: { initial: StatusSnapshot }) {
       <div className="status-overview-pattern" aria-hidden="true" />
       <div className="status-overview-body relative z-10 flex flex-wrap items-center justify-between gap-6 p-6 sm:p-7">
         <div className="flex items-center gap-4 sm:gap-6"><div className="status-orbit shrink-0" aria-hidden="true"><span className="status-orbit-ring" /><span className="status-orbit-ring second" /><span className="status-orbit-core">{snapshot.status === 'operational' ? <Check size={26} /> : snapshot.status === 'maintenance' ? <Wrench size={23} /> : <Radio size={23} />}</span></div><div><p className="status-live font-mono text-[9px] uppercase tracking-[.18em]">{snapshot.available ? 'Live network overview' : 'Connection to feed unavailable'}</p><h2 className="mt-2 text-[clamp(20px,3vw,30px)] font-semibold leading-tight tracking-[-.035em] text-white">{snapshot.label}</h2><p className="mt-2 max-w-lg text-xs leading-relaxed text-zinc-500">{snapshot.available ? 'Current availability reported by Better Stack.' : 'Current availability cannot be confirmed. Automatic sync will retry.'}</p></div></div>
-        <span className="status-auto"><span className={`status-dot ${refreshing ? 'motion-safe:animate-pulse' : ''}`} />{refreshing ? 'Syncing' : 'Auto sync · 60s'}</span>
+        <span className="status-auto"><span className={`status-dot ${refreshing ? 'motion-safe:animate-pulse' : ''}`} />{refreshing ? 'Syncing' : 'Auto sync · 5 min'}</span>
       </div>
       <div className="status-metrics relative z-10 grid grid-cols-3 divide-x divide-white/10">
         {[{ value: snapshot.available ? `${operational}/${snapshot.resources.length}` : '—', label: 'Operational services', Icon: Layers3 }, { value: snapshot.available ? active.length : '—', label: 'Active incidents', Icon: ShieldCheck }, { value: snapshot.available ? maintenance.length : '—', label: 'Planned / active work', Icon: Wrench }].map(stat => <div key={stat.label} className="status-metric"><stat.Icon size={15} className="hidden text-zinc-600 sm:block" /><div><p className="text-[clamp(24px,3vw,32px)] font-semibold leading-none tracking-tight text-zinc-100">{stat.value}</p><p className="mt-2 font-mono text-[8px] uppercase leading-relaxed tracking-[.11em] text-zinc-500 sm:text-[9px]">{stat.label}</p></div></div>)}

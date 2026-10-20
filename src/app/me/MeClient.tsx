@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, useRef } from 'react';
-import React from 'react';
+import React, { type CSSProperties } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import {
@@ -34,6 +34,7 @@ import { MeConfig } from '@/lib/me-config';
 import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
+import { getMeDisplayFont } from '@/lib/me-fonts';
 
 const iconMap: Record<string, any> = {
     Github, Twitter, Instagram, Linkedin, LinkedinIcon, Youtube, ExternalLink, Mail
@@ -252,7 +253,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
         };
     }, [weatherEnabled, config.profile.weatherCoordinates?.latitude, config.profile.weatherCoordinates?.longitude]);
 
-    // Discord Presence: only fetch when auto mode + id present, poll every 60s
+    // Discord presence changes comparatively slowly; use the edge cache and poll
+    // every five minutes rather than making every profile visit poll each minute.
     useEffect(() => {
         const discordId = config.profile.presence?.discordId;
         if (!discordId) return;
@@ -281,7 +283,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
             } catch (e) { console.error(e); }
         };
         fetchLanyard();
-        const id = window.setInterval(fetchLanyard, 60000);
+        const id = window.setInterval(fetchLanyard, 5 * 60_000);
         return () => window.clearInterval(id);
     }, [
         config.profile.presence?.mode,
@@ -384,14 +386,15 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
             // Reduce background churn; resync quickly when the tab returns.
             if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
-                scheduleNext(30_000);
+                scheduleNext(5 * 60_000);
                 return;
             }
 
-            // Vercel free-plan friendly throttle (even on focus/visibility triggers).
+            // Supabase Realtime delivers prompt updates. This fallback is deliberately
+            // slow so open profile tabs do not continually consume origin capacity.
             const now = Date.now();
-            if (lastNowPlayingFetchAt && now - lastNowPlayingFetchAt < 15_000) {
-                scheduleNext(15_000 - (now - lastNowPlayingFetchAt));
+            if (lastNowPlayingFetchAt && now - lastNowPlayingFetchAt < 60_000) {
+                scheduleNext(60_000 - (now - lastNowPlayingFetchAt));
                 return;
             }
             lastNowPlayingFetchAt = now;
@@ -405,7 +408,9 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 inFlight = new AbortController();
 
                 const res = await fetch(spotifyApiUrl, {
-                    cache: 'no-store',
+          // Realtime Supabase events keep this fresh. Let the browser reuse the
+          // short-lived edge response when polling is only a fallback.
+          cache: 'default',
                     signal: inFlight.signal,
                     headers: { accept: 'application/json' }
                 });
@@ -416,11 +421,11 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
                 const normalized = normalizeIncoming(data);
                 applySpotifyState(normalized);
-                scheduleNext(15_000);
+                scheduleNext(60_000);
             } catch (e: any) {
                 if (e?.name === 'AbortError') return;
                 console.error('Spotify sync failed', e);
-                scheduleNext(15_000);
+                scheduleNext(60_000);
             }
         };
 
@@ -446,7 +451,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                     if (!mapped) return;
                     applySpotifyState(mapped);
                     // Keep polling cadence predictable (limits-friendly).
-                    scheduleNext(15_000);
+                    scheduleNext(60_000);
                 }
             )
             .subscribe();
@@ -860,7 +865,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
         <main className={cn(
             "me-v7 min-h-[100svh] bg-[#050505] text-white relative flex flex-col items-center overflow-x-hidden px-1 pt-12 pb-12 sm:pt-16 selection:bg-white/20",
             isImmersive && "immersive-mode"
-        )}>
+        )} style={{ '--me-display-font': getMeDisplayFont(config.profile.fontTheme) } as CSSProperties}>
             {/* Background Decor */}
             <div className={cn(
                 "fixed inset-0 z-0 transition-all duration-1000",
@@ -923,7 +928,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                             presenceClasses.dot
                         )} />
                     </div>
-                    <h1 className="me-profile-title font-[family-name:var(--font-outfit)] text-[clamp(3.5rem,12vw,7rem)] font-black tracking-[-0.085em] leading-[0.82] mb-3 uppercase text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.78)]">
+                    <h1 className="me-profile-title font-[family-name:var(--me-display-font)] text-[clamp(3.5rem,12vw,7rem)] font-black tracking-[-0.085em] leading-[0.82] mb-3 uppercase text-transparent [-webkit-text-stroke:1px_rgba(255,255,255,0.78)]">
                         {headingName}
                     </h1>
                     {weatherEnabled && (
