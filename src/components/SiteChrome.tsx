@@ -28,7 +28,7 @@ function isFooterHidden(pathname: string) {
 }
 
 function isNavHidden(pathname: string) {
-    return NAV_HIDDEN_ROUTES.has(pathname) || isMeRoute(pathname) || pathname.startsWith('/auth/');
+    return NAV_HIDDEN_ROUTES.has(pathname) || isMeRoute(pathname) || pathname === '/notes' || pathname.startsWith('/auth/');
 }
 
 export default function SiteChrome({ position }: { position: 'before' | 'after' }) {

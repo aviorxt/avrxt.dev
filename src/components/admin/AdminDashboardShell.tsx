@@ -55,7 +55,7 @@ export function useAdminProfileSection() {
   return context;
 }
 
-export default function AdminDashboardShell({ dashboardPath, viewer, children }: { dashboardPath: string; viewer: DashboardViewer; children: ReactNode }) {
+export default function AdminDashboardShell({ dashboardPath, viewer, children, showToolbar = true }: { dashboardPath: string; viewer: DashboardViewer; children: ReactNode; showToolbar?: boolean }) {
   const pathname = usePathname();
   const [activeSection, setActiveSection] = useState<ProfileSection>('profile');
   const isProfileEditor = pathname === dashboardPath;
@@ -118,10 +118,10 @@ export default function AdminDashboardShell({ dashboardPath, viewer, children }:
         <SidebarRail />
       </Sidebar>
       <SidebarInset className="min-w-0 bg-[#050505] text-zinc-100">
-        <div className="flex min-h-12 items-center gap-3 border-b border-white/10 px-4 md:px-6">
+        {showToolbar && <div className="flex min-h-12 items-center gap-3 border-b border-white/10 px-4 md:px-6">
           <SidebarTrigger aria-label="Toggle dashboard sidebar" className="text-zinc-300 hover:bg-white/10 hover:text-white" />
           <div className="hidden items-center gap-2 text-[10px] text-zinc-500 sm:flex"><PanelLeft size={13} /><span>Toggle navigation</span><KbdGroup><Kbd>Ctrl</Kbd><Kbd>B</Kbd></KbdGroup></div>
-        </div>
+        </div>}
         {children}
       </SidebarInset>
     </SidebarProvider>

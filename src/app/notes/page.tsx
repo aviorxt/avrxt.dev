@@ -13,5 +13,5 @@ export const metadata: Metadata = { title: 'Notes | avrxt Admin', robots: { inde
 export default async function NotesPage() {
   const user = await protectAdminPage();
   const [dashboardPath, viewer, notes] = await Promise.all([getAdminDashboardPath(), getDashboardViewer(), listNotes(user.id)]);
-  return <AdminDashboardShell dashboardPath={dashboardPath} viewer={viewer}><NotesClient initialNotes={notes} /></AdminDashboardShell>;
+  return <AdminDashboardShell dashboardPath={dashboardPath} viewer={viewer} showToolbar={false}><NotesClient initialNotes={notes} /></AdminDashboardShell>;
 }
