@@ -3,7 +3,7 @@
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, Music, Palette, PanelLeft, Settings, ShieldCheck, SlidersHorizontal, User } from 'lucide-react';
+import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, Music, NotebookPen, Palette, PanelLeft, Settings, ShieldCheck, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 import type { DashboardViewer } from '@/lib/dashboard-viewer';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
@@ -25,12 +25,13 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 
-const navigation = [
+const navigation: ReadonlyArray<{ label: string; suffix: string; href?: string; icon: LucideIcon }> = [
   { label: 'Profile editor', suffix: '', icon: LayoutDashboard },
   { label: 'Docs admin', suffix: '/docs/admin', icon: FileText },
   { label: 'Personal storage', suffix: '/storage', icon: FolderLock },
+  { label: 'Notes', suffix: '', href: '/notes', icon: NotebookPen },
   { label: 'Mail broadcast', suffix: '/mail-broadcat', icon: Mail },
-] as const;
+];
 
 export const profileSections = [
   { id: 'profile', label: 'Profile', icon: User },
@@ -74,8 +75,8 @@ export default function AdminDashboardShell({ dashboardPath, viewer, children }:
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navigation.map(({ label, suffix, icon: Icon }) => {
-                  const href = suffix === '/docs/admin' ? '/docs/admin' : `${dashboardPath}${suffix}`;
+                {navigation.map(({ label, suffix, href: directHref, icon: Icon }) => {
+                  const href = directHref || (suffix === '/docs/admin' ? '/docs/admin' : `${dashboardPath}${suffix}`);
                   return <SidebarMenuItem key={href}><SidebarMenuButton render={<Link href={href} />} isActive={pathname === href} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>;
                 })}
               </SidebarMenu>
