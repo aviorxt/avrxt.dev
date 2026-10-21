@@ -9,15 +9,15 @@
   <body>
     <main>
       <header>
-        <span class="mark">A</span>
-        <div><p>AVRXT</p><h1>Notes capture</h1></div>
+        <span class="mark"><img src="https://www.avrxt.dev/assets/logo/avrxt-vector-slash.png" width="23" height="23" alt="AVRXT" /></span>
+        <div><p>AVRXT / PRIVATE TOOLS</p><h1>Notes capture</h1></div>
         <button id="settings" class="icon" title="Disconnect" aria-label="Disconnect">•••</button>
       </header>
       <section id="connect-view" class="view" hidden>
-        <p class="eyebrow">PRIVATE WORKSPACE</p>
-        <h2>Save thoughts<br />without leaving this tab.</h2>
-        <p class="description">Connect your Discord admin account once, then capture pages, selections, and Markdown notes directly to AVRXT Notes.</p>
-        <button id="connect" class="primary">Connect AVRXT Notes <span>→</span></button>
+        <p class="eyebrow"><i></i> SECURE CAPTURE</p>
+        <h2>Keep the signal.<br />Lose the context switch.</h2>
+        <p class="description">Connect your Discord admin session once, then save pages, selections, and Markdown notes directly to your private AVRXT workspace.</p>
+        <button id="connect" class="primary">Connect private workspace <span>↗</span></button>
         <p id="connect-status" class="status" aria-live="polite"></p>
       </section>
       <section id="capture-view" class="view" hidden>
@@ -26,7 +26,7 @@
         <label>MARKDOWN NOTE<textarea id="content" maxlength="100000" placeholder="Write a quick thought, or leave blank to save the page and selection."></textarea></label>
         <div class="row"><label>FOLDER<input id="folder" maxlength="80" placeholder="Optional" /></label><label>LABELS<input id="tags" maxlength="384" placeholder="work, ideas" /></label></div>
         <label class="toggle"><input id="pin" type="checkbox" /> <span>Pin this note</span></label>
-        <button id="save" class="primary">Save to AVRXT Notes <span>→</span></button>
+        <button id="save" class="primary">Save to AVRXT Notes <span>↗</span></button>
         <p id="save-status" class="status" aria-live="polite"></p>
       </section>
     </main>
