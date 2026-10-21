@@ -4,9 +4,21 @@
   "description": "Capture the current tab, selection, and quick Markdown notes in your private AVRXT Notes workspace.",
   "version": "0.1.0",
   "minimum_chrome_version": "106",
+  "icons": {
+    "16": "assets/avrxt-vector-slash.png",
+    "32": "assets/avrxt-vector-slash.png",
+    "48": "assets/avrxt-vector-slash.png",
+    "128": "assets/avrxt-vector-slash.png"
+  },
   "action": {
     "default_title": "AVRXT Notes",
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "assets/avrxt-vector-slash.png",
+      "32": "assets/avrxt-vector-slash.png",
+      "48": "assets/avrxt-vector-slash.png",
+      "128": "assets/avrxt-vector-slash.png"
+    }
   },
   "permissions": ["activeTab", "identity", "scripting", "storage"],
   "host_permissions": ["https://www.avrxt.dev/*"]
