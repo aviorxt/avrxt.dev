@@ -1,9 +1,9 @@
 'use client';
 
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, Music, NotebookPen, Palette, PanelLeft, Settings, ShieldCheck, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
+import { usePathname, useSearchParams } from 'next/navigation';
+import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, Settings, ShieldCheck, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 import type { DashboardViewer } from '@/lib/dashboard-viewer';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
@@ -25,11 +25,12 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 
-const navigation: ReadonlyArray<{ label: string; suffix: string; href?: string; icon: LucideIcon }> = [
+const navigation: ReadonlyArray<{ label: string; suffix: string; href?: string; section?: ProfileSection; icon: LucideIcon }> = [
   { label: 'Profile editor', suffix: '', icon: LayoutDashboard },
   { label: 'Docs admin', suffix: '/docs/admin', icon: FileText },
   { label: 'Personal storage', suffix: '/storage', icon: FolderLock },
   { label: 'Notes', suffix: '', href: '/notes', icon: NotebookPen },
+  { label: 'Guestbook', suffix: '', section: 'guestbook', icon: MessageSquareQuote },
   { label: 'Mail broadcast', suffix: '/mail-broadcat', icon: Mail },
 ];
 
@@ -45,7 +46,7 @@ export const profileSections = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ] as const;
 
-export type ProfileSection = (typeof profileSections)[number]['id'];
+export type ProfileSection = (typeof profileSections)[number]['id'] | 'guestbook';
 
 const ProfileSectionContext = createContext<{ activeSection: ProfileSection; setActiveSection: (section: ProfileSection) => void } | null>(null);
 
@@ -57,8 +58,13 @@ export function useAdminProfileSection() {
 
 export default function AdminDashboardShell({ dashboardPath, viewer, children, showToolbar = true }: { dashboardPath: string; viewer: DashboardViewer; children: ReactNode; showToolbar?: boolean }) {
   const pathname = usePathname();
-  const [activeSection, setActiveSection] = useState<ProfileSection>('profile');
+  const searchParams = useSearchParams();
+  const requestedSection = searchParams.get('section');
+  const [activeSection, setActiveSection] = useState<ProfileSection>(requestedSection === 'guestbook' ? 'guestbook' : 'profile');
   const isProfileEditor = pathname === dashboardPath;
+  useEffect(() => {
+    if (requestedSection === 'guestbook') setActiveSection('guestbook');
+  }, [requestedSection]);
   return (
     <ProfileSectionContext.Provider value={{ activeSection, setActiveSection }}>
     <SidebarProvider>
@@ -75,9 +81,10 @@ export default function AdminDashboardShell({ dashboardPath, viewer, children, s
             <SidebarGroupLabel>Workspace</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {navigation.map(({ label, suffix, href: directHref, icon: Icon }) => {
-                  const href = directHref || (suffix === '/docs/admin' ? '/docs/admin' : `${dashboardPath}${suffix}`);
-                  return <SidebarMenuItem key={href}><SidebarMenuButton render={<Link href={href} />} isActive={pathname === href} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>;
+                {navigation.map(({ label, suffix, href: directHref, section, icon: Icon }) => {
+                  const href = directHref || (section ? `${dashboardPath}?section=${section}` : suffix === '/docs/admin' ? '/docs/admin' : `${dashboardPath}${suffix}`);
+                  const active = section ? pathname === dashboardPath && activeSection === section : pathname === href;
+                  return <SidebarMenuItem key={href}><SidebarMenuButton render={<Link href={href} />} isActive={active} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>;
                 })}
               </SidebarMenu>
             </SidebarGroupContent>

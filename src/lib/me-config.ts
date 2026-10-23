@@ -9,6 +9,7 @@ export interface MeLink {
 export interface MeConfig {
     site?: {
         maintenanceEnabled: boolean;
+        guestbookEnabled?: boolean;
     };
     profile: {
         handle: string;
@@ -73,6 +74,7 @@ export interface MeConfig {
 export const defaultMeConfig: MeConfig = {
     site: {
         maintenanceEnabled: false,
+        guestbookEnabled: true,
     },
     profile: {
         handle: "@aviorxt",

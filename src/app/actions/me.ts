@@ -36,6 +36,7 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
         ...config,
         site: {
             maintenanceEnabled: config.site?.maintenanceEnabled === true,
+            guestbookEnabled: config.site?.guestbookEnabled !== false,
         },
         profile: { ...config.profile },
         music: { ...config.music },

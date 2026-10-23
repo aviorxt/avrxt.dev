@@ -1,10 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clearGuestbookTransaction, exchangeGuestbookCode, getGuestbookTransaction, setGuestbookSession, type GuestbookProvider } from '@/lib/guestbook-auth';
 import { safeReturnPath } from '@/lib/auth-redirect';
+import { isGuestbookEnabled } from '@/lib/guestbook-config';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: NextRequest) {
+  if (!await isGuestbookEnabled()) {
+    await clearGuestbookTransaction();
+    return NextResponse.redirect(new URL('/guestbook?error=disabled', request.url));
+  }
   const code = request.nextUrl.searchParams.get('code');
   const transaction = await getGuestbookTransaction();
   const fail = async () => { await clearGuestbookTransaction(); return NextResponse.redirect(new URL('/guestbook?error=auth', request.url)); };

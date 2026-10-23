@@ -244,6 +244,17 @@
   }
 }
 
+@keyframes shimmer {
+  from { transform: translateX(-35%) skewX(-12deg); }
+  to { transform: translateX(320%) skewX(-12deg); }
+}
+
+.guestbook-enter { animation: guestbook-enter 700ms cubic-bezier(.18,.75,.25,1) both; }
+.guestbook-enter-delayed { animation: guestbook-enter 700ms 100ms cubic-bezier(.18,.75,.25,1) both; }
+.guestbook-entry { animation: guestbook-enter 480ms cubic-bezier(.18,.75,.25,1) both; }
+@keyframes guestbook-enter { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .guestbook-enter, .guestbook-enter-delayed, .guestbook-entry { animation: none; } }
+
 .animate-progress-flow {
   background: linear-gradient(90deg, #737373 0%, #d4d4d4 25%, #737373 50%, #d4d4d4 75%, #737373 100%);
   background-size: 200% 100%;

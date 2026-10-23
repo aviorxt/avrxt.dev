@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { getGuestbookUser, guestbookAuthorId } from '@/lib/guestbook-auth';
 import { readJsonLimited, RequestBodyError } from '@/lib/read-json-limited';
+import { isGuestbookEnabled } from '@/lib/guestbook-config';
 
 function profile(user: Awaited<ReturnType<typeof getGuestbookUser>> & {}) {
   if (!user) throw new Error('AUTH_REQUIRED');
@@ -12,6 +13,7 @@ function profile(user: Awaited<ReturnType<typeof getGuestbookUser>> & {}) {
 }
 
 async function currentUser() {
+  if (!await isGuestbookEnabled()) return { supabase: null, user: null };
   return { supabase: createAdminClient(), user: await getGuestbookUser() };
 }
 
@@ -24,6 +26,7 @@ export async function POST(request: NextRequest) {
   try {
     if (!hasTrustedOrigin(request)) return NextResponse.json({ error: 'CROSS_SITE_REQUEST_REJECTED' }, { status: 403 });
     const { supabase, user } = await currentUser();
+    if (!supabase) return NextResponse.json({ error: 'GUESTBOOK_DISABLED' }, { status: 403 });
     if (!user) return NextResponse.json({ error: 'AUTH_REQUIRED' }, { status: 401 });
     const body = await readJsonLimited(request, 2048);
     const message = typeof (body as { message?: unknown })?.message === 'string' ? (body as { message: string }).message.trim().replace(/\s+/g, ' ') : '';
@@ -41,6 +44,7 @@ export async function PATCH(request: NextRequest) {
   try {
     if (!hasTrustedOrigin(request)) return NextResponse.json({ error: 'CROSS_SITE_REQUEST_REJECTED' }, { status: 403 });
     const { supabase, user } = await currentUser();
+    if (!supabase) return NextResponse.json({ error: 'GUESTBOOK_DISABLED' }, { status: 403 });
     if (!user) return NextResponse.json({ error: 'AUTH_REQUIRED' }, { status: 401 });
     const body = await readJsonLimited(request, 2048) as { id?: unknown; message?: unknown };
     const id = typeof body.id === 'string' ? body.id : '';
@@ -58,6 +62,7 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   if (!hasTrustedOrigin(request)) return NextResponse.json({ error: 'CROSS_SITE_REQUEST_REJECTED' }, { status: 403 });
   const { supabase, user } = await currentUser();
+  if (!supabase) return NextResponse.json({ error: 'GUESTBOOK_DISABLED' }, { status: 403 });
   if (!user) return NextResponse.json({ error: 'AUTH_REQUIRED' }, { status: 401 });
   const id = request.nextUrl.searchParams.get('id');
   if (!id) return NextResponse.json({ error: 'INVALID_ENTRY' }, { status: 400 });

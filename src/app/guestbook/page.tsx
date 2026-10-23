@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { createPublicClient } from '@/utils/supabase/public';
 import { getGuestbookUser, guestbookAuthorId } from '@/lib/guestbook-auth';
+import { isGuestbookEnabled } from '@/lib/guestbook-config';
 import GuestbookClient, { type GuestbookEntry, type GuestbookViewer } from './GuestbookClient';
 
 export const dynamic = 'force-dynamic';
@@ -11,6 +12,8 @@ export const metadata: Metadata = {
 };
 
 export default async function GuestbookPage() {
+  const enabled = await isGuestbookEnabled();
+  if (!enabled) return <GuestbookClient initialEntries={[]} viewer={null} enabled={false} />;
   let entries: GuestbookEntry[] = [];
   try {
     const supabase = createPublicClient();
@@ -26,5 +29,5 @@ export default async function GuestbookPage() {
     provider: user.provider,
   } : null;
 
-  return <GuestbookClient initialEntries={entries} viewer={viewer} />;
+  return <GuestbookClient initialEntries={entries} viewer={viewer} enabled={enabled} />;
 }

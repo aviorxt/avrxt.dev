@@ -7,7 +7,7 @@ import {
     Music, Link as LinkIcon, Book,
     Check, ArrowUp, ArrowDown,
     User, AlertCircle, Camera, Upload, Activity,
-    Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal, Palette
+    Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal, Palette, MessageSquareQuote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MeConfig } from '@/lib/me-config';
@@ -26,12 +26,13 @@ import { ME_FONT_OPTIONS, isMeFontId } from '@/lib/me-fonts';
 import { ME_THEME_OPTIONS, isMeThemeId } from '@/lib/me-themes';
 import { useAdminProfileSection } from '@/components/admin/AdminDashboardShell';
 import { Switch } from '@/components/ui/switch';
+import { brandIconOptions } from '@/components/BrandIcon';
 
 interface MeAdminClientProps {
     initialConfig: MeConfig;
     isSpotifyConnected: boolean;
 }
-type AdminSection = 'profile' | 'themes' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'settings';
+type AdminSection = 'profile' | 'themes' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'guestbook' | 'settings';
 const R2_CLEANUP_QUEUE_KEY = 'avrxt:admin:r2-cleanup:v1';
 const MUX_CLEANUP_QUEUE_KEY = 'avrxt:admin:mux-cleanup:v1';
 
@@ -1108,7 +1109,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                             newLinks[idx] = { ...newLinks[idx], icon: val };
                                                         }
                                                         setConfig({ ...config, links: newLinks });
-                                                    }} options={[['Instagram', 'Instagram'], ['Github', 'Github'], ['Mail', 'Mail'], ['Discord', 'Discord'], ['Camera', 'Camera'], ['BookOpen', 'BookOpen'], ['ExternalLink', 'External'], ['Share2', 'Share'], ['Image', 'Custom image']].map(([value, label]) => ({ value, label }))}/>
+                                                    }} options={[...brandIconOptions.map((value) => ({ value, label: value })), { value: 'Mail', label: 'Mail' }, { value: 'Camera', label: 'Camera' }, { value: 'BookOpen', label: 'BookOpen' }, { value: 'ExternalLink', label: 'External' }, { value: 'Share2', label: 'Share' }, { value: 'Image', label: 'Custom image' }]}/>
 
                                                 {(link.icon === 'Image' || link.icon?.startsWith('http') || link.icon === '' && config.links[idx].icon === '') && (
                                                     <div className="flex items-center gap-1">
@@ -1358,12 +1359,19 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                     ))}
                                 </div>
                             </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'guestbook' && 'hidden', config.site?.guestbookEnabled === false ? "border-red-400/20 bg-red-400/[0.05]" : "border-white/10 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.guestbookEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><MessageSquareQuote size={18} /></div>
+                                    <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Guestbook_Access</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Allow visitors to read and publish signed Discord or GitHub notes. Turning this off closes the public page and blocks new, edited, and deleted entries. Press Save to apply.</p></div>
+                                </div>
+                                <Switch checked={config.site?.guestbookEnabled !== false} onCheckedChange={(guestbookEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled } }))} aria-label="Toggle guestbook access" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                            </div>
                             <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.maintenanceEnabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-zinc-900/40")}>
                                 <div className="flex items-start gap-4">
                                     <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.maintenanceEnabled ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-zinc-500")}><Wrench size={18} /></div>
                                     <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Maintenance_Mode</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Redirect public pages to the maintenance screen. Admin, authentication, and API routes stay available. Press Save to apply.</p></div>
                                 </div>
-                                <Switch checked={config.site?.maintenanceEnabled === true} onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({ ...prev, site: { maintenanceEnabled } }))} aria-label="Toggle maintenance mode" className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800" />
+                                <Switch checked={config.site?.maintenanceEnabled === true} onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled, guestbookEnabled: prev.site?.guestbookEnabled !== false } }))} aria-label="Toggle maintenance mode" className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800" />
                             </div>
                         </div>
                     </div></div>

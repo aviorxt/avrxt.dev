@@ -36,6 +36,7 @@ import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
 import { getMeDisplayFont } from '@/lib/me-fonts';
 import { isMeThemeId } from '@/lib/me-themes';
+import { BrandIcon, brandIconOptions } from '@/components/BrandIcon';
 
 const iconMap: Record<string, any> = {
     Github, Twitter, Instagram, Linkedin, LinkedinIcon, Youtube, ExternalLink, Mail
@@ -1043,6 +1044,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                     <div className="space-y-3">
                         {config.links.map((link, idx) => {
                             const isCustomIcon = link.icon && (link.icon.startsWith('http') || link.icon.startsWith('/') || link.icon.startsWith('data:'));
+                            const hasBrandIcon = !isCustomIcon && Boolean(link.icon && brandIconOptions.includes(link.icon));
                             const Icon = !isCustomIcon ? (iconMap[link.icon || 'ExternalLink'] || ExternalLink) : null;
 
                             return (
@@ -1057,6 +1059,8 @@ export default function MeClient({ config }: { config: MeConfig }) {
                                                 <div className="icon-surface size-10 shrink-0 text-zinc-400 transition-[transform,border-color,color,background-color] duration-200 group-hover:scale-105 group-hover:border-white/20 group-hover:bg-white/[0.08] group-hover:text-white">
                                                     {isCustomIcon ? (
                                                         <img src={link.icon} alt="" className="size-4 object-contain" />
+                                                    ) : hasBrandIcon ? (
+                                                        <BrandIcon name={link.icon} className="size-[18px]" />
                                                     ) : (
                                                         <Icon className="size-[18px]" aria-hidden="true" />
                                                     )}
