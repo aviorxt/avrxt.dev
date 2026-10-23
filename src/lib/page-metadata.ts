@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ogSize } from '@/lib/og-image';
+import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/site-config';
 
 type PageMetadataInput = {
   title: string;
@@ -9,14 +10,13 @@ type PageMetadataInput = {
   path?: string;
 };
 
-const SITE_NAME = 'avrxt';
-const SITE_URL = 'https://www.avrxt.dev';
+const SITE_TITLE_TOKEN = 'avrxt';
 
 function withSiteSuffix(title: string) {
   const normalized = title.trim();
-  if (!normalized) return SITE_NAME;
-  if (normalized.toLowerCase().includes(SITE_NAME)) return normalized;
-  return `${normalized} | ${SITE_NAME}`;
+  if (!normalized) return SITE_TITLE_TOKEN;
+  if (normalized.toLowerCase().includes(SITE_TITLE_TOKEN)) return normalized;
+  return `${normalized} | ${SITE_TITLE_TOKEN}`;
 }
 
 export function buildPageMetadata({
@@ -56,6 +56,7 @@ export function buildPageMetadata({
     authors: [{ name: 'avrxt (aviorxt)', url: '/about' }],
     creator: 'avrxt',
     publisher: 'avrxt',
+    category: 'technology',
     ...(canonicalUrl ? { alternates: { canonical: canonicalUrl } } : {}),
     robots: noIndex
       ? { index: false, follow: false }
@@ -74,8 +75,8 @@ export function buildPageMetadata({
       title: fullTitle,
       description: normalizedDescription,
       type: 'website',
-      siteName: 'AVRXT.DEV',
-      locale: 'en_IN',
+      siteName: SITE_NAME,
+      locale: SITE_LOCALE,
       ...(canonicalUrl ? { url: canonicalUrl } : {}),
       images: [openGraphImage],
     },

@@ -56,9 +56,14 @@ export default function ApiDocumentationPage() {
                     <p className="mt-8 max-w-2xl text-base leading-8 text-zinc-400 sm:text-lg">
                         The AVRXT edge gateway provides a single, versioned interface for public website services and selected external integrations.
                     </p>
-                    <a href="https://api.avrxt.dev" target="_blank" rel="noreferrer" className="mt-8 inline-flex items-center gap-2 border-b border-cyan-300/60 pb-1 font-mono text-xs uppercase tracking-widest text-cyan-200 transition-colors hover:border-white hover:text-white">
-                        api.avrxt.dev <ArrowUpRight className="h-3.5 w-3.5" />
-                    </a>
+                    <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+                        <a href="https://api.avrxt.dev" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 border-b border-cyan-300/60 pb-1 font-mono text-xs uppercase tracking-widest text-cyan-200 transition-colors hover:border-white hover:text-white">
+                            api.avrxt.dev <ArrowUpRight className="h-3.5 w-3.5" />
+                        </a>
+                        <a href="/openapi.json" className="inline-flex items-center gap-2 border-b border-white/20 pb-1 font-mono text-xs uppercase tracking-widest text-zinc-400 transition-colors hover:border-white hover:text-white">
+                            OpenAPI JSON <ArrowUpRight className="h-3.5 w-3.5" />
+                        </a>
+                    </div>
                 </header>
 
                 <section className="grid gap-px border-x border-b border-white/10 bg-white/10 md:grid-cols-3">

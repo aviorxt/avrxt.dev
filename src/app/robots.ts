@@ -1,4 +1,8 @@
 import { MetadataRoute } from 'next';
+import { absoluteSiteUrl, SITE_URL } from '@/lib/site-config';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export default function robots(): MetadataRoute.Robots {
     return {
@@ -11,6 +15,7 @@ export default function robots(): MetadataRoute.Robots {
                 '/docs/admin',
                 '/api/',
                 '/auth/',
+                '/notes/',
                 '/private/',
                 '/storage/',
                 '/storage/share/',
@@ -20,7 +25,7 @@ export default function robots(): MetadataRoute.Robots {
                 '/preference/',
             ],
         },
-        sitemap: 'https://www.avrxt.dev/sitemap.xml',
-        host: 'https://www.avrxt.dev',
+        sitemap: absoluteSiteUrl('/sitemap.xml'),
+        host: SITE_URL,
     };
 }

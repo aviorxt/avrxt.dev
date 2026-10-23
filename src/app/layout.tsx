@@ -6,6 +6,7 @@ import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
 import { ogSize } from "@/lib/og-image";
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/site-config';
 
 const inter = Inter({
   variable: "--font-sans",
@@ -31,8 +32,7 @@ const instrumentSerif = Instrument_Serif({
 });
 
 const siteFavicon = "/brand/avrxt-selected/favicon.ico";
-const siteUrl = "https://www.avrxt.dev";
-const metadataBase = new URL(siteUrl);
+const metadataBase = new URL(SITE_URL);
 
 const openGraphImage = {
   url: "/opengraph-image",
@@ -50,8 +50,11 @@ const twitterImage = {
 
 export const metadata: Metadata = {
   metadataBase,
-  applicationName: "AVRXT.DEV",
-  title: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",
+  applicationName: SITE_NAME,
+  title: {
+    default: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",
+    template: "%s",
+  },
   description: "avrxt, also known as aviorxt, is an independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, and automation.",
   keywords: ["avrxt", "aviorxt", "independent developer India", "aircraft maintenance engineer", "full stack developer", "web security", "API development", "AI automation"],
   authors: [{ name: "avrxt (aviorxt)", url: "/about" }],
@@ -86,8 +89,8 @@ export const metadata: Metadata = {
     description: "Independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, and automation.",
     type: "website",
     url: "/",
-    siteName: "AVRXT.DEV",
-    locale: "en_IN",
+    siteName: SITE_NAME,
+    locale: SITE_LOCALE,
     images: [openGraphImage],
   },
   twitter: {
@@ -122,19 +125,19 @@ export default function RootLayout({
               '@graph': [
                 {
                   '@type': 'WebSite',
-                  '@id': `${siteUrl}/#website`,
-                  url: `${siteUrl}/`,
+                  '@id': `${SITE_URL}/#website`,
+                  url: `${SITE_URL}/`,
                   name: 'AVRXT.DEV',
                   alternateName: ['avrxt', 'aviorxt'],
                   inLanguage: 'en-IN',
-                  publisher: { '@id': `${siteUrl}/about#person` },
+                  publisher: { '@id': `${SITE_URL}/about#person` },
                 },
                 {
                   '@type': 'Person',
-                  '@id': `${siteUrl}/about#person`,
+                  '@id': `${SITE_URL}/about#person`,
                   name: 'avrxt',
                   alternateName: 'aviorxt',
-                  url: `${siteUrl}/about`,
+                  url: `${SITE_URL}/about`,
                   jobTitle: 'Developer and Aircraft Maintenance Engineer',
                 },
               ],

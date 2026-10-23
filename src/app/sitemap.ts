@@ -1,8 +1,10 @@
 import { MetadataRoute } from 'next';
 import { tools } from '@/lib/tool-catalog';
 import { getPublicDocuments } from '@/lib/public-data';
+import { absoluteSiteUrl } from '@/lib/site-config';
 
-const SITE_URL = 'https://www.avrxt.dev';
+export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 type SitemapEntry = {
     route: string;
@@ -63,7 +65,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
 
     return staticPages.map(({ route, priority, changeFrequency, lastModified }) => ({
-        url: `${SITE_URL}${route}`,
+        url: absoluteSiteUrl(route),
         ...(lastModified ? { lastModified } : {}),
         changeFrequency,
         priority,
