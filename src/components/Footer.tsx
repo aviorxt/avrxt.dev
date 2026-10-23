@@ -43,7 +43,7 @@ const pageGroups = [
             { label: 'Terms', href: '/legal/terms' },
             { label: 'Refunds', href: '/legal/refund' },
             { label: 'Security', href: '/legal/security' },
-            { label: 'Security announcement', href: '/announcement' },
+            { label: 'Security announcements', href: '/announcements' },
             { label: 'Brand assets', href: '/legal/assets' },
             { label: 'Ownership', href: '/annon/ownership' },
             { label: 'Discord privacy', href: '/dc/privacy' },
