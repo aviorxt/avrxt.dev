@@ -12,7 +12,7 @@ import {
 import { cn } from '@/lib/utils';
 import { DocArticle } from '@/lib/docs-config';
 import { createDocAction, updateDocAction, deleteDocAction } from '@/app/actions/docs';
-import { uploadToR2 } from '@/lib/upload-client';
+import { uploadDocsAttachment } from '@/lib/docs-upload-client';
 import { logout } from '@/app/actions/auth';
 import { SelectMenu } from '@/components/ui/SelectMenu';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
@@ -64,8 +64,8 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         setUploading(true);
         setError('');
         try {
-            const { publicUrl } = await uploadToR2(file);
-            onInsert(`![${alt || file.name}](${publicUrl})`);
+            const publicUrl = await uploadDocsAttachment(file);
+            onInsert(file.type.startsWith('image/') ? `![${alt || file.name}](${publicUrl})` : `[${alt || file.name}](${publicUrl})`);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -78,7 +78,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
                 <div className="flex justify-between items-center mb-5">
-                    <h3 className="font-bold font-mono uppercase tracking-widest text-sm">Insert Image</h3>
+                    <h3 className="font-bold font-mono uppercase tracking-widest text-sm">Insert Attachment</h3>
                     <button onClick={onClose}><X size={16} className="text-zinc-500 hover:text-white" /></button>
                 </div>
                 <div className="flex gap-2 mb-4">
@@ -103,12 +103,12 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
                         </>
                     ) : (
                         <>
-                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleFileUpload} />
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,application/pdf,text/plain,text/markdown,application/zip,.docx,.xlsx" className="hidden" onChange={handleFileUpload} />
                             <button onClick={() => fileRef.current?.click()}
                                 disabled={uploading}
                                 className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-bold font-mono uppercase transition-all flex items-center justify-center gap-2 border border-white/10">
                                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                                {uploading ? 'Uploading to R2...' : 'Choose File & Upload'}
+                                {uploading ? 'Uploading to docs storage...' : 'Choose File & Upload'}
                             </button>
                             {error && <p className="text-red-400 text-xs font-mono">{error}</p>}
                         </>

@@ -1,0 +1,42 @@
+'use client';
+
+import { FormEvent, useMemo, useState } from 'react';
+import { Check, Github, MessageCircle, Pencil, Send, Trash2, UserRound } from 'lucide-react';
+
+export type GuestbookEntry = { id: string; author_id: string; provider: 'discord' | 'github'; display_name: string; avatar_url: string | null; message: string; created_at: string; updated_at: string };
+export type GuestbookViewer = { id: string; displayName: string; avatarUrl: string | null; provider: 'discord' | 'github' };
+
+const date = (value: string) => new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(value));
+
+export default function GuestbookClient({ initialEntries, viewer }: { initialEntries: GuestbookEntry[]; viewer: GuestbookViewer | null }) {
+  const [entries, setEntries] = useState(initialEntries);
+  const [message, setMessage] = useState('');
+  const [editing, setEditing] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState('');
+  const ownEntries = useMemo(() => new Set(entries.filter((entry) => entry.author_id === viewer?.id).map((entry) => entry.id)), [entries, viewer]);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault(); if (!message.trim() || pending) return;
+    setPending(true); setNotice('');
+    const response = await fetch('/api/guestbook', { method: editing ? 'PATCH' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(editing ? { id: editing, message } : { message }) });
+    const data = await response.json().catch(() => ({})); setPending(false);
+    if (!response.ok || !data.entry) { setNotice(data.error || 'Could not save your message.'); return; }
+    setEntries((current) => editing ? current.map((entry) => entry.id === data.entry.id ? data.entry : entry) : [data.entry, ...current]);
+    setMessage(''); setEditing(null); setNotice(editing ? 'Message updated.' : 'Your footprint is live.');
+  }
+  function beginEdit(entry: GuestbookEntry) { setEditing(entry.id); setMessage(entry.message); setNotice(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }
+  async function remove(id: string) {
+    if (!window.confirm('Delete this guestbook message?')) return;
+    setPending(true); const response = await fetch(`/api/guestbook?id=${encodeURIComponent(id)}`, { method: 'DELETE' }); setPending(false);
+    if (!response.ok) { setNotice('Could not delete this message.'); return; }
+    setEntries((current) => current.filter((entry) => entry.id !== id)); setNotice('Message removed.');
+  }
+
+  return <main className="min-h-screen bg-[#050505] px-4 py-14 text-white sm:px-7 sm:py-20"><div className="mx-auto max-w-5xl"><header className="border-b border-white/10 pb-10 sm:pb-14"><p className="font-mono text-[10px] uppercase tracking-[.28em] text-zinc-500">AVRXT / public record</p><div className="mt-6 flex flex-col gap-7 md:flex-row md:items-end md:justify-between"><div><h1 className="max-w-3xl text-5xl font-semibold tracking-[-.075em] sm:text-7xl">Leave Your<br/><span className="text-zinc-500">FootPrint.</span></h1><p className="mt-5 max-w-xl text-sm leading-7 text-zinc-400">A small public wall for people who passed through. Sign in, leave a message, and return any time to edit or remove your own words.</p></div><div className="flex items-center gap-2 text-xs text-zinc-500"><MessageCircle size={15}/>{entries.length} {entries.length === 1 ? 'entry' : 'entries'}</div></div></header>
+    <section className="grid gap-10 py-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:py-14"><div><div className="border border-white/10 bg-[#0a0a0a] p-5 sm:p-7">{viewer ? <><div className="mb-5 flex items-center gap-3"><Avatar name={viewer.displayName} src={viewer.avatarUrl}/><div><p className="text-sm font-medium">{viewer.displayName}</p><p className="mt-0.5 font-mono text-[9px] uppercase tracking-[.16em] text-zinc-500">Signed in with {viewer.provider}</p></div></div><form onSubmit={submit}><label className="sr-only" htmlFor="guestbook-message">Your message</label><textarea id="guestbook-message" value={message} onChange={(event) => setMessage(event.target.value)} maxLength={600} placeholder="Leave a kind note, a signal, or a memory…" className="min-h-32 w-full resize-y border border-white/10 bg-black p-4 text-sm leading-6 outline-none transition focus:border-white/40"/><div className="mt-3 flex flex-wrap items-center justify-between gap-3"><p className="font-mono text-[9px] uppercase tracking-[.14em] text-zinc-600">{message.length}/600 · Your profile name and avatar are attached automatically.</p><div className="flex gap-2">{editing && <button type="button" onClick={() => { setEditing(null); setMessage(''); }} className="min-h-10 border border-white/15 px-4 text-xs text-zinc-300">Cancel</button>}<button disabled={pending || !message.trim()} className="inline-flex min-h-10 items-center gap-2 bg-white px-4 text-xs font-semibold text-black disabled:opacity-50"><Send size={14}/>{pending ? 'Saving…' : editing ? 'Update message' : 'Leave footprint'}</button></div></div></form></> : <div className="py-2"><p className="font-mono text-[10px] uppercase tracking-[.18em] text-zinc-500">Identity required</p><h2 className="mt-3 text-2xl font-semibold tracking-[-.045em]">Sign in to write.</h2><p className="mt-3 max-w-md text-sm leading-6 text-zinc-400">Use Discord or GitHub. We only display your provider name, avatar, and the message you choose to publish.</p><div className="mt-6 flex flex-wrap gap-3"><a href="/guestbook/auth?provider=discord" className="inline-flex min-h-11 items-center gap-2 bg-white px-4 text-xs font-semibold text-black"><MessageCircle size={15}/>Continue with Discord</a><a href="/guestbook/auth?provider=github" className="inline-flex min-h-11 items-center gap-2 border border-white/15 px-4 text-xs font-semibold text-white"><Github size={15}/>Continue with GitHub</a></div></div>}</div>{notice && <p role="status" className="mt-3 flex items-center gap-2 text-xs text-emerald-300"><Check size={14}/>{notice}</p>}
+      <div className="mt-7 space-y-3">{entries.length ? entries.map((entry) => <article key={entry.id} className="border border-white/10 bg-[#080808] p-5 transition hover:border-white/20 sm:p-6"><div className="flex gap-3"><Avatar name={entry.display_name} src={entry.avatar_url}/><div className="min-w-0 flex-1"><div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-sm font-medium">{entry.display_name}</p><p className="mt-0.5 font-mono text-[9px] uppercase tracking-[.14em] text-zinc-600">{entry.provider} · {date(entry.created_at)}{entry.updated_at !== entry.created_at ? ' · edited' : ''}</p></div>{ownEntries.has(entry.id) && <div className="flex gap-1"><button onClick={() => beginEdit(entry)} className="grid size-8 place-items-center text-zinc-500 hover:text-white" aria-label="Edit your message"><Pencil size={14}/></button><button onClick={() => void remove(entry.id)} className="grid size-8 place-items-center text-zinc-500 hover:text-red-300" aria-label="Delete your message"><Trash2 size={14}/></button></div>}</div><p className="mt-4 whitespace-pre-wrap text-sm leading-7 text-zinc-300">{entry.message}</p></div></div></article>) : <div className="border border-dashed border-white/15 p-10 text-center"><UserRound className="mx-auto text-zinc-600"/><p className="mt-4 text-sm text-zinc-400">No footprints yet. Be the first to leave one.</p></div>}</div></div>
+      <aside className="h-fit border border-white/10 bg-[#090909] p-5 sm:p-6"><p className="font-mono text-[10px] uppercase tracking-[.2em] text-zinc-500">Guestbook protocol</p><ul className="mt-5 space-y-4 text-sm leading-6 text-zinc-400"><li>Be respectful. Public messages may be moderated.</li><li>Only the signed-in author can change or remove their own entry.</li><li>No passwords, private keys, or personal information.</li></ul><p className="mt-7 border-t border-white/10 pt-5 font-mono text-[9px] uppercase leading-5 tracking-[.14em] text-zinc-600">Powered by your Discord or GitHub identity.</p></aside></section></div></main>;
+}
+
+function Avatar({ name, src }: { name: string; src: string | null }) { return src ? <img src={src} alt="" className="size-10 shrink-0 rounded-full border border-white/15 object-cover" referrerPolicy="no-referrer"/> : <span className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-zinc-300">{name.slice(0, 1).toUpperCase()}</span>; }
