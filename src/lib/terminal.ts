@@ -16,6 +16,7 @@ export const TERMINAL_PAGES: TerminalPage[] = [
   { command: 'privacy', title: 'Privacy', description: 'Data handling, providers, and your choices.', href: '/legal/privacy', group: 'legal' },
   { command: 'terms', title: 'Terms', description: 'Website rules and responsibilities.', href: '/legal/terms', group: 'legal' },
   { command: 'security', title: 'Security', description: 'Safeguards and responsible disclosure.', href: '/legal/security', group: 'legal' },
+  { command: 'announcement', title: 'Security announcement', description: 'Official AVRXT mail domains, trusted links, and impersonation reporting.', href: '/announcement', group: 'legal' },
   { command: 'refund', title: 'Refunds', description: 'Refunds for eligible paid project work.', href: '/legal/refund', group: 'legal' },
   { command: 'assets', title: 'Brand assets', description: 'Official logos and brand rights.', href: '/legal/assets', group: 'legal' },
   { command: 'ownership', title: 'Ownership', description: 'Ownership and independence notice.', href: '/annon/ownership', group: 'legal' },

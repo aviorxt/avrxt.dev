@@ -16,7 +16,7 @@ export type AuthUser = {
   sessionId?: string;
 };
 
-type Transaction = { state: string; verifier: string; next: string; returnOrigin?: string };
+type Transaction = { state: string; verifier: string; next: string };
 type Session = AuthUser & { exp: number };
 type DiscordExchange = { user: AuthUser; accessToken: string };
 
@@ -81,16 +81,7 @@ export function createDiscordAuthorization(requestUrl: string, next: string) {
   url.searchParams.set('state', state);
   url.searchParams.set('code_challenge', challenge);
   url.searchParams.set('code_challenge_method', 'S256');
-  return { url, transaction: { state, verifier, next } as Transaction };
-}
-
-export function trustedVaultOrigin(value: unknown) {
-  return value === 'https://vault.avrxt.dev' ? value : undefined;
-}
-
-function sessionCookieDomain() {
-  const value = process.env.AUTH_COOKIE_DOMAIN;
-  return value && /^\.[a-z0-9.-]+$/i.test(value) ? value : undefined;
+  return { url, transaction: { state, verifier, next } satisfies Transaction };
 }
 
 export async function exchangeDiscordCode(code: string, verifier: string, requestUrl: string): Promise<DiscordExchange> {
@@ -126,7 +117,7 @@ export async function setAuthSession(user: AuthUser, accessToken: string) {
   const payload: Session = { ...user, sessionId, exp: Math.floor(Date.now() / 1000) + SESSION_MAX_AGE_SECONDS };
   const encoded = encode(payload);
   const store = await cookies();
-  store.set(SESSION_COOKIE, `${encoded}.${sign(encoded)}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_MAX_AGE_SECONDS, domain: sessionCookieDomain() });
+  store.set(SESSION_COOKIE, `${encoded}.${sign(encoded)}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_MAX_AGE_SECONDS });
 }
 
 export async function clearAuthSession() {
@@ -134,7 +125,7 @@ export async function clearAuthSession() {
   const user = verifyAuthSession(store.get(SESSION_COOKIE)?.value);
   const redis = configuredRedis();
   if (user?.sessionId && redis) await redis.command('DEL', accessTokenKey(user.sessionId)).catch(() => {});
-  store.delete({ name: SESSION_COOKIE, path: '/', domain: sessionCookieDomain() });
+  store.delete(SESSION_COOKIE);
 }
 
 export async function getDiscordSessionAccessToken(user: AuthUser) {

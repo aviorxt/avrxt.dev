@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createDiscordAuthorization, getDiscordCallbackUrl, trustedVaultOrigin } from '@/lib/discord-auth';
+import { createDiscordAuthorization, getDiscordCallbackUrl } from '@/lib/discord-auth';
 import { safeReturnPath } from '@/lib/auth-redirect';
 
 export const dynamic = 'force-dynamic';
@@ -11,18 +11,12 @@ export async function GET(request: NextRequest) {
   const callback = getDiscordCallbackUrl(request.url);
   // OAuth must begin on the same canonical host that receives its callback so
   // the browser-bound transaction cookie survives preview-to-production hops.
-  if (callback.origin !== request.nextUrl.origin) {
-    const canonical = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, callback.origin);
-    if (trustedVaultOrigin(request.nextUrl.origin)) canonical.searchParams.set('returnOrigin', request.nextUrl.origin);
-    return NextResponse.redirect(canonical);
-  }
+  if (callback.origin !== request.nextUrl.origin) return NextResponse.redirect(new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, callback.origin));
   try {
     const { url, transaction } = createDiscordAuthorization(request.url, next);
-    const returnOrigin = trustedVaultOrigin(request.nextUrl.searchParams.get('returnOrigin'));
-    if (returnOrigin) transaction.returnOrigin = returnOrigin;
     const response = NextResponse.redirect(url);
     response.cookies.set('avrxt_oauth_transaction', JSON.stringify(transaction), {
-    httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/auth', maxAge: 600, domain: process.env.AUTH_COOKIE_DOMAIN || undefined,
+    httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/auth', maxAge: 600,
     });
     return response;
   } catch {
