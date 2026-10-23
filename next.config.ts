@@ -25,6 +25,9 @@ const contentSecurityPolicy = [
 ].join('; ');
 
 const nextConfig: NextConfig = {
+  experimental: {
+    agentUpgrade: 'security',
+  },
   poweredByHeader: false,
   async redirects() {
     return [
