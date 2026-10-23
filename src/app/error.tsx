@@ -5,7 +5,7 @@ import MinimalErrorPage from '@/components/MinimalErrorPage';
 
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
     useEffect(() => {
-        console.error(error);
+        console.error('[PAGE_RENDER_FAILED]', { digest: error.digest });
     }, [error]);
 
     return (

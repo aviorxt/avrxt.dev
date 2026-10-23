@@ -10,6 +10,7 @@ type StatusValue = 'operational' | 'down' | 'maintenance' | 'unknown' | 'degrade
 type StatusState = {
     status: StatusValue;
     label: string;
+    badgeEnabled?: boolean;
 };
 
 const STATUS_CACHE_KEY = 'avrxt:status-badge:v1';
@@ -45,6 +46,7 @@ function isStatusPayload(value: unknown): value is StatusState {
 export default function StatusBadge() {
     const [data, setData] = useState<StatusState>({ status: 'unknown', label: 'Checking status' });
     const [loading, setLoading] = useState(true);
+    const [enabled, setEnabled] = useState(true);
 
     useEffect(() => {
         let mounted = true;
@@ -72,9 +74,13 @@ export default function StatusBadge() {
         const fetchStatus = async () => {
             try {
                 const response = await fetch(apiUrl('/v1/status', '/api/status'), { method: 'GET', cache: 'no-store' });
-                if (!response.ok) return;
+                if (!response.ok) {
+                    if (response.status === 404 && mounted) setEnabled(false);
+                    return;
+                }
                 const result: unknown = await response.json();
                 if (isStatusPayload(result)) {
+                    if (result.badgeEnabled === false) { if (mounted) setEnabled(false); return; }
                     const next = { ...result, fetchedAt: Date.now() };
                     try { window.sessionStorage.setItem(STATUS_CACHE_KEY, JSON.stringify(next)); } catch { /* Storage is optional. */ }
                     if (mounted) setData(next);
@@ -113,6 +119,8 @@ export default function StatusBadge() {
     const current = loading ? loadingConfig : statusConfig[data.status];
     const Icon = current.icon;
     const statusLabel = loading ? 'Checking status' : data.label;
+
+    if (!enabled) return null;
 
     return (
         <Link

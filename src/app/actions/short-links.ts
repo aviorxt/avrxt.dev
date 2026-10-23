@@ -2,6 +2,14 @@
 
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createShortLink, deleteShortLink, listShortLinks, type ShortLinkInput, updateShortLink } from '@/lib/shortio';
+import { getAuthUser } from '@/lib/discord-auth';
+import { writeAuditLog } from '@/lib/audit-logs';
+
+async function logAdminShortLink(action: 'create' | 'update' | 'delete', message: string) {
+  const user = await getAuthUser();
+  if (!user) return;
+  await writeAuditLog({ actor_id: user.id, actor_name: user.user_metadata.full_name || user.user_metadata.user_name || 'Discord admin', actor_role: 'admin', event_type: 'short_link', action, category: 'administration', severity: action === 'delete' ? 'warning' : 'info', status: 'success', message });
+}
 
 function validate(input: ShortLinkInput) {
   const originalURL = typeof input?.originalURL === 'string' ? input.originalURL.trim() : '';
@@ -17,22 +25,22 @@ function validate(input: ShortLinkInput) {
 
 export async function listShortLinksAction() {
   if (!(await verifyAdmin()).authorized) return { error: 'Unauthorized.' } as const;
-  try { return { links: await listShortLinks() } as const; } catch (error) { return { error: error instanceof Error ? error.message : 'Could not load Short.io links.' } as const; }
+  try { return { links: await listShortLinks() } as const; } catch { return { error: 'Could not load Short.io links.' } as const; }
 }
 
 export async function createShortLinkAction(input: ShortLinkInput) {
   if (!(await verifyAdmin()).authorized) return { error: 'Unauthorized.' } as const;
-  try { return { link: await createShortLink(validate(input)) } as const; } catch (error) { return { error: error instanceof Error ? error.message : 'Could not create link.' } as const; }
+  try { const link = await createShortLink(validate(input)); await logAdminShortLink('create', 'An administrator created a Short.io link.'); return { link } as const; } catch (error) { return { error: error instanceof Error && error.message.startsWith('Enter a valid') || error instanceof Error && error.message.startsWith('The short path') ? error.message : 'Could not create link.' } as const; }
 }
 
 export async function updateShortLinkAction(id: string, input: ShortLinkInput) {
   if (!(await verifyAdmin()).authorized) return { error: 'Unauthorized.' } as const;
   if (!/^lnk_[A-Za-z0-9_-]+(?:_[A-Za-z0-9_-]+)?$/.test(id)) return { error: 'Invalid Short.io link ID.' } as const;
-  try { return { link: await updateShortLink(id, validate(input)) } as const; } catch (error) { return { error: error instanceof Error ? error.message : 'Could not update link.' } as const; }
+  try { const link = await updateShortLink(id, validate(input)); await logAdminShortLink('update', 'An administrator updated a Short.io link.'); return { link } as const; } catch (error) { return { error: error instanceof Error && (error.message.startsWith('Enter a valid') || error.message.startsWith('The short path')) ? error.message : 'Could not update link.' } as const; }
 }
 
 export async function deleteShortLinkAction(id: string) {
   if (!(await verifyAdmin()).authorized) return { error: 'Unauthorized.' } as const;
   if (!/^lnk_[A-Za-z0-9_-]+(?:_[A-Za-z0-9_-]+)?$/.test(id)) return { error: 'Invalid Short.io link ID.' } as const;
-  try { await deleteShortLink(id); return { success: true } as const; } catch (error) { return { error: error instanceof Error ? error.message : 'Could not delete link.' } as const; }
+  try { await deleteShortLink(id); await logAdminShortLink('delete', 'An administrator deleted a Short.io link.'); return { success: true } as const; } catch { return { error: 'Could not delete link.' } as const; }
 }

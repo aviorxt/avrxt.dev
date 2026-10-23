@@ -14,7 +14,8 @@ async function currentUser() {
 
 function message(error: unknown) {
   if (error instanceof Error && error.message.includes('ConditionalCheckFailed')) return 'This note no longer exists.';
-  return error instanceof Error ? error.message : 'Notes request failed.';
+  if (error instanceof Error && ['Invalid note.', 'Unauthorized.'].includes(error.message)) return error.message;
+  return 'Notes request failed. Please try again.';
 }
 
 export async function createNoteAction(input: Partial<NoteInput>) {

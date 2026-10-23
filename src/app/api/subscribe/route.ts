@@ -6,6 +6,8 @@ import { issueConfirmation, confirmationHash } from '@/lib/newsletter-confirmati
 import { createAdminClient } from '@/utils/supabase/admin';
 import { isRateLimited } from '@/lib/api-rate-limit';
 import { confirmationEmail } from '@/lib/newsletter-emails';
+import { isNewsletterEnabled } from '@/lib/public-feature-config';
+import { isJsonRequest, isTrustedMutationOrigin } from '@/lib/request-security';
 
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
 
@@ -50,8 +52,8 @@ async function isFakeEmail(email: string): Promise<boolean> {
     if (data.status === 200 && (data.disposable || !data.mx)) {
       return true;
     }
-  } catch (error) {
-    console.error('[SECURITY_API_LOG] External validation bypassed due to error:', error);
+  } catch {
+    // Mail validation is advisory; DNS validation below remains mandatory.
   }
 
   try {
@@ -64,15 +66,15 @@ async function isFakeEmail(email: string): Promise<boolean> {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!await isNewsletterEnabled()) return NextResponse.json({ error: 'NEWSLETTER_SIGNUP_DISABLED' }, { status: 403 });
+    if (!isTrustedMutationOrigin(request)) return NextResponse.json({ error: 'CROSS_SITE_REQUEST_REJECTED' }, { status: 403 });
+    if (!isJsonRequest(request)) return NextResponse.json({ error: 'UNSUPPORTED_CONTENT_TYPE' }, { status: 415 });
     const body = await readJsonLimited(request, 4096);
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ error: 'INVALID_REQUEST_BODY' }, { status: 400 });
     }
     const payload = body as { email?: unknown };
     const email = typeof payload.email === 'string' ? payload.email : '';
-    const origin = request.headers.get('origin');
-    const allowedOrigins = new Set([request.nextUrl.origin, 'https://avrxt.dev', 'https://www.avrxt.dev', process.env.NEXT_PUBLIC_SITE_URL]);
-    if (origin && !allowedOrigins.has(origin)) return NextResponse.json({ error: 'CROSS_SITE_REQUEST_REJECTED' }, { status: 403 });
     if (await isRateLimited(request.headers, 'subscribe', 5, 24 * 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'RATE_LIMIT_EXCEEDED: PLEASE_TRY_AGAIN_TOMORROW' }, { status: 429 });
     }
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     const isFake = await isFakeEmail(sanitizedEmail);
     if (isFake) {
-      console.warn(`[SHIELD_TRIGGERED] Blocked fake identity: ${sanitizedEmail}`);
+      console.warn('[NEWSLETTER_SIGNUP_REJECTED]', { reason: 'unreliable_domain' });
       return NextResponse.json({ error: 'UPLINK_REJECTED: UNRELIABLE_DOMAIN' }, { status: 403 });
     }
 
@@ -124,7 +126,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     if (error instanceof RequestBodyError) return NextResponse.json({ error: error.message }, { status: error.status });
-    console.error('CRITICAL_SUBSCRIBE_ERROR:', error);
+    console.error('[NEWSLETTER_SIGNUP_FAILED]');
     return NextResponse.json({ error: 'INTERNAL_SYSTEM_FAILURE' }, { status: 500 });
   }
 }

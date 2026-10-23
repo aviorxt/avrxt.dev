@@ -3,7 +3,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, Settings, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
+import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, ScrollText, Settings, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 import type { DashboardViewer } from '@/lib/dashboard-viewer';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
@@ -32,6 +32,7 @@ const navigation: ReadonlyArray<{ label: string; suffix: string; href?: string; 
   { label: 'Notes', suffix: '', href: '/notes', icon: NotebookPen },
   { label: 'Guestbook', suffix: '', section: 'guestbook', icon: MessageSquareQuote },
   { label: 'Short links', suffix: '/short-links', icon: Link2 },
+  { label: 'Logs', suffix: '/logs', icon: ScrollText },
   { label: 'Mail broadcast', suffix: '/mail-broadcat', icon: Mail },
 ];
 

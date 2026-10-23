@@ -1,10 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getMuzixChart } from '@/lib/spotify-chart';
 import { cachedPublic } from '@/lib/public-cache';
+import { isProfileEnabled } from '@/lib/public-feature-config';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  if (!await isProfileEnabled()) return NextResponse.json({ error: 'PROFILE_DISABLED' }, { status: 404 });
   try {
     const chart = await cachedPublic('spotify:chart', { ttlSeconds: 60, tags: ['spotify'], cacheable: value => value.connected === true }, getMuzixChart);
     return NextResponse.json(chart, {

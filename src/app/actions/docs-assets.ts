@@ -15,6 +15,10 @@ export async function prepareDocsAttachment(name: string, type: string, size: nu
 export async function completeDocsAttachment(key: string, type: string, size: number) {
   const { authorized } = await verifyAdmin();
   if (!authorized) return { error: 'Unauthorized.' };
-  try { await verifyDocsUpload(key, type, size); return { success: true as const }; }
+  try {
+    assertR2UploadOrigin((await headers()).get('origin') || '');
+    await verifyDocsUpload(key, type, size);
+    return { success: true as const };
+  }
   catch (error) { return { error: error instanceof Error ? error.message : 'Could not verify attachment.' }; }
 }

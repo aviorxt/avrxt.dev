@@ -11,6 +11,12 @@ export interface MeConfig {
         maintenanceEnabled: boolean;
         guestbookEnabled?: boolean;
         profileEnabled?: boolean;
+        newsletterEnabled?: boolean;
+        newsletterShowHome?: boolean;
+        newsletterShowProfile?: boolean;
+        contactEnabled?: boolean;
+        statusPageEnabled?: boolean;
+        statusBadgeEnabled?: boolean;
     };
     profile: {
         handle: string;
@@ -77,6 +83,12 @@ export const defaultMeConfig: MeConfig = {
         maintenanceEnabled: false,
         guestbookEnabled: true,
         profileEnabled: true,
+        newsletterEnabled: true,
+        newsletterShowHome: true,
+        newsletterShowProfile: true,
+        contactEnabled: true,
+        statusPageEnabled: true,
+        statusBadgeEnabled: true,
     },
     profile: {
         handle: "@aviorxt",

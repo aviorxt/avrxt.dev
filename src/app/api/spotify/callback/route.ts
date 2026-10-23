@@ -74,7 +74,7 @@ export async function GET(request: Request) {
   };
 
   if (!tokenResponse.ok || !tokenData.access_token || !tokenData.expires_in) {
-    console.error('[SPOTIFY_TOKEN_EXCHANGE_FAILED]', tokenResponse.status, tokenData.error, tokenData.error_description);
+    console.error('[SPOTIFY_TOKEN_EXCHANGE_FAILED]', { status: tokenResponse.status });
     return redirectWithStateCleanup(request, `${dashboardPath}?error=token_fetch_failed`);
   }
 
@@ -100,8 +100,8 @@ export async function GET(request: Request) {
   });
 
   if (error) {
-    console.error('SPOTIFY DB SAVE ERROR:', error);
-    return redirectWithStateCleanup(request, `${dashboardPath}?error=db_save_failed&msg=${encodeURIComponent(error.message)}`);
+    console.error('[SPOTIFY_TOKEN_STORAGE_FAILED]');
+    return redirectWithStateCleanup(request, `${dashboardPath}?error=db_save_failed`);
   }
 
   await invalidatePublicCache('spotify');

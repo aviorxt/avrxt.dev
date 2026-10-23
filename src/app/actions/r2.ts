@@ -22,7 +22,8 @@ export async function getPresignedR2UrlAction(fileName: string, fileType: string
         const data = await getPresignedUploadUrl(details.fileName, details.contentType, details.folder);
         return { success: true, ...data, contentType: details.contentType, fileName: details.fileName };
     } catch (error) {
-        return { error: error instanceof Error ? error.message : 'Could not prepare the upload. Check R2 configuration.' };
+        const message = error instanceof Error && error.message === 'Invalid file details.' ? error.message : 'Could not prepare the upload. Check the file and try again.';
+        return { error: message };
     }
 }
 export async function refreshR2UploadAction(key: string, fileType: string, fileSize: number) {

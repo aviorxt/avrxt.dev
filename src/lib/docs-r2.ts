@@ -17,14 +17,25 @@ function details(name: string, type: string, size: number) {
   return { key, type, size, publicUrl: `https://cdn.avrxt.dev/${key}` };
 }
 
+function attachmentDisposition(key: string) {
+  const name = key.split('/').at(-1) || 'attachment';
+  return `attachment; filename="${name.replace(/[^A-Za-z0-9._-]/g, '_')}"`;
+}
+
 export async function createDocsUpload(name: string, type: string, size: number) {
   const file = details(name, type, size);
-  const uploadUrl = await getSignedUrl(getR2Client(), new PutObjectCommand({ Bucket: bucket(), Key: file.key, ContentType: file.type }), { expiresIn: 600, signableHeaders: new Set(['content-type']) });
-  return { ...file, uploadUrl };
+  const contentDisposition = attachmentDisposition(file.key);
+  const uploadUrl = await getSignedUrl(getR2Client(), new PutObjectCommand({
+    Bucket: bucket(), Key: file.key, ContentType: file.type,
+    // Attachments never execute in the CDN origin, even if a browser attempts
+    // MIME sniffing or the uploaded bytes do not match the claimed file type.
+    ContentDisposition: contentDisposition,
+  }), { expiresIn: 600, signableHeaders: new Set(['content-type', 'content-disposition']) });
+  return { ...file, contentDisposition, uploadUrl };
 }
 
 export async function verifyDocsUpload(key: string, type: string, size: number) {
   if (!/^docs\/avrxt-doc-[a-f0-9-]{36}\.[a-z0-9]+$/.test(key) || !TYPES[type]) throw new Error('Invalid document attachment.');
   const object = await getR2Client().send(new HeadObjectCommand({ Bucket: bucket(), Key: key }));
-  if (object.ContentLength !== size || object.ContentType !== type) throw new Error('Uploaded attachment did not pass verification.');
+  if (object.ContentLength !== size || object.ContentType !== type || object.ContentDisposition !== attachmentDisposition(key)) throw new Error('Uploaded attachment did not pass verification.');
 }

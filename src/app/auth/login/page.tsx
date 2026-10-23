@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { ArrowLeft, ArrowUpRight, LoaderCircle, LockKeyhole, ShieldCheck } from 'lucide-react';
+import Turnstile, { turnstileClientEnabled } from '@/components/Turnstile';
 
 export default function LoginPage() {
     return (
@@ -18,6 +19,7 @@ function LoginContent() {
     const router = useRouter();
     const [isDiscordLoading, setIsDiscordLoading] = useState(false);
     const [clientError, setClientError] = useState<string | null>(null);
+    const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
     const source = searchParams.get('source');
     const next = searchParams.get('next') || (source === 'admin' ? '/dashboard' : '/docs/admin');
 
@@ -25,11 +27,20 @@ function LoginContent() {
         if (!source) router.replace('/');
     }, [source, router]);
 
-    const handleDiscordLogin = () => {
-        if (isDiscordLoading) return;
+    const turnstileRequired = turnstileClientEnabled('admin');
+
+    const handleDiscordLogin = (event: React.FormEvent<HTMLFormElement>) => {
+        if (turnstileRequired && !turnstileToken) {
+            event.preventDefault();
+            setClientError('Complete the security check before continuing.');
+            return;
+        }
+        if (isDiscordLoading) {
+            event.preventDefault();
+            return;
+        }
         setIsDiscordLoading(true);
         setClientError(null);
-        window.location.assign(new URL(`/auth/start?provider=discord&next=${encodeURIComponent(next)}`, window.location.origin).toString());
     };
 
     if (!source) return null;
@@ -44,6 +55,9 @@ function LoginContent() {
         auth_configuration: 'Admin verification is not configured correctly. Check the server, role, and bot settings.',
         oauth_callback_failed: 'Discord authentication could not be completed. Please try again.',
         oauth_service_unavailable: 'The sign-in service timed out or is unavailable. Start a new Discord login; the previous link cannot be reused.',
+        turnstile_required: 'Complete the security check before continuing.',
+        turnstile_verification_failed: 'The security check could not be verified. Please try again.',
+        turnstile_unavailable: 'The security service is temporarily unavailable. Please try again shortly.',
         provider_rejected: 'Discord rejected or cancelled the authorization request.',
         pkce_cookie_missing: 'The secure login cookie was lost. Start again in this same browser tab.',
         admin_session_failed: 'Admin access was verified, but the secure session could not be refreshed. Please sign in again.',
@@ -79,11 +93,17 @@ function LoginContent() {
                 )}
 
                 {source === 'admin' && (
-                    <button onClick={handleDiscordLogin} disabled={isDiscordLoading} className="group mt-7 flex min-h-14 w-full items-center justify-center gap-3 bg-white px-5 font-mono text-[11px] font-bold uppercase tracking-[.12em] text-black transition hover:bg-zinc-200 active:scale-[.99] disabled:cursor-wait disabled:opacity-70">
-                        {isDiscordLoading ? <LoaderCircle size={17} className="animate-spin" /> : <DiscordIcon />}
-                        {isDiscordLoading ? 'Opening Discord…' : 'Authenticate via Discord'}
-                        {!isDiscordLoading && <ArrowUpRight size={16} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />}
-                    </button>
+                    <form action="/auth/start" method="post" onSubmit={handleDiscordLogin} className="mt-7">
+                        <input type="hidden" name="provider" value="discord" />
+                        <input type="hidden" name="next" value={next} />
+                        <input type="hidden" name="turnstileToken" value={turnstileToken || ''} />
+                        {turnstileRequired && <div className="mb-5 border border-white/10 bg-black/25 p-3"><Turnstile scope="admin" onTokenChange={setTurnstileToken} onError={() => setClientError('The security check could not load. Please refresh and try again.')} /></div>}
+                        <button type="submit" disabled={isDiscordLoading || (turnstileRequired && !turnstileToken)} className="group flex min-h-14 w-full items-center justify-center gap-3 bg-white px-5 font-mono text-[11px] font-bold uppercase tracking-[.12em] text-black transition hover:bg-zinc-200 active:scale-[.99] disabled:cursor-wait disabled:opacity-70">
+                            {isDiscordLoading ? <LoaderCircle size={17} className="animate-spin" /> : <DiscordIcon />}
+                            {isDiscordLoading ? 'Opening Discord…' : 'Authenticate via Discord'}
+                            {!isDiscordLoading && <ArrowUpRight size={16} className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />}
+                        </button>
+                    </form>
                 )}
 
                 <p className="mt-5 text-center font-mono text-[9px] uppercase leading-5 tracking-[.14em] text-zinc-600">Discord authorization · encrypted session · 12 hour expiry</p>

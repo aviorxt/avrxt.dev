@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createNote, normalizeNoteInput } from '@/lib/notes';
 import { extensionIdFromOrigin, verifyNotesExtensionToken } from '@/lib/notes-extension-auth';
 import { readJsonLimited, RequestBodyError } from '@/lib/read-json-limited';
+import { isRateLimited } from '@/lib/api-rate-limit';
 
 export const runtime = 'nodejs';
 
@@ -37,6 +38,8 @@ export async function OPTIONS(request: NextRequest) {
 export async function POST(request: NextRequest) {
   const auth = authorizedExtension(request);
   if (!auth) return NextResponse.json({ error: 'UNAUTHORIZED_EXTENSION' }, { status: 401 });
+  if (!/^application\/json(?:\s*;|$)/i.test(request.headers.get('content-type') || '')) return NextResponse.json({ error: 'UNSUPPORTED_CONTENT_TYPE' }, { status: 415, headers: cors(auth.origin) });
+  if (await isRateLimited(request.headers, 'notes-extension-capture', 30, 60_000, auth.session.userId)) return NextResponse.json({ error: 'RATE_LIMITED' }, { status: 429, headers: cors(auth.origin) });
   try {
     const raw = await readJsonLimited(request, 110_000);
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return NextResponse.json({ error: 'INVALID_REQUEST' }, { status: 400, headers: cors(auth.origin) });
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ note }, { status: 201, headers: cors(auth.origin) });
   } catch (error) {
     if (error instanceof RequestBodyError) return NextResponse.json({ error: error.message }, { status: error.status, headers: cors(auth.origin) });
-    console.error('[NOTES_EXTENSION_CAPTURE_FAILED]', error);
+    console.error('[NOTES_EXTENSION_CAPTURE_FAILED]');
     return NextResponse.json({ error: 'NOTE_CAPTURE_FAILED' }, { status: 500, headers: cors(auth.origin) });
   }
 }

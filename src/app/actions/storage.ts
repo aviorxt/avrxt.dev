@@ -3,11 +3,18 @@
 import { verifyAdmin } from '@/lib/auth-checks';
 import { copyStorageEntry, createStorageFolder, createStorageShareLink, deleteStorageEntry, listStorage, readStorageText, setStorageVisibility, signedStorageUpload, storagePreview, writeStorageText } from '@/lib/s3-storage';
 
+function safeStorageError(error: unknown) {
+  const message = error instanceof Error ? error.message : '';
+  return ['Unauthorized.', 'Invalid storage path.', 'Use a single folder name.', 'Choose a different destination.', 'Only text files up to 1 MB can be edited in the browser.', 'Text content must be at most 1 MB.', 'Unsupported text content type.', 'This share link has expired.', 'Invalid share link.'].includes(message)
+    ? message
+    : 'Storage operation failed. Please try again.';
+}
+
 async function guarded<T>(work: () => Promise<T>) {
   const auth = await verifyAdmin();
   if (!auth.authorized) return { error: 'Unauthorized.' } as const;
   try { return { data: await work() } as const; }
-  catch (error) { return { error: error instanceof Error ? error.message : 'Storage operation failed.' } as const; }
+  catch (error) { return { error: safeStorageError(error) } as const; }
 }
 
 export async function listStorageAction(prefix = '') { return guarded(() => listStorage(prefix)); }

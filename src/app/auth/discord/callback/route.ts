@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exchangeDiscordCode, setAuthSession } from '@/lib/discord-auth';
 import { safeReturnPath } from '@/lib/auth-redirect';
+import { writeAuditLog } from '@/lib/audit-logs';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
   try {
     const { user, accessToken } = await exchangeDiscordCode(code, transaction.verifier, request.url);
     await setAuthSession(user, accessToken);
+    await writeAuditLog({ actor_id: user.id, actor_name: user.user_metadata.full_name || user.user_metadata.user_name || 'Discord user', actor_role: 'admin', event_type: 'authentication', action: 'sign_in', category: 'admin', severity: 'security', status: 'success', message: 'An administrator signed in with Discord.' });
     const response = NextResponse.redirect(new URL(safeReturnPath(transaction.next), request.url));
     response.cookies.set('avrxt_oauth_transaction', '', { path: '/auth', maxAge: 0 });
     return response;

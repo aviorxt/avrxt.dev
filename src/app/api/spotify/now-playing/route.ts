@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getNowPlaying, getSpotifyTokens } from '@/lib/spotify';
 import { createAdminClient } from '@/utils/supabase/admin';
 import { cachedPublic } from '@/lib/public-cache';
+import { isProfileEnabled } from '@/lib/public-feature-config';
 
 export const dynamic = 'force-dynamic';
 const cacheHeaders = { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=90' };
@@ -44,6 +45,7 @@ async function loadNowPlaying() {
 }
 
 export async function GET() {
+    if (!await isProfileEnabled()) return NextResponse.json({ error: 'PROFILE_DISABLED' }, { status: 404 });
     try {
         const value = await cachedPublic('spotify:now-playing', { ttlSeconds: 30, tags: ['spotify'] }, loadNowPlaying);
         return json(value);

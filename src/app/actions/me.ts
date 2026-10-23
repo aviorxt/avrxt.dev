@@ -38,6 +38,12 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
             maintenanceEnabled: config.site?.maintenanceEnabled === true,
             guestbookEnabled: config.site?.guestbookEnabled !== false,
             profileEnabled: config.site?.profileEnabled !== false,
+            newsletterEnabled: config.site?.newsletterEnabled !== false,
+            newsletterShowHome: config.site?.newsletterShowHome !== false,
+            newsletterShowProfile: config.site?.newsletterShowProfile !== false,
+            contactEnabled: config.site?.contactEnabled !== false,
+            statusPageEnabled: config.site?.statusPageEnabled !== false,
+            statusBadgeEnabled: config.site?.statusBadgeEnabled !== false,
         },
         profile: { ...config.profile },
         music: { ...config.music },
@@ -136,8 +142,14 @@ export async function saveMeConfigAction(config: MeConfig) {
     }
 
     const cacheInvalidated = await invalidatePublicCache('profile');
+    revalidatePath('/');
     revalidatePath('/me');
+    revalidatePath('/contact');
+    revalidatePath('/subscribe');
     revalidatePath(await getAdminDashboardPath());
     revalidatePath('/maintenance');
+    revalidatePath('/status');
+    revalidatePath('/api/status');
+    revalidatePath('/api/status/details');
     return { success: true, ...(!cacheInvalidated ? { warning: 'Saved, but Redis cache invalidation failed. Public data may take up to two minutes to refresh.' } : {}) };
 }

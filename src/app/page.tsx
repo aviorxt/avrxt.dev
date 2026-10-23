@@ -2,6 +2,8 @@ import Link from 'next/link';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import HomeSubscribe from '@/components/HomeSubscribe';
+import { getPublicProfileRecord } from '@/lib/public-data';
+import { connection } from 'next/server';
 
 export const metadata = buildPageMetadata({
     title: 'avrxt (aviorxt) — Independent Developer & Aircraft Maintenance Engineer',
@@ -10,7 +12,10 @@ export const metadata = buildPageMetadata({
     path: '/',
 });
 
-export default function HomePage() {
+export default async function HomePage() {
+    await connection();
+    const config = await getPublicProfileRecord().catch(() => null);
+    const showNewsletter = config?.site?.newsletterEnabled !== false && config?.site?.newsletterShowHome !== false;
     return (
         <main className="home-screen page-enter relative flex min-h-screen min-h-[100svh] flex-col overflow-hidden px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-10 lg:px-16">
             <header className="relative z-10 flex items-center justify-between font-mono text-[10px] uppercase tracking-[.2em] text-zinc-400 sm:text-xs">
@@ -33,7 +38,7 @@ export default function HomePage() {
                     <Link href="/tools" prefetch={false} className="group inline-flex min-h-11 items-center gap-3 border border-white/15 bg-white/[.035] px-4 font-mono text-[10px] uppercase tracking-[.16em] text-zinc-300 transition-colors hover:border-white/45 hover:bg-white/[.08] hover:text-white sm:px-5">
                         Explore the tools <ArrowDownRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
                     </Link>
-                    <HomeSubscribe />
+                    {showNewsletter && <HomeSubscribe />}
                 </div>
             </section>
         </main>

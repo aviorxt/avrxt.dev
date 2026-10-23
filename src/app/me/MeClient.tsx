@@ -1306,7 +1306,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                 )}
 
                 {/* Newsletter Card */}
-                <Reveal className="w-full mb-10" data-me-section="newsletter" direction="up" delay={0.6}>
+                {config.site?.newsletterEnabled !== false && config.site?.newsletterShowProfile !== false && <Reveal className="w-full mb-10" data-me-section="newsletter" direction="up" delay={0.6}>
                     <Tilt intensity={5}>
                         <div className="sub-card p-6 rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-3xl relative overflow-hidden">
                             <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
@@ -1344,7 +1344,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
                             </form>
                         </div>
                     </Tilt>
-                </Reveal>
+                </Reveal>}
 
                 {/* Resources */}
                 <div className="w-full mb-10" data-me-section="resources">
