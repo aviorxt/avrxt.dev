@@ -22,15 +22,15 @@ const reports = [
 
 export default function AnnouncementsPage() {
   return (
-    <main className="relative min-h-screen overflow-x-clip bg-[#050505] px-3 pb-16 pt-24 text-white sm:px-6 sm:pb-32 sm:pt-36">
+    <main className="relative min-h-screen w-full max-w-full overflow-x-hidden bg-[#050505] px-3 pb-16 pt-24 text-white sm:px-6 sm:pb-32 sm:pt-36">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.026)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.026)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
       <div className="pointer-events-none absolute -top-64 left-1/2 size-[42rem] -translate-x-1/2 rounded-full bg-white/[.055] blur-3xl" />
       <div className="relative mx-auto max-w-6xl">
         <header className="border-b border-[#1F1F1F] pb-10 sm:pb-14">
-          <div className="grid gap-7 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-end">
-            <div>
+          <div className="grid min-w-0 gap-7 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-end">
+            <div className="min-w-0">
               <p className="font-mono text-[9px] uppercase tracking-[.28em] text-[#858585]">Public record / AVRXT</p>
-              <h1 className="mt-4 max-w-4xl text-[clamp(2.85rem,14vw,8rem)] font-semibold uppercase leading-[.82] tracking-[-.075em] text-white sm:mt-5 sm:leading-[.78]">Official<br /><span className="text-[#686868]">announcements.</span></h1>
+              <h1 className="mt-4 max-w-full font-semibold uppercase leading-[.82] tracking-[-.075em] text-white sm:mt-5 sm:leading-[.78]"><span className="text-[clamp(2.85rem,14vw,8rem)]">Official</span><br /><span className="block break-words text-[clamp(2.15rem,10.5vw,8rem)] text-[#686868] sm:text-[clamp(2.85rem,14vw,8rem)]">announcements.</span></h1>
               <p className="mt-6 max-w-2xl text-[15px] leading-7 text-[#BCBCBC] sm:mt-7 sm:text-lg sm:leading-8">A permanent public record for security notices, service communications, and detailed issue reports published by AVRXT.</p>
             </div>
             <aside className="border border-[#292929] bg-black/70 p-4 sm:p-6"><ShieldAlert size={19} className="text-[#D0D0D0]" aria-hidden="true" /><p className="mt-4 font-mono text-[9px] uppercase tracking-[.18em] text-[#858585] sm:mt-5">Verification rule</p><p className="mt-2 text-sm leading-6 text-[#A3A3A3]">If a message is not listed or linked here, verify it through an official AVRXT contact channel before acting.</p></aside>
