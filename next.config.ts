@@ -37,7 +37,6 @@ const nextConfig: NextConfig = {
       { source: '/gallery/:path*', destination: '/', permanent: true },
       { source: '/galleery/:path*', destination: '/', permanent: true },
       { source: '/hireme', destination: '/contact', permanent: true },
-      { source: '/guestbook', destination: '/', permanent: true },
       { source: '/privacy', destination: '/legal/privacy', permanent: true },
       { source: '/terms', destination: '/legal/terms', permanent: true },
       { source: '/security', destination: '/legal/security', permanent: true },
