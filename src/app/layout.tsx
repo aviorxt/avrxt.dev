@@ -5,7 +5,6 @@ import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
 import { ogSize } from "@/lib/og-image";
-import { TooltipProvider } from '@/components/ui/tooltip';
 import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/site-config';
 
 const inter = Inter({
@@ -116,7 +115,6 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark scroll-smooth">
       <body className={`${inter.variable} ${spaceMono.variable} ${outfit.variable} ${instrumentSerif.variable} theme-v7 font-sans bg-[#050505] text-white selection:bg-cyan-300/20 overflow-x-clip`}>
-        <TooltipProvider>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -151,7 +149,6 @@ export default function RootLayout({
         <SiteChrome position="after" />
         <CookieBanner />
         <OptionalAnalytics />
-        </TooltipProvider>
       </body>
     </html>
   );
