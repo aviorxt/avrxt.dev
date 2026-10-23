@@ -21,24 +21,24 @@ const suspiciousExamples = [
 
 export function IdentityImpersonationNotice() {
   return (
-    <main className="relative min-h-screen overflow-x-clip bg-[#050505] px-4 pb-24 pt-28 text-white sm:px-6 sm:pb-32 sm:pt-36">
+    <main className="relative min-h-screen overflow-x-clip bg-[#050505] px-3 pb-16 pt-24 text-white sm:px-6 sm:pb-32 sm:pt-36">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,.026)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.026)_1px,transparent_1px)] bg-[size:3rem_3rem] [mask-image:linear-gradient(to_bottom,black,transparent_78%)]" />
       <div className="pointer-events-none absolute -top-64 left-1/2 size-[42rem] -translate-x-1/2 rounded-full bg-red-500/[.07] blur-3xl" />
 
       <div className="relative mx-auto max-w-6xl">
         <header className="border-b border-[#1F1F1F] pb-10 sm:pb-14">
-          <div className="mb-8 flex w-fit items-center gap-2 border border-red-300/30 bg-red-300/[.07] px-3 py-2 font-mono text-[9px] uppercase tracking-[.18em] text-red-100 sm:text-[10px]">
+          <div className="mb-6 flex w-fit items-center gap-2 border border-red-300/30 bg-red-300/[.07] px-3 py-2 font-mono text-[8px] uppercase tracking-[.14em] text-red-100 sm:mb-8 sm:text-[10px] sm:tracking-[.18em]">
             <TriangleAlert size={13} aria-hidden="true" /> Security announcement / 2026
           </div>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-end">
+          <div className="grid gap-7 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_19rem] lg:items-end">
             <div>
               <p className="font-mono text-[9px] uppercase tracking-[.28em] text-[#858585]">Trust notice / Official identity</p>
-              <h1 className="mt-5 max-w-4xl text-[clamp(3.5rem,11vw,8rem)] font-semibold uppercase leading-[.78] tracking-[-.075em] text-white">Verify before<br /><span className="text-[#686868]">you trust.</span></h1>
-              <p className="mt-7 max-w-2xl text-base leading-8 text-[#BCBCBC] sm:text-lg">We are aware of websites claiming to represent AVRXT. Do not click links, reply to messages, share credentials, or send money until the sender and destination have been verified.</p>
+              <h1 className="mt-4 max-w-4xl text-[clamp(2.85rem,14vw,8rem)] font-semibold uppercase leading-[.82] tracking-[-.075em] text-white sm:mt-5 sm:leading-[.78]">Verify before<br /><span className="text-[#686868]">you trust.</span></h1>
+              <p className="mt-6 max-w-2xl text-[15px] leading-7 text-[#BCBCBC] sm:mt-7 sm:text-lg sm:leading-8">We are aware of websites claiming to represent AVRXT. Do not click links, reply to messages, share credentials, or send money until the sender and destination have been verified.</p>
             </div>
-            <div className="border border-[#3E2A2A] bg-[#110909]/80 p-5 sm:p-6">
+            <div className="border border-[#3E2A2A] bg-[#110909]/80 p-4 sm:p-6">
               <ShieldAlert size={20} className="text-red-200" aria-hidden="true" />
-              <p className="mt-5 font-mono text-[9px] uppercase tracking-[.18em] text-red-100">Important</p>
+              <p className="mt-4 font-mono text-[9px] uppercase tracking-[.18em] text-red-100 sm:mt-5">Important</p>
               <p className="mt-2 text-sm leading-6 text-[#D0B7B7]">AVRXT is not responsible for loss caused by an impersonating website, message, or payment request. Pause and verify first.</p>
             </div>
           </div>
