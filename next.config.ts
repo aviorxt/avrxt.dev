@@ -11,7 +11,10 @@ const contentSecurityPolicy = [
   "base-uri 'none'",
   "object-src 'none'",
   "frame-ancestors 'none'",
-  "form-action 'self'",
+  // Discord OAuth begins as a same-site form POST, then hands the browser to
+  // Discord's authorization endpoint. Keep forms locked down except for this
+  // explicit identity-provider redirect.
+  "form-action 'self' https://discord.com",
   `script-src 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com https://challenges.cloudflare.com${developmentScriptSources}${previewScriptSources}`,
   `script-src-elem 'self' 'unsafe-inline' https://www.youtube.com https://s.ytimg.com https://cdn.jsdelivr.net https://static.cloudflareinsights.com https://challenges.cloudflare.com${previewScriptSources}`,
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",

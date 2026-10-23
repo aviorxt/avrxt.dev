@@ -30,6 +30,17 @@ async function beginDiscordAuthorization(request: NextRequest, values: URLSearch
   }
 }
 
+function canonicalStartRedirect(request: NextRequest) {
+  const callback = getDiscordCallbackUrl(request.url);
+  if (callback.origin === request.nextUrl.origin) return null;
+
+  const destination = new URL(`${request.nextUrl.pathname}${request.nextUrl.search}`, callback.origin);
+  // Preserve the form body while moving from avrxt.dev to the canonical
+  // www.avrxt.dev host. This must happen before Turnstile verification:
+  // Turnstile tokens are single-use and cannot be verified on both hosts.
+  return NextResponse.redirect(destination, { status: request.method === 'POST' ? 307 : 302 });
+}
+
 function loginError(request: NextRequest, error: string) {
   const destination = new URL('/auth/login', request.url);
   destination.searchParams.set('source', 'admin');
@@ -40,12 +51,16 @@ function loginError(request: NextRequest, error: string) {
 }
 
 export async function GET(request: NextRequest) {
+  const canonical = canonicalStartRedirect(request);
+  if (canonical) return canonical;
   if (!turnstileIsEnabled('admin')) return beginDiscordAuthorization(request, request.nextUrl.searchParams);
   return loginError(request, 'turnstile_required');
 }
 
 export async function POST(request: NextRequest) {
   if (!isTrustedMutationOrigin(request)) return loginError(request, 'cross_site_request_rejected');
+  const canonical = canonicalStartRedirect(request);
+  if (canonical) return canonical;
   const length = Number(request.headers.get('content-length') || 0);
   if (Number.isFinite(length) && length > 8_192) return loginError(request, 'invalid_request');
   const { isRateLimited } = await import('@/lib/api-rate-limit');

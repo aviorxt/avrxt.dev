@@ -47,6 +47,7 @@ function LoginContent() {
 
     const error = searchParams.get('error');
     const errorMessages: Record<string, string> = {
+        not_logged_in: 'Sign in with Discord to access the administrator workspace.',
         discord_required: 'Discord authentication is required.',
         metadata_missing: 'Discord identity not found.',
         unauthorized_role: 'Access denied: required role missing.',
@@ -58,6 +59,9 @@ function LoginContent() {
         turnstile_required: 'Complete the security check before continuing.',
         turnstile_verification_failed: 'The security check could not be verified. Please try again.',
         turnstile_unavailable: 'The security service is temporarily unavailable. Please try again shortly.',
+        cross_site_request_rejected: 'This sign-in request came from an untrusted origin. Open the AVRXT login page and try again.',
+        invalid_request: 'This sign-in request was invalid. Refresh the page and try again.',
+        rate_limited: 'Too many sign-in attempts. Please wait a few minutes before trying again.',
         provider_rejected: 'Discord rejected or cancelled the authorization request.',
         pkce_cookie_missing: 'The secure login cookie was lost. Start again in this same browser tab.',
         admin_session_failed: 'Admin access was verified, but the secure session could not be refreshed. Please sign in again.',
