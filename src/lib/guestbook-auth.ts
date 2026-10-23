@@ -84,6 +84,9 @@ export async function setGuestbookSession(user: GuestbookUser) {
   const encoded = Buffer.from(JSON.stringify(payload)).toString('base64url');
   (await cookies()).set(SESSION_COOKIE, `${encoded}.${sign(encoded)}`, { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: SESSION_MAX_AGE_SECONDS });
 }
+export async function clearGuestbookSession() {
+  (await cookies()).set(SESSION_COOKIE, '', { httpOnly: true, secure: process.env.NODE_ENV === 'production', sameSite: 'lax', path: '/', maxAge: 0 });
+}
 export async function getGuestbookUser(): Promise<GuestbookUser | null> {
   const raw = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!raw) return null;

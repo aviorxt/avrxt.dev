@@ -6,7 +6,7 @@ import {
     Plus, Trash2, Save,
     Music, Link as LinkIcon, Book,
     Check, ArrowUp, ArrowDown,
-    User, AlertCircle, Camera, Upload, Activity,
+    User, AlertCircle, Camera, Upload, Activity, Eye,
     Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal, Palette, MessageSquareQuote
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -288,6 +288,13 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         <div className="w-full space-y-6">
                             {/* Profile Settings */}
                             <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'profile' && 'hidden')}>
+                                <div className={cn("mb-6 flex flex-col gap-5 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between", config.site?.profileEnabled === false ? "border-red-400/20 bg-red-400/[0.05]" : "border-white/10 bg-black/20")}>
+                                    <div className="flex items-start gap-4">
+                                        <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.profileEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><Eye size={18} /></div>
+                                        <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Public_Profile_Access</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Control whether visitors can open avrxt.dev/me. Turn this off to show a private unavailable screen instead. Press Save to apply.</p></div>
+                                    </div>
+                                    <Switch checked={config.site?.profileEnabled !== false} onCheckedChange={(profileEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled } }))} aria-label="Toggle public profile access" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                                </div>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                     <User size={16} className="text-zinc-500" /> Profile_Data
                                 </h2>
@@ -1364,14 +1371,14 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                     <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.guestbookEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><MessageSquareQuote size={18} /></div>
                                     <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Guestbook_Access</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Allow visitors to read and publish signed Discord or GitHub notes. Turning this off closes the public page and blocks new, edited, and deleted entries. Press Save to apply.</p></div>
                                 </div>
-                                <Switch checked={config.site?.guestbookEnabled !== false} onCheckedChange={(guestbookEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled } }))} aria-label="Toggle guestbook access" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                                <Switch checked={config.site?.guestbookEnabled !== false} onCheckedChange={(guestbookEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled, profileEnabled: prev.site?.profileEnabled !== false } }))} aria-label="Toggle guestbook access" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
                             </div>
                             <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.maintenanceEnabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-zinc-900/40")}>
                                 <div className="flex items-start gap-4">
                                     <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.maintenanceEnabled ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-zinc-500")}><Wrench size={18} /></div>
                                     <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Maintenance_Mode</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Redirect public pages to the maintenance screen. Admin, authentication, and API routes stay available. Press Save to apply.</p></div>
                                 </div>
-                                <Switch checked={config.site?.maintenanceEnabled === true} onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled, guestbookEnabled: prev.site?.guestbookEnabled !== false } }))} aria-label="Toggle maintenance mode" className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800" />
+                                <Switch checked={config.site?.maintenanceEnabled === true} onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false } }))} aria-label="Toggle maintenance mode" className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800" />
                             </div>
                         </div>
                     </div></div>

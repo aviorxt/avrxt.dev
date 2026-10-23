@@ -3,7 +3,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, Settings, ShieldCheck, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
+import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, Settings, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 import type { DashboardViewer } from '@/lib/dashboard-viewer';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
@@ -31,6 +31,7 @@ const navigation: ReadonlyArray<{ label: string; suffix: string; href?: string; 
   { label: 'Personal storage', suffix: '/storage', icon: FolderLock },
   { label: 'Notes', suffix: '', href: '/notes', icon: NotebookPen },
   { label: 'Guestbook', suffix: '', section: 'guestbook', icon: MessageSquareQuote },
+  { label: 'Short links', suffix: '/short-links', icon: Link2 },
   { label: 'Mail broadcast', suffix: '/mail-broadcat', icon: Mail },
 ];
 
@@ -71,7 +72,7 @@ export default function AdminDashboardShell({ dashboardPath, viewer, children, s
       <Sidebar variant="inset" collapsible="icon">
         <SidebarHeader className="border-b border-sidebar-border p-3">
           <Link href={dashboardPath} className="flex items-center gap-3 rounded-md px-2 py-2 text-sidebar-foreground hover:bg-sidebar-accent">
-            <span className="grid size-7 shrink-0 place-items-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground"><ShieldCheck size={15} /></span>
+            <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-md border border-sidebar-border bg-black/30 p-1"><img src="https://cdn.avrxt.dev/logo/avrxt-vector-slash-Photoroom.png" alt="AVRXT" className="h-full w-full object-contain" /></span>
             <span className="min-w-0 group-data-[collapsible=icon]:hidden"><strong className="block truncate text-xs tracking-wide">AVRXT</strong><small className="block truncate font-mono text-[9px] text-sidebar-foreground/60">ADMIN CONSOLE</small></span>
           </Link>
         </SidebarHeader>

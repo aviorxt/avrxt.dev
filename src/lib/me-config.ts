@@ -10,6 +10,7 @@ export interface MeConfig {
     site?: {
         maintenanceEnabled: boolean;
         guestbookEnabled?: boolean;
+        profileEnabled?: boolean;
     };
     profile: {
         handle: string;
@@ -75,6 +76,7 @@ export const defaultMeConfig: MeConfig = {
     site: {
         maintenanceEnabled: false,
         guestbookEnabled: true,
+        profileEnabled: true,
     },
     profile: {
         handle: "@aviorxt",
