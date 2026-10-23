@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ArrowUpRight, ChevronDown, FileText, Mail, Wrench } from 'lucide-react';
+import { ArrowUpRight, ChevronDown, FileText, Mail, Wrench, X } from 'lucide-react';
 import Github from '@thesvg/react/github';
 import Instagram from '@thesvg/react/instagram';
 import { tools } from '@/lib/tool-catalog';
@@ -110,6 +110,15 @@ function FooterNavigation() {
         { title: 'Tools', links: tools.map((tool) => ({ label: tool.title, href: `/tools/${tool.slug}` })) },
     ];
 
+    useEffect(() => {
+        const closeOnEscape = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') setOpenMenu(null);
+        };
+
+        window.addEventListener('keydown', closeOnEscape);
+        return () => window.removeEventListener('keydown', closeOnEscape);
+    }, []);
+
     return <nav aria-label="Footer navigation" className="relative z-10 flex flex-wrap gap-1.5 py-6 sm:gap-2 sm:py-10">
         {menus.map((menu) => {
             const isOpen = openMenu === menu.title;
@@ -118,15 +127,23 @@ function FooterNavigation() {
                 <button type="button" aria-expanded={isOpen} aria-controls={`footer-menu-${menu.title.toLowerCase()}`} onClick={() => setOpenMenu(isOpen ? null : menu.title)} className="inline-flex min-h-9 items-center gap-1.5 border border-[#292929] bg-[#080808] px-3 font-mono text-[8px] uppercase tracking-[.12em] text-[#A3A3A3] transition-colors hover:border-[#686868] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:min-h-11 sm:gap-2 sm:px-4 sm:text-[9px] sm:tracking-[.16em]">
                     {Icon && <Icon size={12} />}{menu.title}<ChevronDown size={12} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
                 </button>
-                {isOpen && <div id={`footer-menu-${menu.title.toLowerCase()}`} className="fixed inset-x-4 bottom-4 z-30 max-h-[60svh] overflow-y-auto border border-[#292929] bg-[#080808] p-1.5 shadow-2xl shadow-black/80 sm:absolute sm:inset-x-auto sm:bottom-[calc(100%+0.55rem)] sm:left-0 sm:z-20 sm:max-h-[min(50vh,20rem)] sm:w-[min(20rem,calc(100vw-2rem))] sm:p-2">
-                    <p className="px-2.5 pb-1.5 pt-1 font-mono text-[7px] uppercase tracking-[.16em] text-[#666666] sm:px-3 sm:pb-2 sm:text-[8px] sm:tracking-[.2em]">{menu.title}</p>
-                    <ul className="grid gap-0.5 sm:gap-1 sm:grid-cols-2">
-                        {menu.links.map((link) => {
-                            const external = 'external' in link && link.external;
-                            return <li key={link.href}><Link href={link.href} prefetch={false} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} onClick={() => setOpenMenu(null)} className="group flex min-h-9 items-center justify-between gap-3 px-2.5 text-xs text-[#A3A3A3] transition-colors hover:bg-white/[.06] hover:text-white focus-visible:bg-white/[.06] focus-visible:outline-none sm:min-h-11 sm:px-3 sm:text-sm"><span>{link.label}</span>{external && <ArrowUpRight size={11} className="shrink-0 text-[#666666] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 sm:size-3" />}</Link></li>;
-                        })}
-                    </ul>
-                </div>}
+                {isOpen && <>
+                    <button type="button" aria-label={`Close ${menu.title} menu`} onClick={() => setOpenMenu(null)} className="fixed inset-0 z-20 bg-black/55 backdrop-blur-[1px] sm:hidden" />
+                    <div id={`footer-menu-${menu.title.toLowerCase()}`} role="dialog" aria-label={`${menu.title} navigation`} className="fixed inset-x-4 bottom-4 z-30 max-h-[60svh] overflow-y-auto border border-[#292929] bg-[#080808] p-1.5 shadow-2xl shadow-black/80 sm:absolute sm:inset-x-auto sm:bottom-[calc(100%+0.55rem)] sm:left-0 sm:z-20 sm:max-h-[min(50vh,20rem)] sm:w-[min(20rem,calc(100vw-2rem))] sm:p-2">
+                        <div className="flex items-center justify-between px-2.5 pb-1.5 pt-1 sm:px-3 sm:pb-2">
+                            <p className="font-mono text-[7px] uppercase tracking-[.16em] text-[#666666] sm:text-[8px] sm:tracking-[.2em]">{menu.title}</p>
+                            <button type="button" onClick={() => setOpenMenu(null)} className="grid size-8 place-items-center border border-[#292929] text-[#A3A3A3] transition-colors hover:border-[#686868] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:hidden" aria-label={`Close ${menu.title} menu`}>
+                                <X size={14} aria-hidden="true" />
+                            </button>
+                        </div>
+                        <ul className="grid gap-0.5 sm:gap-1 sm:grid-cols-2">
+                            {menu.links.map((link) => {
+                                const external = 'external' in link && link.external;
+                                return <li key={link.href}><Link href={link.href} prefetch={false} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} onClick={() => setOpenMenu(null)} className="group flex min-h-9 items-center justify-between gap-3 px-2.5 text-xs text-[#A3A3A3] transition-colors hover:bg-white/[.06] hover:text-white focus-visible:bg-white/[.06] focus-visible:outline-none sm:min-h-11 sm:px-3 sm:text-sm"><span>{link.label}</span>{external && <ArrowUpRight size={11} className="shrink-0 text-[#666666] transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 sm:size-3" />}</Link></li>;
+                            })}
+                        </ul>
+                    </div>
+                </>}
             </div>;
         })}
     </nav>;

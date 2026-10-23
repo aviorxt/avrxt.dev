@@ -4,6 +4,7 @@ const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
     '/me/admin',
     '/dashboard',
+    '/vault',
     '/docs/admin',
     '/mail',
     '/auth',
@@ -32,6 +33,12 @@ async function isMaintenanceModeEnabled() {
 
 export default async function proxy(request: NextRequest) {
     const url = request.nextUrl
+
+    if (url.hostname === 'vault.avrxt.dev' && url.pathname === '/') {
+        const vaultUrl = url.clone()
+        vaultUrl.pathname = '/vault'
+        return NextResponse.rewrite(vaultUrl)
+    }
 
     const sessionResponse = NextResponse.next()
 

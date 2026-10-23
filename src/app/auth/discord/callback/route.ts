@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { exchangeDiscordCode, setAuthSession } from '@/lib/discord-auth';
+import { exchangeDiscordCode, setAuthSession, trustedVaultOrigin } from '@/lib/discord-auth';
 import { safeReturnPath } from '@/lib/auth-redirect';
 
 export const dynamic = 'force-dynamic';
@@ -7,10 +7,10 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   const fail = (error = 'oauth_callback_failed') => {
     const response = NextResponse.redirect(new URL(`/auth/login?source=admin&error=${error}`, request.url));
-    response.cookies.set('avrxt_oauth_transaction', '', { path: '/auth', maxAge: 0 });
+    response.cookies.set('avrxt_oauth_transaction', '', { path: '/auth', maxAge: 0, domain: process.env.AUTH_COOKIE_DOMAIN || undefined });
     return response;
   };
-  let transaction: { state?: string; verifier?: string; next?: string };
+  let transaction: { state?: string; verifier?: string; next?: string; returnOrigin?: string };
   try { transaction = JSON.parse(request.cookies.get('avrxt_oauth_transaction')?.value || '{}'); }
   catch { return fail(); }
   const code = request.nextUrl.searchParams.get('code');
@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
   try {
     const { user, accessToken } = await exchangeDiscordCode(code, transaction.verifier, request.url);
     await setAuthSession(user, accessToken);
-    const response = NextResponse.redirect(new URL(safeReturnPath(transaction.next), request.url));
-    response.cookies.set('avrxt_oauth_transaction', '', { path: '/auth', maxAge: 0 });
+    const response = NextResponse.redirect(new URL(safeReturnPath(transaction.next), trustedVaultOrigin(transaction.returnOrigin) || request.url));
+    response.cookies.set('avrxt_oauth_transaction', '', { path: '/auth', maxAge: 0, domain: process.env.AUTH_COOKIE_DOMAIN || undefined });
     return response;
   } catch (error) {
     console.warn('[DISCORD_OAUTH_CALLBACK] Sign-in service failed', { kind: error instanceof Error ? error.name : 'unknown' });
