@@ -463,16 +463,6 @@ button:active, a:active {
 .home-word:nth-child(2) { animation-delay: 120ms; }
 .home-outline-word { color: rgba(255,255,255,.7); }
 .home-tagline { animation: page-enter 800ms 320ms cubic-bezier(.18,.75,.25,1) both; }
-/* Keep the opt-in form within reach when a desktop browser is short or heavily zoomed. */
-@media (min-width: 640px) and (max-height: 1040px) {
-  .avrxt-signal-dock {
-    position: fixed;
-    z-index: 40;
-    bottom: max(1rem, env(safe-area-inset-bottom));
-    left: max(1rem, env(safe-area-inset-left));
-    width: min(30rem, calc(100vw - 2rem));
-  }
-}
 @keyframes home-word-in { from { opacity: 0; transform: translateY(8vh); } to { opacity: 1; transform: translateY(0); } }
 @supports not (mask-image: linear-gradient(#000, transparent)) { .home-screen::before { opacity: .08; } }
 @supports (-webkit-text-stroke: 1px white) { .home-outline-word { color: transparent; -webkit-text-stroke: 1px rgba(255,255,255,.68); } }

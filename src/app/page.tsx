@@ -40,7 +40,7 @@ export default async function HomePage() {
                     </Link>
                 </div>
                 {showNewsletter && (
-                    <div className="absolute bottom-0 left-0 z-20 w-full">
+                    <div className="mt-8 w-full">
                         <HomeSubscribe />
                     </div>
                 )}
