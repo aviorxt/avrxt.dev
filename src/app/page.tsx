@@ -25,7 +25,7 @@ export default async function HomePage() {
                 </Link>
             </header>
 
-            <section className="relative z-10 mx-auto flex w-full max-w-[90rem] flex-1 flex-col justify-center py-16 sm:py-20">
+            <section className="relative z-10 mx-auto flex w-full max-w-[90rem] flex-1 flex-col justify-center pb-36 pt-16 sm:pb-40 sm:pt-20">
                 <p className="mb-6 flex items-center gap-3 font-mono text-[10px] uppercase tracking-[.25em] text-zinc-400 sm:text-xs">
                     <span className="h-px w-7 bg-zinc-500" /> Independent by design
                 </p>
@@ -40,7 +40,7 @@ export default async function HomePage() {
                     </Link>
                 </div>
                 {showNewsletter && (
-                    <div className="mt-8 w-full sm:absolute sm:bottom-0 sm:left-0 sm:mt-0">
+                    <div className="absolute bottom-0 left-0 z-20 w-full">
                         <HomeSubscribe />
                     </div>
                 )}
