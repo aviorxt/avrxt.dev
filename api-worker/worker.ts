@@ -207,7 +207,16 @@ async function handleSpotify(request: Request, env: Env) {
   // The main application owns the Spotify OAuth tokens and refresh lifecycle.
   // Proxy its canonical endpoint instead of the legacy Supabase function, which
   // can return stale state after a token refresh or playback change.
-  return proxyToSite(request, env, '/api/spotify/now-playing', 30);
+  const response = await proxyToSite(request, env, '/api/spotify/now-playing');
+  const headers = new Headers(response.headers);
+  // Playback state is perishable. Do not let a browser or edge cache make an
+  // active session appear stopped (or vice versa).
+  headers.set('Cache-Control', 'no-store, max-age=0');
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
 }
 
 async function handleStatus(request: Request, env: Env) {
