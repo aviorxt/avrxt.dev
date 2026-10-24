@@ -39,7 +39,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticPages: SitemapEntry[] = [
         { route: '', priority: 1, changeFrequency: 'weekly' },
         { route: '/about', priority: 0.9, changeFrequency: 'monthly' },
-        { route: '/me', priority: 0.8, changeFrequency: 'monthly' },
         { route: '/contact', priority: 0.8, changeFrequency: 'monthly' },
         { route: '/guestbook', priority: 0.65, changeFrequency: 'weekly' },
         { route: '/tools', priority: 0.8, changeFrequency: 'monthly' },
