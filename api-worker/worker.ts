@@ -147,7 +147,7 @@ type PublicConfig = { site?: { profileEnabled?: boolean; statusPageEnabled?: boo
 
 async function getPublicConfig(env: Env): Promise<PublicConfig | null> {
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return null;
-  const cache = caches.default;
+  const cache = await caches.open('avrxt-public-config');
   const cached = await cache.match(PUBLIC_CONFIG_CACHE_KEY);
   if (cached) {
     try { return await cached.json() as PublicConfig; } catch { /* refresh an invalid cache entry */ }

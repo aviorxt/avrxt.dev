@@ -31,7 +31,6 @@ import Reveal from '@/components/Reveal';
 import Tilt from '@/components/Tilt';
 import Magnetic from '@/components/Magnetic';
 import { MeConfig } from '@/lib/me-config';
-import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
 import { getMeDisplayFont } from '@/lib/me-fonts';
@@ -219,10 +218,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
         const latitude = config.profile.weatherCoordinates?.latitude ?? 13.0827;
         const longitude = config.profile.weatherCoordinates?.longitude ?? 80.2707;
         const query = `?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m`;
-        const endpoints = [...new Set([
-            apiUrl(`/v1/geo/forecast${query}`, edgeUrl(`/v1/fnc/geo/forecast${query}`)),
-            edgeUrl(`/v1/fnc/geo/forecast${query}`),
-        ])];
+        const endpoints = [apiUrl(`/v1/geo/forecast${query}`, '')];
         const fetchWeather = async () => {
             for (const endpoint of endpoints) {
                 try {
@@ -255,7 +251,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
         };
     }, [weatherEnabled, config.profile.weatherCoordinates?.latitude, config.profile.weatherCoordinates?.longitude]);
 
-    // Discord presence changes comparatively slowly; use the edge cache and poll
+    // Discord presence changes comparatively slowly; use the API gateway cache and poll
     // every five minutes rather than making every profile visit poll each minute.
     useEffect(() => {
         const discordId = config.profile.presence?.discordId;
@@ -279,7 +275,7 @@ export default function MeClient({ config }: { config: MeConfig }) {
 
         const fetchLanyard = async () => {
             try {
-                const res = await fetch(apiUrl(`/v1/discord/presence/${discordId}`, edgeUrl(`/v1/realtime/dc-presence/${discordId}`)), { cache: 'no-store' });
+                const res = await fetch(apiUrl(`/v1/discord/presence/${discordId}`, ''), { cache: 'no-store' });
                 const data = await res.json();
                 if (data.success) setLanyardData(data.data);
             } catch (e) { console.error(e); }

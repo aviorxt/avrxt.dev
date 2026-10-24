@@ -17,7 +17,6 @@ import { searchYouTubeAction } from '@/app/actions/youtube';
 import { deleteFromR2Action } from '@/app/actions/r2';
 import { createMuxVideoUploadAction, deleteMuxVideoAction, getMuxVideoUploadAction } from '@/app/actions/mux';
 import { uploadToR2 } from '@/lib/upload-client';
-import { edgeUrl } from '@/lib/edge';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
 import { SelectMenu } from '@/components/ui/SelectMenu';
@@ -377,7 +376,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                     setSaveStatus('SEARCHING_GEO...');
                                                     try {
                                                         const path = `/v1/geo/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
-                                                        const res = await fetch(apiUrl(path, edgeUrl(`/v1/fnc/geo/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`)), { cache: 'no-store' });
+                                                        const res = await fetch(apiUrl(path, ''), { cache: 'no-store' });
                                                         const data = await res.json();
                                                         if (data.results?.length) {
                                                             // We'll use a simple alert/prompt for now or just take the first one
