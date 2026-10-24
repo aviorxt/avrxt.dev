@@ -10,7 +10,6 @@ interface Env {
   MAIL_AI_LIMITER: { limit(options: { key: string }): Promise<{ success: boolean }> };
 }
 
-const DEFAULT_SPOTIFY_NOW_PLAYING_UPSTREAM = 'https://jirohobyxsihzbpopsse.supabase.co/functions/v1/v2-now-playing';
 const STATUS_SOURCES = ['https://avrxt-dev.betteruptime.com/index.json', 'https://status.avrxt.dev/index.json'];
 const PUBLIC_CONFIG_CACHE_KEY = new Request('https://avrxt.internal/cache/public-profile-config');
 const requestBuckets = new Map<string, { count: number; resetAt: number }>();
@@ -205,8 +204,10 @@ async function handleDiscord(request: Request, discordId: string) {
 async function handleSpotify(request: Request, env: Env) {
   const config = await getPublicConfig(env);
   if (config?.site?.profileEnabled === false) return json(request, { error: 'PROFILE_DISABLED' }, 404, { 'Cache-Control': 'no-store' });
-  const upstream = new URL(env.SPOTIFY_NOW_PLAYING_UPSTREAM || DEFAULT_SPOTIFY_NOW_PLAYING_UPSTREAM);
-  return externalJson(request, upstream, 10);
+  // The main application owns the Spotify OAuth tokens and refresh lifecycle.
+  // Proxy its canonical endpoint instead of the legacy Supabase function, which
+  // can return stale state after a token refresh or playback change.
+  return proxyToSite(request, env, '/api/spotify/now-playing', 30);
 }
 
 async function handleStatus(request: Request, env: Env) {
