@@ -178,7 +178,7 @@ export default function Navbar() {
                             </Link>
                         ))}
                         <Link
-                            href="/me"
+                            href="https://me.avrxt.dev"
                             prefetch={false}
                             onClick={() => setIsOpen(false)}
                             className="group block min-h-12 w-fit max-w-full py-1 text-[clamp(2.75rem,13vw,4rem)] font-black leading-none tracking-tighter text-zinc-500 transition-all hover:translate-x-2 hover:text-white active:scale-[.98] origin-left"

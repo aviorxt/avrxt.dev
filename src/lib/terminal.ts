@@ -4,7 +4,7 @@ export const COMMAND_LIMIT = 240;
 export const TERMINAL_PAGES: TerminalPage[] = [
   { command: 'home', title: 'Home', description: 'Independent development, aviation, and useful ideas.', href: '/', group: 'site' },
   { command: 'about', title: 'About', description: 'The person behind AVRXT.', href: '/about', group: 'site' },
-  { command: 'profile', title: 'Profile', description: 'Selected links, presence, and current frequency.', href: '/me', group: 'site' },
+  { command: 'profile', title: 'Profile', description: 'Selected links, presence, and current frequency.', href: 'https://me.avrxt.dev', group: 'site', external: true },
   { command: 'contact', title: 'Contact', description: 'Start a conversation or discuss a project.', href: '/contact', group: 'site' },
   { command: 'signature', title: 'Signature', description: 'The AVRXT digital mark.', href: '/signature', group: 'site' },
   { command: 'uses', title: 'Uses', description: 'Hardware, software, and everyday instruments.', href: '/uses', group: 'site' },

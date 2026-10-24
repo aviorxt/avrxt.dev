@@ -17,7 +17,7 @@ const pageGroups = [
         links: [
             { label: 'Home', href: '/' },
             { label: 'About', href: '/about' },
-            { label: 'Profile', href: '/me' },
+            { label: 'Profile', href: 'https://me.avrxt.dev', external: true },
             { label: 'Signature', href: '/signature' },
             { label: 'Uses', href: '/uses' },
             { label: 'Contact', href: '/contact' },
