@@ -5,7 +5,7 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
   title: 'Terms of Use',
-  description: 'Terms for AVRXT public tools, accounts, newsletters, email preferences, public media, search, service status, and third-party integrations.',
+  description: 'Terms for AVRXT public tools, profile and Muzix services, accounts, newsletters, email preferences, public media, search, service status, and third-party integrations.',
   keywords: ['terms of use', 'avrxt terms', 'acceptable use', 'developer tools', 'Spotify dashboard', 'AI handoff', 'API terms'],
   path: '/legal/terms',
 });
@@ -15,9 +15,9 @@ const nav = [
 ];
 
 export default function TermsPage() {
-  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using www.avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.6" lastUpdated="19 October 2026" updatedBy={{ handle: '@error', profileUrl: 'https://discord.com/users/1332903068899213363', avatarUrl: 'https://cdn.avrxt.dev/team/erroraero-avatar-1024.png' }} nav={nav} reader highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}><PolicyReader nav={nav}>
+  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using AVRXT websites and tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.7" lastUpdated="24 October 2026" updatedBy={{ handle: '@error', profileUrl: 'https://discord.com/users/1332903068899213363', avatarUrl: 'https://cdn.avrxt.dev/team/erroraero-avatar-1024.png' }} nav={nav} reader highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}><PolicyReader nav={nav}>
     <PolicySection id="agreement" number="01" title="Agreement and scope">
-      <p>By accessing or using www.avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the site. These terms cover public pages, forms, tools, APIs, newsletter features, Ask AI handoffs, the Muzix dashboard, account features, and integrations operated through this website.</p>
+      <p>By accessing or using www.avrxt.dev, me.avrxt.dev, or muzix.avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the applicable service. These terms cover public pages, forms, tools, APIs, newsletter features, Ask AI handoffs, the public profile, the Muzix chart, account features, and integrations operated by AVRXT.</p>
       <p>The site may change, experience downtime, or discontinue a feature. No promise is made that every feature will remain available, error-free, or compatible with every device.</p>
     </PolicySection>
 
@@ -67,7 +67,7 @@ export default function TermsPage() {
       <p>Public pages and API responses may be cached in Redis or delivery infrastructure and can briefly show an earlier version. Rate limits may apply across instances and may temporarily block a request when abuse-protection dependencies are unavailable. The public APIs do not carry an uptime, freshness, or unlimited-access commitment.</p>
       <p>The administrator newsletter assistant uses Cloudflare Workers AI to produce drafts. Administrators must review recipients, factual claims, links, and generated content before sending. Do not provide confidential information or personal data that is unnecessary for the drafting task. AI output does not create a professional advice relationship.</p>
       <p>The Ask AI launcher prepares the current page title, description, public www.avrxt.dev URL, and your question for a third-party AI service that you choose. AVRXT does not operate those models, control their responses, or guarantee that an answer is accurate, complete, or suitable for your purpose. Review important answers independently, and do not put passwords, confidential material, or sensitive personal data in an AI prompt.</p>
-      <p>The Muzix dashboard displays data supplied by Spotify and can update while you view it. Playback state, rankings, counts, availability, artwork, and listening summaries may be delayed, incomplete, or changed by Spotify. Music, artwork, artist names, and Spotify marks remain subject to their respective rights and platform terms.</p>
+      <p>The Muzix chart at muzix.avrxt.dev displays data supplied by Spotify and can update while you view it. Playback state, rankings, counts, availability, artwork, and listening summaries may be delayed, incomplete, or changed by Spotify. Music, artwork, artist names, and Spotify marks remain subject to their respective rights and platform terms.</p>
       <p>Links do not imply endorsement, and AVRXT is not responsible for content or transactions on an external website.</p>
     </PolicySection>
 

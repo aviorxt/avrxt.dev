@@ -4,7 +4,7 @@ import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
   title: 'Security',
-  description: 'AVRXT security controls for OAuth, private email links, public media, database access, search, caching, monitoring, and responsible vulnerability disclosure.',
+  description: 'AVRXT security controls across the main site, profile, and Muzix for OAuth, private email links, public media, database access, search, caching, monitoring, and responsible disclosure.',
   keywords: ['avrxt security', 'responsible disclosure', 'OAuth security', 'API rate limiting', 'security headers', 'vulnerability report', 'website security'],
   path: '/legal/security',
 });
@@ -14,15 +14,15 @@ const nav = [
 ];
 
 export default function SecurityPage() {
-  return <PolicyShell eyebrow="Trust center" title="Security" description="How www.avrxt.dev reduces common web risk, protects interactive features, and works with researchers who report vulnerabilities responsibly." version="v5.6" lastUpdated="19 October 2026" updatedBy={{ handle: '@error', profileUrl: 'https://discord.com/users/1332903068899213363', avatarUrl: 'https://cdn.avrxt.dev/team/erroraero-avatar-1024.png' }} nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Email links', value: 'Explicit confirmation' }]}>
+  return <PolicyShell eyebrow="Trust center" title="Security" description="How AVRXT websites reduce common web risk, protect interactive features, and work with researchers who report vulnerabilities responsibly." version="v5.7" lastUpdated="24 October 2026" updatedBy={{ handle: '@error', profileUrl: 'https://discord.com/users/1332903068899213363', avatarUrl: 'https://cdn.avrxt.dev/team/erroraero-avatar-1024.png' }} nav={nav} highlights={[{ label: 'Disclosure channel', value: 'support@avrxt.dev' }, { label: 'Transport', value: 'HTTPS + HSTS' }, { label: 'Email links', value: 'Explicit confirmation' }]}>
     <PolicySection id="approach" number="01" title="Security approach">
-      <p>Security is treated as an ongoing engineering process rather than a guarantee or certification. Controls are selected for the site’s actual risk: public forms and utilities, newsletter delivery, administrator-only features, GitHub, Discord and Spotify OAuth connections, public music data, and third-party infrastructure.</p>
+      <p>Security is treated as an ongoing engineering process rather than a guarantee or certification. Controls are selected for the actual risk across www.avrxt.dev, me.avrxt.dev, and muzix.avrxt.dev: public forms and utilities, newsletter delivery, administrator-only features, GitHub, Discord and Spotify OAuth connections, public music data, and third-party infrastructure.</p>
       <p>No internet service is completely secure. This page describes controls visible in the current application and avoids claiming a specific audit result, cipher suite, recovery target, or compliance certification that has not been independently verified.</p>
     </PolicySection>
 
     <PolicySection id="web" number="02" title="Web and browser safeguards">
       <PolicyList items={[
-        <><strong>Encrypted transport:</strong> the deployed site is served over HTTPS and sends a long-lived HSTS policy.</>,
+        <><strong>Encrypted transport:</strong> AVRXT web properties are served over HTTPS. The main application sends a long-lived HSTS policy; independently hosted properties are protected by their hosting and CDN TLS configuration.</>,
         <><strong>Content controls:</strong> Content Security Policy restricts resource categories and names specific script, frame, and font sources. HTTPS images, media, and connections have broader allowances for connected features. The Vercel toolbar origin is allowed only on preview deployments.</>,
         <><strong>Browser isolation:</strong> frame, content-type, referrer, permissions, opener, and cross-domain policy headers reduce common browser attack paths.</>,
         <><strong>Safer rendering:</strong> user-supplied contact content is validated, length-limited, and HTML-escaped before it is relayed.</>,
@@ -31,7 +31,7 @@ export default function SecurityPage() {
     </PolicySection>
 
     <PolicySection id="data" number="03" title="Data, identity, and privileged access">
-      <p>Secrets, email credentials, OAuth client secrets, and Spotify access or refresh tokens are expected to remain in server-side environment configuration and are not intentionally exposed to client JavaScript. Authentication uses provider-backed OAuth flows, security-state checks, HTTP-only cookies where applicable, and server-side authorization for restricted routes.</p>
+      <p>Secrets, email credentials, OAuth client secrets, and Spotify access or refresh tokens are expected to remain in server-side environment configuration and are not intentionally exposed to client JavaScript. Authentication uses provider-backed OAuth flows, security-state checks, HTTP-only cookies where applicable, and server-side authorization for restricted routes. The public profile and Muzix frontends use approved public API responses and do not receive administrator or Spotify credentials.</p>
       <p>Public Muzix responses contain selected listening information rather than credentials. Operational data is handled through providers such as Vercel, Cloudflare, Supabase, Resend, Discord, GitHub, Discord, and Spotify. Those systems maintain their own infrastructure controls. Access should be limited to what is required to operate and support the site.</p>
       <PolicyList items={[
         <><strong>Discord administration:</strong> login uses OAuth state and PKCE. The application verifies signed sessions and their audience, then checks current server membership and the required role, or the configured owner identity. Provider errors deny access with a distinct verification error rather than proving a role is absent.</>,
