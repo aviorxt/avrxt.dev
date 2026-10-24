@@ -49,7 +49,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { route: '/docs', priority: 0.7, changeFrequency: 'weekly' },
         ...documentEntries,
         { route: '/uses', priority: 0.6, changeFrequency: 'monthly' },
-        { route: '/muzix/chart', priority: 0.65, changeFrequency: 'daily' },
         { route: '/subscribe', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/announcements', priority: 0.7, changeFrequency: 'monthly' },
         { route: '/announcements/identity-impersonation-notice', priority: 0.7, changeFrequency: 'monthly' },

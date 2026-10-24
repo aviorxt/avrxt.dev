@@ -23,7 +23,6 @@ const ROUTES: Record<string, OgCard> = {
   '/contact': card('Open channel', 'Start a thoughtful conversation.', 'Questions, collaborations and meaningful ideas are always welcome.', 'contact', '04', ['CONTACT', 'COLLABORATE', 'CONNECT']),
   '/uses': card('Working system', 'The tools behind the work.', 'Hardware, software and everyday instruments that make the process possible.', 'tools', '06', ['HARDWARE', 'SOFTWARE', 'WORKFLOW']),
   '/tools': card('Public utilities · 08', 'Small tools. Serious utility.', 'Fast, privacy-conscious browser tools designed with the same care as the rest of avrxt.dev.', 'tools', '07', ['NETWORK', 'TYPE', 'DIAGNOSTICS']),
-  '/muzix/chart': card('Listening intelligence', 'Muzix chart.', 'Now playing, top artists, repeat signals and monthly listening patterns in one live capsule.', 'music', '08', ['SPOTIFY', 'NOW PLAYING', 'CHARTS']),
   '/subscribe': card('Low-frequency signal', 'Notes worth opening.', 'Occasional product notes, experiments and new releases — delivered without the noise.', 'contact', '09', ['NEWSLETTER', 'UPDATES', 'NO SPAM']),
   '/docs': card('Knowledge base', 'Documentation & field notes.', 'Technical guides, implementation notes and carefully documented experiments.', 'docs', '10', ['GUIDES', 'NOTES', 'REFERENCE']),
   '/system/api/doc': card('Developer interface', 'avrxt API reference.', 'Endpoints, response models and integration guidance for the public avrxt.dev API.', 'tools', '11', ['REST', 'JSON', 'REFERENCE']),

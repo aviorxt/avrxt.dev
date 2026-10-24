@@ -30,7 +30,7 @@ const pageGroups = [
             { label: 'Guestbook', href: '/guestbook' },
             { label: 'Tools directory', href: '/tools' },
             { label: 'Terminal', href: '/terminal' },
-            { label: 'Muzix chart', href: '/muzix/chart' },
+            { label: 'Muzix chart', href: 'https://muzix.avrxt.dev', external: true },
             { label: 'Subscribe', href: '/subscribe' },
             { label: 'API documentation', href: '/system/api/doc' },
             { label: 'Website source', href: 'https://github.com/aviorxt/avrxt-core-web', external: true },

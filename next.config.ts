@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
       // The public profile is independently hosted on Amplify. Keep the
       // administrative profile routes on this application.
       { source: '/me', destination: 'https://me.avrxt.dev', permanent: true },
+      { source: '/muzix/chart', destination: 'https://muzix.avrxt.dev', permanent: true },
       { source: '/preferance/mail/unsub/:path*', destination: '/preference/mail/unsub/:path*', permanent: true },
       { source: '/home', destination: '/', permanent: true },
       { source: '/portfolio', destination: '/', permanent: true },

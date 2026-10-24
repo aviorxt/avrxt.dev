@@ -8,7 +8,7 @@ export const TERMINAL_PAGES: TerminalPage[] = [
   { command: 'contact', title: 'Contact', description: 'Start a conversation or discuss a project.', href: '/contact', group: 'site' },
   { command: 'signature', title: 'Signature', description: 'The AVRXT digital mark.', href: '/signature', group: 'site' },
   { command: 'uses', title: 'Uses', description: 'Hardware, software, and everyday instruments.', href: '/uses', group: 'site' },
-  { command: 'music', title: 'Muzix', description: 'Live Spotify listening chart.', href: '/muzix/chart', group: 'site' },
+  { command: 'music', title: 'Muzix', description: 'Live Spotify listening chart.', href: 'https://muzix.avrxt.dev', group: 'site', external: true },
   { command: 'subscribe', title: 'Newsletter', description: 'Subscribe to AVRXT updates with email confirmation.', href: '/subscribe', group: 'site' },
   { command: 'docs', title: 'Documentation', description: 'Published technical notes and resources.', href: '/docs', group: 'docs' },
   { command: 'tools', title: 'Tools', description: 'Focused browser and network utilities.', href: '/tools', group: 'tools' },
