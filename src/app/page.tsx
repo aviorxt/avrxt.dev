@@ -17,7 +17,7 @@ export default async function HomePage() {
     const config = await getPublicProfileRecord().catch(() => null);
     const showNewsletter = config?.site?.newsletterEnabled !== false && config?.site?.newsletterShowHome !== false;
     return (
-        <main className="home-screen page-enter relative flex min-h-screen min-h-[100svh] flex-col overflow-x-hidden px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-10 lg:px-16">
+        <main className="home-screen relative flex min-h-screen min-h-[100svh] flex-col overflow-x-hidden px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-10 lg:px-16">
             <header className="relative z-10 flex items-center justify-between font-mono text-[10px] uppercase tracking-[.2em] text-zinc-400 sm:text-xs">
                 <Link href="/" prefetch={false} aria-label="AVRXT / 01 home" className="transition-colors hover:text-white">AVRXT<span className="text-zinc-400"> / 01</span></Link>
                 <Link href="https://me.avrxt.dev" prefetch={false} className="group inline-flex items-center gap-2 transition-colors hover:text-white">
