@@ -11,6 +11,7 @@ interface Env {
 const ALLOWED_ORIGINS = new Set([
   'https://avrxt.dev',
   'https://www.avrxt.dev',
+  'https://me.avrxt.dev',
   'http://localhost:3000',
 ]);
 
