@@ -1,4 +1,4 @@
-const productionOrigins = new Set(['https://www.avrxt.dev', 'https://avrxt.dev']);
+const productionOrigins = new Set(['https://www.avrxt.dev', 'https://avrxt.dev', 'https://me.avrxt.dev']);
 
 function previewOrigins() {
   if (process.env.VERCEL_ENV !== 'preview') return [];

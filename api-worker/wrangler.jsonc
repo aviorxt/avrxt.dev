@@ -9,8 +9,7 @@
     { "name": "MAIL_AI_LIMITER", "namespace_id": "2026100701", "simple": { "limit": 8, "period": 60 } }
   ],
   "vars": {
-    "SITE_ORIGIN": "https://www.avrxt.dev",
-    "EDGE_ORIGIN": "https://edge.avrxt.space"
+    "SITE_ORIGIN": "https://www.avrxt.dev"
   },
   "routes": [
     { "pattern": "api.avrxt.dev", "custom_domain": true }
