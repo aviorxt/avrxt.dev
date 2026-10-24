@@ -17,7 +17,7 @@ export default async function HomePage() {
     const config = await getPublicProfileRecord().catch(() => null);
     const showNewsletter = config?.site?.newsletterEnabled !== false && config?.site?.newsletterShowHome !== false;
     return (
-        <main className="home-screen page-enter relative flex min-h-screen min-h-[100svh] flex-col overflow-hidden px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-10 lg:px-16">
+        <main className="home-screen page-enter relative flex min-h-screen min-h-[100svh] flex-col overflow-x-hidden px-5 pb-8 pt-[max(1.25rem,env(safe-area-inset-top))] text-white sm:px-10 lg:px-16">
             <header className="relative z-10 flex items-center justify-between font-mono text-[10px] uppercase tracking-[.2em] text-zinc-400 sm:text-xs">
                 <Link href="/" prefetch={false} aria-label="AVRXT / 01 home" className="transition-colors hover:text-white">AVRXT<span className="text-zinc-400"> / 01</span></Link>
                 <Link href="https://me.avrxt.dev" prefetch={false} className="group inline-flex items-center gap-2 transition-colors hover:text-white">
@@ -38,8 +38,12 @@ export default async function HomePage() {
                     <Link href="/tools" prefetch={false} className="group inline-flex min-h-11 items-center gap-3 border border-white/15 bg-white/[.035] px-4 font-mono text-[10px] uppercase tracking-[.16em] text-zinc-300 transition-colors hover:border-white/45 hover:bg-white/[.08] hover:text-white sm:px-5">
                         Explore the tools <ArrowDownRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
                     </Link>
-                    {showNewsletter && <HomeSubscribe />}
                 </div>
+                {showNewsletter && (
+                    <div className="mt-8 w-full sm:absolute sm:bottom-0 sm:left-0 sm:mt-0">
+                        <HomeSubscribe />
+                    </div>
+                )}
             </section>
         </main>
     );
