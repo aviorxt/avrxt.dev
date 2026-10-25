@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getPublicDocument } from '@/lib/public-data';
 
 import { getOgFonts } from '@/app/_og/fonts';
 import { getTool, tools } from '@/lib/tool-catalog';
@@ -14,15 +14,15 @@ const card = (eyebrow: string, title: string, description: string, motif: Motif,
   ({ eyebrow, title, description, motif, index, chips });
 
 const ROUTES: Record<string, OgCard> = {
+  '/status': card('System telemetry', 'System status. Every signal accounted for.', 'Live service availability, measured uptime, public incidents, and maintenance from Better Stack.', 'tools', '21', ['UPTIME', 'INCIDENTS', 'LIVE']),
+  '/terminal': card('Interactive index', 'Less clicking. More exploring.', 'Explore public AVRXT pages, published notes, and useful tools with simple browser commands.', 'tools', '20', ['COMMANDS', 'EXPLORE', 'BROWSER']),
   '/': card('Independent developer · India', 'Ideas, systems & useful digital tools.', 'The personal web home of avrxt — also known as aviorxt.', 'identity', '00', ['DEVELOPMENT', 'AVIATION', 'EXPERIMENTS']),
   '/about': card('About avrxt', 'Developer by craft. Aircraft engineer by discipline.', 'An independent builder based in India, working where technology and precision meet.', 'identity', '01', ['PROFILE', 'STORY', 'INDIA']),
   '/me': card('Digital profile', '@avrxt', 'Selected links, live status and the shortest route to everything avrxt.', 'identity', '02', ['AVIORXT', 'ONLINE', 'LINKS']),
   '/signature': card('Digital mark · 2026', 'The avrxt signature.', 'A motion-crafted personal signature, drawn one deliberate stroke at a time.', 'signature', '03', ['MOTION', 'IDENTITY', 'HAND-DRAWN']),
   '/contact': card('Open channel', 'Start a thoughtful conversation.', 'Questions, collaborations and meaningful ideas are always welcome.', 'contact', '04', ['CONTACT', 'COLLABORATE', 'CONNECT']),
-  '/gallery': card('Visual archive', 'Frames from the journey.', 'A curated gallery of moments, details and visual experiments.', 'gallery', '05', ['ARCHIVE', 'FRAMES', 'STORIES']),
   '/uses': card('Working system', 'The tools behind the work.', 'Hardware, software and everyday instruments that make the process possible.', 'tools', '06', ['HARDWARE', 'SOFTWARE', 'WORKFLOW']),
   '/tools': card('Public utilities · 08', 'Small tools. Serious utility.', 'Fast, privacy-conscious browser tools designed with the same care as the rest of avrxt.dev.', 'tools', '07', ['NETWORK', 'TYPE', 'DIAGNOSTICS']),
-  '/muzix/chart': card('Listening intelligence', 'Muzix chart.', 'Now playing, top artists, repeat signals and monthly listening patterns in one live capsule.', 'music', '08', ['SPOTIFY', 'NOW PLAYING', 'CHARTS']),
   '/subscribe': card('Low-frequency signal', 'Notes worth opening.', 'Occasional product notes, experiments and new releases — delivered without the noise.', 'contact', '09', ['NEWSLETTER', 'UPDATES', 'NO SPAM']),
   '/docs': card('Knowledge base', 'Documentation & field notes.', 'Technical guides, implementation notes and carefully documented experiments.', 'docs', '10', ['GUIDES', 'NOTES', 'REFERENCE']),
   '/system/api/doc': card('Developer interface', 'avrxt API reference.', 'Endpoints, response models and integration guidance for the public avrxt.dev API.', 'tools', '11', ['REST', 'JSON', 'REFERENCE']),
@@ -46,19 +46,11 @@ function normalizePath(input: string | null) {
   return !raw.startsWith('/') || raw.includes('://') || raw.includes('..') || raw.length > 200 ? '/' : raw;
 }
 
-function supabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !anon) return null;
-  return createSupabaseClient(url, anon, { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } });
-}
-
 async function documentCard(path: string): Promise<OgCard> {
   const slug = path.split('/').filter(Boolean)[1] || 'docs';
   const fallback = card(`Documentation · ${slug.replace(/-/g, ' ')}`, slug.replace(/-/g, ' '), 'A technical field note from the avrxt.dev knowledge base.', 'docs', '10', ['DOCUMENT', 'REFERENCE', 'AVRXT.DEV']);
-  const client = supabase();
-  if (!client) return fallback;
-  const { data } = await client.from('documents').select('title,description').eq('slug', slug).maybeSingle<{ title: string | null; description: string | null }>();
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return fallback;
+  const data = await getPublicDocument(decodeURIComponent(slug)).catch(() => null);
   return data ? { ...fallback, title: clampText(data.title || fallback.title, 58), description: clampText(data.description || fallback.description, 150) } : fallback;
 }
 

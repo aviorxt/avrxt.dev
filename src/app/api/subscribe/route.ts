@@ -1,10 +1,13 @@
 import { resolveMx } from 'node:dns/promises';
-import { headers } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { LRUCache } from 'lru-cache';
 import { Resend } from 'resend';
 import { readJsonLimited, RequestBodyError } from '@/lib/read-json-limited';
-import { ensureUnsubscribeProperty, issueUnsubscribeLink, removeUnsubscribeLink, makeUnsubscribeUrl } from '@/lib/newsletter-broadcast';
+import { issueConfirmation, confirmationHash } from '@/lib/newsletter-confirmation';
+import { createAdminClient } from '@/utils/supabase/admin';
+import { isRateLimited } from '@/lib/api-rate-limit';
+import { confirmationEmail } from '@/lib/newsletter-emails';
+import { isNewsletterEnabled } from '@/lib/public-feature-config';
+import { isJsonRequest, isTrustedMutationOrigin } from '@/lib/request-security';
 
 const AUDIENCE_ID = process.env.RESEND_AUDIENCE_ID || '';
 
@@ -28,26 +31,11 @@ const PROHIBITED_DOMAINS = ['avrxt.dev', 'avrxt.space', 'aviorxt.aero'];
 
 const BLACKLISTED_EMAILS = new Set(['example@gmail.com', 'spam@gmail.com', 'test@test.com']);
 
-const rateLimit = new LRUCache<string, number>({
-  max: 1000,
-  ttl: 1000 * 60 * 60 * 24,
-});
-
 function getAllowedOrigin(request: NextRequest): string {
   const configured = process.env.NEXT_PUBLIC_SITE_URL;
   const origin = request.headers.get('origin');
   if (configured && origin && origin === configured) return origin;
   return configured || 'https://www.avrxt.dev';
-}
-
-function getClientIp(headerList: Headers): string {
-  const cf = headerList.get('cf-connecting-ip');
-  if (cf) return cf;
-
-  const realIp = headerList.get('x-real-ip');
-  if (realIp) return realIp;
-
-  return 'anonymous';
 }
 
 async function isFakeEmail(email: string): Promise<boolean> {
@@ -64,8 +52,8 @@ async function isFakeEmail(email: string): Promise<boolean> {
     if (data.status === 200 && (data.disposable || !data.mx)) {
       return true;
     }
-  } catch (error) {
-    console.error('[SECURITY_API_LOG] External validation bypassed due to error:', error);
+  } catch {
+    // Mail validation is advisory; DNS validation below remains mandatory.
   }
 
   try {
@@ -78,25 +66,27 @@ async function isFakeEmail(email: string): Promise<boolean> {
 
 export async function POST(request: NextRequest) {
   try {
+    if (!await isNewsletterEnabled()) return NextResponse.json({ error: 'NEWSLETTER_SIGNUP_DISABLED' }, { status: 403 });
+    if (!isTrustedMutationOrigin(request)) return NextResponse.json({ error: 'CROSS_SITE_REQUEST_REJECTED' }, { status: 403 });
+    if (!isJsonRequest(request)) return NextResponse.json({ error: 'UNSUPPORTED_CONTENT_TYPE' }, { status: 415 });
     const body = await readJsonLimited(request, 4096);
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
       return NextResponse.json({ error: 'INVALID_REQUEST_BODY' }, { status: 400 });
     }
     const payload = body as { email?: unknown };
     const email = typeof payload.email === 'string' ? payload.email : '';
-    const headerList = await headers();
-    const ip = getClientIp(headerList);
-
-    const attempts = rateLimit.get(ip) || 0;
-    if (attempts >= 5) {
+    if (await isRateLimited(request.headers, 'subscribe', 5, 24 * 60 * 60 * 1000)) {
       return NextResponse.json({ error: 'RATE_LIMIT_EXCEEDED: PLEASE_TRY_AGAIN_TOMORROW' }, { status: 429 });
     }
-    rateLimit.set(ip, attempts + 1);
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const sanitizedEmail = email.toLowerCase().trim();
     if (!sanitizedEmail || sanitizedEmail.length > 254 || !emailRegex.test(sanitizedEmail)) {
       return NextResponse.json({ error: 'INVALID_EMAIL_FORMAT' }, { status: 400 });
+    }
+
+    if (await isRateLimited(request.headers, 'subscribe-email', 1, 10 * 60 * 1000, sanitizedEmail)) {
+      return NextResponse.json({ error: 'CHECK_YOUR_INBOX_OR_TRY_AGAIN_LATER' }, { status: 429 });
     }
 
     const emailDomain = sanitizedEmail.split('@')[1];
@@ -112,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     const isFake = await isFakeEmail(sanitizedEmail);
     if (isFake) {
-      console.warn(`[SHIELD_TRIGGERED] Blocked fake identity: ${sanitizedEmail}`);
+      console.warn('[NEWSLETTER_SIGNUP_REJECTED]', { reason: 'unreliable_domain' });
       return NextResponse.json({ error: 'UPLINK_REJECTED: UNRELIABLE_DOMAIN' }, { status: 403 });
     }
 
@@ -123,67 +113,20 @@ export async function POST(request: NextRequest) {
 
     const resend = new Resend(process.env.RESEND_API_KEY);
 
-    const { data: existingContact, error: contactLookupError } = await resend.contacts.get({ email: sanitizedEmail, audienceId: AUDIENCE_ID });
-    if (contactLookupError && !/not found|does not exist/i.test(contactLookupError.message)) {
-      throw new Error(contactLookupError.message);
-    }
-    if (existingContact && !existingContact.unsubscribed) {
-      return NextResponse.json({ error: 'YOU ARE ALREADY SUBSCRIBED' }, { status: 409 });
-    }
-
-    await ensureUnsubscribeProperty(resend);
-    const unsubscribeLink = await issueUnsubscribeLink(sanitizedEmail, AUDIENCE_ID);
-    const contactResult = existingContact
-      ? await resend.contacts.update({
-          email: sanitizedEmail,
-          audienceId: AUDIENCE_ID,
-          unsubscribed: false,
-          properties: { UNSUBSCRIBE_URL: unsubscribeLink.url },
-        })
-      : await resend.contacts.create({
-          email: sanitizedEmail,
-          unsubscribed: false,
-          audienceId: AUDIENCE_ID,
-          properties: { UNSUBSCRIBE_URL: unsubscribeLink.url },
-        });
-    const createError = contactResult.error;
-
-    if (createError) {
-      await removeUnsubscribeLink(unsubscribeLink.token);
-      if (createError.message.toLowerCase().includes('already exists')) {
-        return NextResponse.json({ error: 'YOU ARE ALREADY SUBSCRIBED' }, { status: 409 });
-      }
-      throw new Error(createError.message);
-    }
-
+    const confirmation = await issueConfirmation(sanitizedEmail, AUDIENCE_ID);
     const { error: emailError } = await resend.emails.send({
-      from: 'avrxt.dev <Notify@AvrXt.dev>',
+      ...confirmationEmail(confirmation.url),
       to: sanitizedEmail,
-      subject: 'Connection Established: Welcome to avrxt.dev',
-      html: `
-        <div style="background-color: #000; color: #fff; padding: 40px; font-family: Arial, sans-serif; max-width: 500px; margin: auto; border: 1px solid #1a1a1a; border-radius: 24px; text-align: center;">
-          <h1 style="font-size: 24px; font-weight: 900; margin-bottom: 16px;">Greetings, avrxt</h1>
-          <p style="color: #a1a1aa; line-height: 1.6; margin-bottom: 32px;">
-            Welcome to <strong>avrxt.dev</strong>. You are now successfully subscribed to the avrxt mailing list.
-          </p>
-          <div style="border-top: 1px solid #1a1a1a; padding-top: 24px; margin-top: 24px;">
-            <p style="font-size: 14px; color: #666; margin-bottom: 4px;">Best regards @avrxt</p>
-            <a href="https://www.avrxt.dev" style="color: #fff; text-decoration: none; font-size: 12px; font-weight: 700;">www.avrxt.dev</a>
-            <p style="font-size: 12px; color: #777; margin-top: 20px;"><a href="${makeUnsubscribeUrl(unsubscribeLink.token)}" style="color: #aaa;">Unsubscribe from avrxt emails</a></p>
-          </div>
-        </div>
-      `,
-    });
-
+    }, { idempotencyKey: `newsletter-confirmation/${confirmationHash(confirmation.token)}` });
     if (emailError) {
-      console.error('EMAIL_DISPATCH_ERROR:', emailError);
-      return NextResponse.json({ message: 'SUCCESSFULLY_SUBSCRIBED', warning: 'WELCOME_EMAIL_DELAYED' });
+      await createAdminClient().from('newsletter_confirmations').delete().eq('token_hash', confirmationHash(confirmation.token));
+      throw new Error('Confirmation email failed');
     }
+    return NextResponse.json({ message: 'CHECK_YOUR_INBOX_TO_CONFIRM_SUBSCRIPTION' });
 
-    return NextResponse.json({ message: 'SUCCESSFULLY_SUBSCRIBED' });
   } catch (error) {
     if (error instanceof RequestBodyError) return NextResponse.json({ error: error.message }, { status: error.status });
-    console.error('CRITICAL_SUBSCRIBE_ERROR:', error);
+    console.error('[NEWSLETTER_SIGNUP_FAILED]');
     return NextResponse.json({ error: 'INTERNAL_SYSTEM_FAILURE' }, { status: 500 });
   }
 }

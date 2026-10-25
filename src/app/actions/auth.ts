@@ -1,9 +1,10 @@
 'use server';
 
 import { redirect } from 'next/navigation';
-import { clearAuthTokens } from '@/lib/openauth';
+import { clearAuthSession } from '@/lib/discord-auth';
+import { safeReturnPath } from '@/lib/auth-redirect';
 
 export async function logout(redirectTo: string = '/') {
-  await clearAuthTokens();
-  redirect(redirectTo);
+  await clearAuthSession();
+  redirect(safeReturnPath(redirectTo));
 }

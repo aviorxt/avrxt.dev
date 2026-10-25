@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
-import { lookup } from 'node:dns/promises';
-import { isIP } from 'node:net';
+import { publicFetch } from '@/lib/public-fetch';
+import { isRateLimited } from '@/lib/api-rate-limit';
+import { cachedPublic } from '@/lib/public-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,39 +15,6 @@ type LinkPreviewResponse = {
   favicon: string | null;
   siteName: string | null;
 };
-
-function isPrivateIpv4(ip: string): boolean {
-  const parts = ip.split('.').map((p) => Number(p));
-  if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return false;
-  const [a, b] = parts;
-  if (a === 10) return true;
-  if (a === 127) return true;
-  if (a === 0) return true;
-  if (a === 169 && b === 254) return true;
-  if (a === 192 && b === 168) return true;
-  if (a === 172 && b >= 16 && b <= 31) return true;
-  if (a === 100 && b >= 64 && b <= 127) return true;
-  if (a === 192 && b === 0) return true;
-  if (a === 198 && (b === 18 || b === 19)) return true;
-  if ((a === 198 && b === 51 && parts[2] === 100) || (a === 203 && b === 0 && parts[2] === 113)) return true;
-  if (a >= 224) return true;
-  return false;
-}
-
-function isPrivateIpv6(ip: string): boolean {
-  const value = ip.toLowerCase();
-  return value === '::' || value === '::1' || value.startsWith('::') || value.startsWith('fc') || value.startsWith('fd') ||
-    value.startsWith('fe8') || value.startsWith('fe9') || value.startsWith('fea') || value.startsWith('feb') ||
-    value.startsWith('ff') || value.startsWith('::ffff:');
-}
-
-function isLikelyPrivateHost(host: string): boolean {
-  const h = host.toLowerCase();
-  if (h === 'localhost' || h.endsWith('.localhost') || h.endsWith('.internal')) return true;
-  if (h.endsWith('.local')) return true;
-  if (h === '0.0.0.0') return true;
-  return false;
-}
 
 function getMeta(html: string, key: { attr: 'property' | 'name'; value: string }): string | null {
   const re = new RegExp(
@@ -93,27 +61,6 @@ function abs(baseUrl: string, maybeRelative: string | null): string | null {
   }
 }
 
-async function assertPublicHostname(hostname: string): Promise<void> {
-  const normalizedHost = hostname.replace(/^\[|\]$/g, '').toLowerCase().replace(/\.$/, '');
-  if (isLikelyPrivateHost(normalizedHost)) {
-    throw new Error('Blocked hostname');
-  }
-
-  const ipVersion = isIP(normalizedHost);
-  if (ipVersion === 4 && isPrivateIpv4(normalizedHost)) throw new Error('Blocked IP');
-  if (ipVersion === 6 && isPrivateIpv6(normalizedHost)) throw new Error('Blocked IP');
-  if (ipVersion) return;
-
-  // Best-effort DNS resolve to block private IPv4 ranges.
-  // (Vercel/Node environments may not always resolve IPv6 here; keep it simple.)
-  const results = await lookup(normalizedHost, { all: true, verbatim: true });
-  for (const r of results) {
-    if ((r.family === 4 && isPrivateIpv4(r.address)) || (r.family === 6 && isPrivateIpv6(r.address))) {
-      throw new Error('Blocked IP');
-    }
-  }
-}
-
 async function readHtmlLimited(response: Response, limit: number): Promise<string> {
   const length = Number(response.headers.get('content-length'));
   if (Number.isFinite(length) && length > limit) throw new Error('Response too large');
@@ -138,32 +85,7 @@ async function readHtmlLimited(response: Response, limit: number): Promise<strin
   return new TextDecoder().decode(bytes);
 }
 
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const input = (searchParams.get('url') || '').trim();
-  if (!input) {
-    return NextResponse.json({ error: 'Missing url' }, { status: 400 });
-  }
-  if (input.length > 2048) return NextResponse.json({ error: 'URL is too long' }, { status: 400 });
-
-  let url: URL;
-  try {
-    url = new URL(input);
-  } catch {
-    return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
-  }
-
-  if (!['http:', 'https:'].includes(url.protocol)) {
-    return NextResponse.json({ error: 'Unsupported protocol' }, { status: 400 });
-  }
-  if (url.username || url.password) return NextResponse.json({ error: 'Credentials in URL are not supported' }, { status: 400 });
-
-  try {
-    await assertPublicHostname(url.hostname);
-  } catch {
-    return NextResponse.json({ error: 'Blocked url' }, { status: 400 });
-  }
-
+async function loadPreview(url: URL): Promise<LinkPreviewResponse> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 5000);
 
@@ -171,17 +93,7 @@ export async function GET(request: Request) {
     let target = url;
     let res: Response | undefined;
     for (let redirectCount = 0; redirectCount <= 4; redirectCount += 1) {
-      await assertPublicHostname(target.hostname);
-      res = await fetch(target.toString(), {
-        method: 'GET',
-        redirect: 'manual',
-        signal: controller.signal,
-        headers: {
-          'user-agent': 'Mozilla/5.0 (compatible; avrxt-link-preview/1.0; +https://www.avrxt.dev)',
-          accept: 'text/html,application/xhtml+xml',
-        },
-        cache: 'no-store',
-      });
+      res = await publicFetch(target, controller.signal);
 
       if (res.status < 300 || res.status >= 400) break;
       const location = res.headers.get('location');
@@ -209,11 +121,7 @@ export async function GET(request: Request) {
         siteName: new URL(resolvedUrl).hostname,
       };
 
-      return NextResponse.json(payload, {
-        headers: {
-          'cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-        },
-      });
+      return payload;
     }
 
     const html = await readHtmlLimited(res, 1_000_000);
@@ -243,16 +151,40 @@ export async function GET(request: Request) {
       siteName: ogSiteName || new URL(resolvedUrl).hostname,
     };
 
-    return NextResponse.json(payload, {
-      headers: {
-        'cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400',
-      },
-    });
+    return payload;
   } catch (e: any) {
     const message = e?.name === 'AbortError' ? 'Timeout' : 'Fetch failed';
-    return NextResponse.json({ error: message }, { status: 500 });
+    throw new Error(message);
   } finally {
     clearTimeout(timeout);
   }
 }
 
+
+export async function GET(request: Request) {
+  if (await isRateLimited(request.headers, 'link-preview', 20, 60_000)) return NextResponse.json({ error: 'Too many previews. Try again shortly.' }, { status: 429 });
+  const { searchParams } = new URL(request.url);
+  const input = (searchParams.get('url') || '').trim();
+  if (!input) {
+    return NextResponse.json({ error: 'Missing url' }, { status: 400 });
+  }
+  if (input.length > 2048) return NextResponse.json({ error: 'URL is too long' }, { status: 400 });
+
+  let url: URL;
+  try {
+    url = new URL(input);
+  } catch {
+    return NextResponse.json({ error: 'Invalid url' }, { status: 400 });
+  }
+
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    return NextResponse.json({ error: 'Unsupported protocol' }, { status: 400 });
+  }
+  if (url.username || url.password) return NextResponse.json({ error: 'Credentials in URL are not supported' }, { status: 400 });
+
+  try {
+    // URL validation and rate limiting run even when the preview is cached.
+    const payload = await cachedPublic(`preview:${url.toString()}`, { ttlSeconds: 3600 }, () => loadPreview(url));
+    return NextResponse.json(payload, { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } });
+  } catch { return NextResponse.json({ error: 'Preview unavailable' }, { status: 502 }); }
+}

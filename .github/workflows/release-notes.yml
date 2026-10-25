@@ -1,0 +1,121 @@
+name: Publish release notes
+
+on:
+  push:
+    branches: [main]
+
+# Releases are made with the short-lived token that GitHub provides to this
+# workflow. A personal access token is deliberately not required or used.
+permissions:
+  contents: write
+
+concurrency:
+  group: release-notes-main
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish GitHub and Discord release notes
+    # `[skip release]` provides a safe escape hatch for operational commits.
+    if: ${{ !contains(github.event.head_commit.message, '[skip release]') }}
+    runs-on: ubuntu-latest
+    env:
+      DISCORD_RELEASE_WEBHOOK_URL: ${{ secrets.DISCORD_RELEASE_WEBHOOK_URL }}
+    steps:
+      - name: Check out the release commit
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Build release summary
+        id: release
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+          RUN_NUMBER: ${{ github.run_number }}
+        run: |
+          VERSION="v0.1.0-$(date -u +%Y%m%d).${RUN_NUMBER}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          node <<'NODE'
+          const { execFileSync } = require('node:child_process');
+          const { readFileSync, writeFileSync, appendFileSync } = require('node:fs');
+
+          const event = JSON.parse(readFileSync(process.env.GITHUB_EVENT_PATH, 'utf8'));
+          const before = process.env.BEFORE_SHA;
+          const after = process.env.AFTER_SHA;
+          const run = (args) => execFileSync('git', args, { encoding: 'utf8' }).trim();
+          const initialPush = !before || /^0+$/.test(before);
+          const range = initialPush ? after : `${before}..${after}`;
+          const messages = run(['log', '--format=%s|%an', range])
+            .split('\n')
+            .filter(Boolean)
+            .map((line) => {
+              const index = line.lastIndexOf('|');
+              return { subject: line.slice(0, index), author: line.slice(index + 1) };
+            });
+          const changedFiles = (initialPush
+            ? run(['diff-tree', '--no-commit-id', '--name-only', '-r', after])
+            : run(['diff', '--name-only', before, after]))
+            .split('\n')
+            .filter(Boolean);
+
+          const groups = { 'What’s new': [], Fixes: [], Removed: [], Changed: [] };
+          for (const commit of messages) {
+            const text = `• ${commit.subject} — ${commit.author}`;
+            if (/^(feat|add)(\(.+\))?!?:/i.test(commit.subject)) groups['What’s new'].push(text);
+            else if (/^fix(\(.+\))?!?:/i.test(commit.subject)) groups.Fixes.push(text);
+            else if (/^(remove|delete|deprecate)(\(.+\))?!?:/i.test(commit.subject)) groups.Removed.push(text);
+            else groups.Changed.push(text);
+          }
+
+          const clip = (value, max) => value.length > max ? `${value.slice(0, max - 1)}…` : value;
+          const field = (name, values) => ({
+            name,
+            value: clip(values.length ? values.join('\n') : '—', 1024),
+            inline: false,
+          });
+          const version = readFileSync(process.env.GITHUB_OUTPUT, 'utf8').match(/version=(.+)/)?.[1] ?? 'release';
+          const author = event.head_commit?.author?.username || event.pusher?.name || 'AVRXT';
+          const files = changedFiles.map((file) => `\`${file}\``).join(', ') || 'No file metadata available.';
+          const compareUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}/compare/${initialPush ? after : `${before}...${after}`}`;
+          const payload = {
+            username: 'AVRXT Releases',
+            embeds: [{
+              title: `AVRXT ${version}`,
+              url: `https://github.com/${process.env.GITHUB_REPOSITORY}/releases/tag/${version}`,
+              description: `A new production release is available. [View commit range](${compareUrl})`,
+              color: 0x7c3aed,
+              fields: [
+                field('What’s new', groups['What’s new']),
+                field('Fixes', groups.Fixes),
+                field('Removed', groups.Removed),
+                field('Changed', groups.Changed),
+                { name: `Changed files (${changedFiles.length})`, value: clip(files, 1024), inline: false },
+              ],
+              footer: { text: `Published by ${author} • ${process.env.GITHUB_REPOSITORY}` },
+              timestamp: new Date().toISOString(),
+            }],
+          };
+          writeFileSync('release-discord.json', JSON.stringify(payload));
+          appendFileSync(process.env.GITHUB_STEP_SUMMARY, `## ${version}\n\n` +
+            `- Commit: \`${after.slice(0, 7)}\`\n` +
+            `- Author: ${author}\n` +
+            `- Changed files: ${changedFiles.length}\n`);
+          NODE
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.release.outputs.version }}" \
+            --target "$GITHUB_SHA" \
+            --title "AVRXT ${{ steps.release.outputs.version }}" \
+            --generate-notes
+
+      - name: Send Discord release embed
+        if: ${{ env.DISCORD_RELEASE_WEBHOOK_URL != '' }}
+        run: |
+          curl --fail --silent --show-error \
+            --header 'Content-Type: application/json' \
+            --data @release-discord.json \
+            "$DISCORD_RELEASE_WEBHOOK_URL"

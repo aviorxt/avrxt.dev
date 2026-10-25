@@ -1,5 +1,6 @@
 'use server';
 
+import { campaignChecks, UNSUBSCRIBE_VARIABLE } from '@/lib/newsletter-content';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { isRateLimited } from '@/lib/api-rate-limit';
 import { headers } from 'next/headers';
@@ -19,7 +20,7 @@ export async function generateNewsletterEmailAction(input: { prompt: string }) {
     if (!authorized) return { error: 'Unauthorized.' };
 
     const requestHeaders = await headers();
-    if (isRateLimited(requestHeaders, 'newsletter-ai', 5, 60_000)) {
+    if (await isRateLimited(requestHeaders, 'newsletter-ai', 5, 60_000)) {
         return { error: 'Too many AI requests. Please wait a minute and try again.' };
     }
 
@@ -114,20 +115,28 @@ export async function createNewsletterBroadcastAction(input: {
             scheduledAt = date.toISOString();
         }
 
+        const checks = campaignChecks(html, subject, previewText);
+        if (mode !== 'draft' && checks.errors.length) throw new Error(checks.errors.join(' '));
         const resend = createResendClient();
         const audienceId = getNewsletterAudienceId();
         if (input.existingId) {
             const existing = await resend.broadcasts.get(input.existingId);
             if (existing.error) throw new Error(existing.error.message);
+            if (existing.data?.audience_id === audienceId && mode !== 'draft' && ['sent', 'scheduled', 'queued'].includes(existing.data.status)) {
+                return { success: true, id: input.existingId };
+            }
             if (!existing.data || existing.data.audience_id !== audienceId || existing.data.status !== 'draft') {
                 throw new Error('Only draft broadcasts in the configured newsletter audience can be updated or sent.');
             }
         }
         let recipientCount: number | undefined;
-        if (mode !== 'draft') recipientCount = await syncAudienceUnsubscribeLinks(resend, audienceId);
+        if (mode !== 'draft') {
+            recipientCount = await syncAudienceUnsubscribeLinks(resend, audienceId);
+            if (!recipientCount) throw new Error('No active newsletter contacts. No broadcast was sent.');
+        }
 
         const htmlWithFooter = appendUnsubscribeFooter(html);
-        const plainText = `${htmlToPlainText(html)}\n\nUnsubscribe: {{{UNSUBSCRIBE_URL}}}`;
+        const plainText = htmlToPlainText(htmlWithFooter);
         const payload = {
             name,
             from,
@@ -148,7 +157,8 @@ export async function createNewsletterBroadcastAction(input: {
             });
             if (updated.error) throw new Error(updated.error.message);
             if (mode === 'draft') return { success: true, id: input.existingId, recipientCount };
-            result = await resend.broadcasts.send(input.existingId, scheduledAt ? { scheduledAt } : undefined);
+            result = await resend.post<{ id: string }>(`/broadcasts/${input.existingId}/send`,
+                scheduledAt ? { scheduled_at: scheduledAt } : {}, { headers: { 'Idempotency-Key': idempotencyKey } });
         } else {
             result = await resend.broadcasts.create({
                 audienceId,
@@ -204,10 +214,15 @@ export async function sendNewsletterTestAction(input: { from: string; to: string
         const to = input.to.trim().toLowerCase();
         if (to.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) throw new Error('Enter a valid test recipient address.');
         if (!input.subject.trim() || /[\r\n]/.test(input.subject) || !input.html.trim() || input.html.length > 500_000) throw new Error('Enter a valid subject and HTML (HTML limit: 500 KB).');
+        const checks = campaignChecks(input.html, input.subject, 'Test');
+        if (checks.errors.length) throw new Error(checks.errors.join(' '));
         const unsubscribeLink = await issueTestUnsubscribeLink(to);
         testToken = unsubscribeLink.token;
         const testHtml = appendUnsubscribeFooter(input.html, 'test')
-            .replace(/\{\{\{UNSUBSCRIBE_URL\}\}\}/g, unsubscribeLink.url);
+            .split(UNSUBSCRIBE_VARIABLE).join(unsubscribeLink.url)
+            .replace(/\{\{\{contact\.first_name(?:\|[^}]*)?\}\}\}/g, 'Test reader')
+            .replace(/\{\{\{contact\.last_name(?:\|[^}]*)?\}\}\}/g, 'Reader')
+            .replace(/\{\{\{contact\.email\}\}\}/g, to);
         const resend = createResendClient();
         const result = await resend.emails.send({
             from,

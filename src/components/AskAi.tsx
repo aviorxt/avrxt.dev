@@ -75,9 +75,9 @@ function makePrompt(context: PageContext, question: string) {
   ].join('\n');
 }
 
-export default function AskAi() {
+export default function AskAi({ initialOpen = false }: { initialOpen?: boolean }) {
   const pathname = usePathname();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [question, setQuestion] = useState(defaultQuestion);
   const [copied, setCopied] = useState(false);
   const [context, setContext] = useState<PageContext>({
@@ -127,11 +127,11 @@ export default function AskAi() {
     copyPrompt();
   };
 
-  if (pathname === '/') return null;
+  if (pathname === '/' || (pathname === '/subscribe/confirm' || pathname.startsWith('/delete-request') || pathname === '/contact/confirm') || pathname.startsWith('/preference/mail/unsub') || pathname.startsWith('/preferance/mail/unsub')) return null;
 
   return (
     <>
-      <motion.button
+      {!initialOpen && <motion.button
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Ask AI about this page"
@@ -145,7 +145,7 @@ export default function AskAi() {
         <Sparkles className="relative size-3 text-[#D0D0D0]" aria-hidden="true" />
         <span className="relative">Ask AI</span>
         <span className="relative size-1 rounded-full bg-white shadow-[0_0_8px_1px_rgba(255,255,255,0.35)]" />
-      </motion.button>
+      </motion.button>}
 
       <AnimatePresence>
         {open && (

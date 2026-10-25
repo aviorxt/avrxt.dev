@@ -37,6 +37,7 @@ Copy `.env.example` to `.env.local` and provide only the integrations you intend
 ```bash
 npm run lint
 npm run build
+npm test
 npm audit
 ```
 
@@ -44,6 +45,69 @@ npm audit
 
 See `/legal/security` for the disclosure policy. The app sets baseline browser security headers, validates same-origin contact submissions, limits JSON body size, escapes email content, and keeps secrets in server-only environment variables.
 
+## Redis REST cache
+
+Public profile, published documents, maintenance, Spotify, status and link previews use a shared Redis REST cache when configured. Admin writes invalidate affected entries; public loaders never inherit session cookies. Redis also handles fixed-window rate limits, with the database limiter retained as fallback. Configure server-only `REDIS_REST_URL`, `REDIS_REST_TOKEN`, and a deployment-specific `REDIS_CACHE_NAMESPACE`; run `npm run redis:check`. See `REDIS_CACHE.md` for TTLs, outage behavior, credentials and verification.
+
+## Deploying the security and upload fixes
+
+Apply all `supabase/migrations` in filename order before deploying the app. For an existing database, reconcile the bootstrap definitions with its actual schema and apply the new access/rate-limit and confirmation migrations. The access migration replaces old public policies on application tables; public documents remain readable only when published, and Spotify tokens/history remain private. Database rate limits fail closed in production if the migration or service-role configuration is missing.
+
+Configure the same `GATEWAY_SHARED_SECRET` in the web deployment and API Worker so the origin can verify the visitor IP forwarded by Cloudflare. Existing `MAIL_AI_SHARED_SECRET` can serve as the fallback signing secret when the dedicated value is unset on both sides. Unsigned visitor headers are ignored; otherwise gateway traffic would share the proxy's IP quota. `TRUST_CLOUDFLARE_PROXY` is for a directly protected Cloudflare origin, not a publicly reachable Vercel origin.
+
+Discord authentication runs entirely in the Vercel app. Add `https://www.avrxt.dev/auth/discord/callback` as the Discord application's production redirect URI, then configure `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and a distinct, random `AUTH_SESSION_SECRET` of at least 32 characters in every Vercel environment. Login uses a browser-bound PKCE transaction and a 12-hour signed, HttpOnly session cookie. Web admin checks require `DISCORD_TOKEN`, `DISCORD_GUILD_ID`, and `DISCORD_ROLE_ID`, or the configured `DISCORD_ADMIN_USER_ID` owner exception. Never set these as public variables.
+
+## Guestbook and documentation attachments
+
+`/guestbook` uses AVRXT-owned Discord and GitHub OAuth sessions, not Supabase Auth. Apply `supabase/migrations/202610230001_guestbook.sql` and `supabase/migrations/202610230002_guestbook_owned_oauth.sql` before deployment. The Vercel deployment needs the existing public Supabase URL/key, server-only `SUPABASE_SERVICE_ROLE_KEY`, existing Discord OAuth credentials, and server-only `GITHUB_CLIENT_ID`/`GITHUB_CLIENT_SECRET`. Add `https://www.avrxt.dev/guestbook/auth/callback` to both provider applications. Published Guestbook messages are readable through the anonymous database client; all mutations use the server-side service role after validating the signed AVRXT session.
+
+The `/docs/admin` editor accepts images, PDF, text/Markdown, ZIP, DOCX, and XLSX attachments up to 25 MB. It uploads them through short-lived R2 presigned URLs into the `docs/` prefix and inserts a Markdown link into the document. Keep `R2_ENDPOINT`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, and `NEXT_PUBLIC_R2_DOMAIN=https://cdn.avrxt.dev` configured server-side/publicly as appropriate. Published docs are included automatically in `/sitemap.xml`.
+
+Newsletter signup sends a confirmation link; it does not activate or reactivate a contact until the recipient confirms with POST. Configure the canonical HTTPS site origin and verified Resend sender. `/api/health` is cheap liveness; protected readiness is `/api/health?deep=1` with `Authorization: Bearer <HEALTH_CHECK_TOKEN>`.
+
+Confirmation emails use `confirm@avrxt.dev`; welcome emails use `info@avrxt.dev`. Both require the existing `avrxt.dev` verified sending domain, with no new credentials. Templates are in `src/lib/newsletter-emails.ts`; static doodle PNGs and optional fonts are served from `/newsletter/`. Email clients that block web fonts use the supplied system fallbacks. Regenerate artwork with `node scripts/build-newsletter-assets.mjs`.
+
+The confirmation page performs a read-only token check on GET and submits JSON to `/api/subscribe/confirm` after an explicit click. Tokens expire after 24 hours and are consumed through an atomic `confirmed_at IS NULL` update. Used links cannot activate a contact or send another welcome. The winning confirmation schedules welcome delivery with Next `after`, up to three bounded retries using one Resend idempotency key, and a working branded unsubscribe link. A welcome-provider outage does not roll back the subscription; inspect the sanitized `NEWSLETTER_WELCOME_UNAVAILABLE` event if delivery fails. The page suppresses analytics, removes the token from the visible URL, and prevents cross-site requests.
+
+Unsubscribe processing runs in Next.js at `/preference/mail/unsub/[token]`, with explicit POST confirmation through `/api/newsletter/unsubscribe`. It uses the website's existing Supabase server credentials, Resend key, and distributed rate limiter. GET reads preferences without changing subscription state. Missing links, provider errors, already-completed requests, and non-mutating test links have distinct UI states. The page suppresses analytics/AI handoffs, removes the visible token from the address bar, and sends no-store/noindex and same-origin referrer headers. New welcome emails, test emails, and broadcast contact properties always use the canonical www route; the obsolete `NEWSLETTER_UNSUBSCRIBE_BASE_URL` value is ignored.
+
+Deploy the web app first and verify the new preferences route, then deploy the compatibility-only `avrxt-newsletter-unsubscribe` redirect bridge. Existing `/mail/[token]` links on `unsub.avrxt.dev` redirect to the website; an old form POST redirects as GET and requires fresh confirmation. The bridge makes no database/Resend calls and needs no credentials or rate-limit bindings. After cutover, remove only its obsolete `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, optional `SUPABASE_SECRET_KEY`, and `RESEND_API_KEY` secret bindings from that Worker; do not rotate shared provider keys. `wrangler deploy --dry-run --config unsubscribe-worker/wrangler.jsonc` builds the redirect bridge locally without changing the live service.
+
+See `CLOUDFLARE_R2.md` for CORS, filename rewriting and upload verification. Smoke-test a new profile image and a media file from the deployed admin page after configuration. Existing assets are removed only after the edited profile is saved.
+
+The development-only braces advisory currently has no published patched version. Production audit is clean. Keep repository lint patterns trusted; do not force npm's suggested Next.js downgrade. Track https://github.com/advisories/GHSA-vfj7-8cjw-p6xm for an upstream fix.
+
+## Public site search
+
+Algolia powers the navigation search dialog with typo tolerance, keyboard navigation, and a public-page fallback. Configure the three `NEXT_PUBLIC_ALGOLIA_*` values, an index-scoped server `ALGOLIA_WRITE_KEY` with `addObject`, `deleteObject`, `browse`, and `editSettings`, and a random `CRON_SECRET` of at least 32 characters. The browser key needs only `search`, the same index restriction, trusted website referers, max 10 hits per query, and a per-IP limit. Never use an Admin key in either environment.
+
+Configure index ranking once in Algolia: searchable attributes `title`, `unordered(keywords)`, `description`, `content`, `href`; retrieved attributes `title`, `description`, `href`, `category`; no provider HTML highlighting. Routine synchronization does not rewrite index settings. Record tasks use bounded backoff for up to 25 seconds to accommodate asynchronous publication.
+
+The protected `/api/search/sync` GET endpoint requires `Authorization: Bearer <CRON_SECRET>`. Vercel runs it daily at 04:00 UTC. It reads published notes through the anonymous/RLS database client, updates public page metadata and bounded note excerpts, and removes obsolete records. Admin document mutations request a background index update after saving. Failures preserve the database save and are repaired by daily reconciliation. Redis serializes index writers. Preview deployments read the Production public index and never rewrite it. A database outage stops reconciliation rather than clearing indexed content.
+
+After the first Production deployment, invoke the protected sync endpoint once and verify a public note query. Keep the Free plan and its visible search attribution; quotas or provider outages fall back to local page navigation. Search requests disable query/click analytics and send no user identity; ordinary provider logs may still apply. Indexing limits require review before exceeding 5,000 published notes.
+
+## Public status page
+
+`/status` and `/api/status/details` read Better Stack’s public JSON feed for the existing AVRXT hosted status page. Both sources are fixed HTTPS URLs; no account API key is needed. The server whitelists public service, report and update fields, bounds response size and fetch duration, and shares a 30-second Redis cache. Source failure is displayed as unknown availability rather than healthy. The footer summary uses the same source. Public page links now lead to `/status`; `status.avrxt.dev` remains the independent fallback.
+
+The browser updates status in place every five minutes and when returning to a visible tab. The footer status badge shares a five-minute browser-session cache, so normal navigation does not create another status request. There is no reload or manual Refresh button. It preserves local history selection and expanded report timelines during normal updates. History gaps remain unmonitored, and manually reported entries have no measured uptime. Motion respects reduced-motion preferences.
+
+The database monitor calls `/api/health/database` with a dedicated `STATUS_MONITOR_TOKEN`. Keep this random bearer token only in the Better Stack monitor and server environments. The route rejects missing/incorrect authentication before issuing a five-second anonymous/RLS query and returns only healthy/unavailable. It never returns records, database credentials, provider errors, or the broader deep-readiness report. The fresh service checks start on 12 October 2026; earlier legacy checks targeted unrelated or duplicated endpoints, so their history is not presented as AVRXT uptime.
+
+Manage public incidents and scheduled maintenance in Better Stack’s existing status page. Only published status reports enter the web UI; internal incident alerts and notes do not. The current response limits are 50 public resources, 90 history days, 100 public reports, and 25 updates per report. Verify these before expanding the status page beyond those limits.
+
 ## License
 
 Source code is covered by the repository `LICENSE`. Brand assets, personal media, and third-party materials are not automatically licensed by that file.
+
+
+### Contact and verified deletion requests
+
+`/delete-request` is linked from the privacy, terms, and security pages only. It is not added to the footer or public search catalog. `/contact` now posts to the same-origin API instead of the external gateway. Contact messages go directly to Discord without verification or a new pending-request database row; Resend sends a receipt after Discord accepts the message. Deletion requests require explicit email confirmation before forwarding to their separate Discord webhook. Gmail is no longer used by the contact route.
+
+Set `DISCORD_DELETE_REQUEST_WEBHOOK_URL` and `DISCORD_CONTACT_WEBHOOK_URL` as server-only secrets. Existing `RESEND_API_KEY`, Supabase server credentials, and distributed rate-limiter configuration are required. Apply `supabase/migrations/202610130001_verified_requests.sql` with server privileges. It enables RLS and denies anonymous/authenticated table access. The webhook secrets and private table have been configured in the existing Vercel/Supabase projects; a new deployment is required to activate application changes.
+
+Deletion verification and receipt emails use security@avrxt.dev; contact receipts use info@avrxt.dev. Verify both with the current email provider before launch. Confirmation tokens expire after 24 hours; expired unconfirmed rows are removed opportunistically on later submissions. Confirmation pages disable application analytics and Ask AI. The 72-hour response window begins after contact submission or deletion confirmation is delivered to Discord. Contact addresses are labeled unverified; a receipt failure does not invite resubmission of an accepted message. Legacy /contact/confirm links redirect to /contact; prior pending contact records expire through existing cleanup. This is manual intake, not automatic deletion.
+
+Deletion Discord deliveries are leased for ten minutes to prevent simultaneous confirmation sends. After an ambiguous provider timeout or a database write failure after Discord accepted a message, an operator should reconcile the request reference with channel history before retrying; the lease is not a guarantee of exactly-once delivery. Completed links do not notify Discord again. Email receipts use provider idempotency and bounded retries. Review channel access and record retention operationally; channel copies are not automatically erased with the database record.

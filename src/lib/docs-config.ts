@@ -11,4 +11,6 @@ export interface DocArticle {
     author?: string;
     tags?: string[];
     lastModified?: string;
+    last_modified?: string;
+    created_at?: string;
 }

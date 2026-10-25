@@ -3,9 +3,17 @@ import { NextResponse, type NextRequest } from 'next/server'
 const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
     '/me/admin',
+    '/dashboard',
+    '/docs/admin',
     '/mail',
     '/auth',
     '/api',
+    '/preferance/mail/unsub',
+    '/delete-request',
+    '/contact/confirm',
+    '/api/delete-request',
+    '/api/requests/confirm',
+    '/preference/mail/unsub',
 ]
 
 async function isMaintenanceModeEnabled() {
@@ -14,20 +22,8 @@ async function isMaintenanceModeEnabled() {
     if (!supabaseUrl || !anonKey) return false
 
     try {
-        const response = await fetch(
-            `${supabaseUrl.replace(/\/$/, '')}/rest/v1/me_config?key=eq.main_config&select=data`,
-            {
-                headers: {
-                    apikey: anonKey,
-                    Authorization: `Bearer ${anonKey}`,
-                },
-                cache: 'no-store',
-            }
-        )
-        if (!response.ok) return false
-
-        const rows = await response.json() as Array<{ data?: { site?: { maintenanceEnabled?: boolean } } }>
-        return rows[0]?.data?.site?.maintenanceEnabled === true
+        const { getPublicMaintenance } = await import('@/lib/public-data')
+        return await getPublicMaintenance()
     } catch (error) {
         console.error('[MAINTENANCE_CHECK_FAILED]', error)
         return false
@@ -35,22 +31,9 @@ async function isMaintenanceModeEnabled() {
 }
 
 export default async function proxy(request: NextRequest) {
-    const host = request.nextUrl.hostname.toLowerCase()
     const url = request.nextUrl
 
-    // Subdomain routing for status.avrxt.dev
-    if (host === 'status.avrxt.dev') {
-        // Map root, /incidents, and /maintenance to the status route group
-        if (url.pathname === '/') {
-            return NextResponse.rewrite(new URL('/status', request.url))
-        }
-        if (['/incidents', '/maintenance'].includes(url.pathname)) {
-            return NextResponse.rewrite(new URL(`/status${url.pathname}`, request.url))
-        }
-        return NextResponse.next()
-    }
-
-    const sessionResponse = NextResponse.next({ request })
+    const sessionResponse = NextResponse.next()
 
     const bypassesMaintenance = MAINTENANCE_BYPASS_PREFIXES.some(prefix =>
         url.pathname === prefix || url.pathname.startsWith(`${prefix}/`)

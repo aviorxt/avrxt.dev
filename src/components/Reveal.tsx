@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 
-interface RevealProps {
+interface RevealProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     className?: string;
     id?: string;
@@ -12,7 +12,7 @@ interface RevealProps {
     direction?: 'up' | 'down' | 'left' | 'right';
 }
 
-export default function Reveal({ children, className, id, style, delay = 0, direction = 'up' }: RevealProps) {
+export default function Reveal({ children, className, id, style, delay = 0, direction = 'up', ...props }: RevealProps) {
     const [isVisible, setIsVisible] = useState(true);
     const [canAnimate, setCanAnimate] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -51,6 +51,7 @@ export default function Reveal({ children, className, id, style, delay = 0, dire
         <div
             id={id}
             ref={ref}
+            {...props}
             style={{
                 ...style,
                 transitionDelay: `${delay}s`

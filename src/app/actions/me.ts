@@ -1,10 +1,14 @@
 'use server';
 
-import { createClient } from '@/utils/supabase/server';
+import { getPublicProfileRecord } from '@/lib/public-data';
+import { invalidatePublicCache } from '@/lib/public-cache';
 import { revalidatePath } from 'next/cache';
 import { MeConfig, defaultMeConfig } from '@/lib/me-config';
+import { isMeFontId } from '@/lib/me-fonts';
+import { isMeThemeId } from '@/lib/me-themes';
 import { verifyAdmin } from '@/lib/auth-checks';
 import { createAdminClient } from '@/utils/supabase/admin';
+import { getAdminDashboardPath } from '@/lib/admin-dashboard';
 
 function safeUrl(value: unknown, media = false): string {
     if (typeof value !== 'string') return '';
@@ -14,6 +18,7 @@ function safeUrl(value: unknown, media = false): string {
     try {
         const parsed = new URL(candidate, 'https://www.avrxt.dev');
         const isInternal = parsed.origin === 'https://www.avrxt.dev';
+        if (!media && isInternal && /^\/(?:gallery|galleery|portfolio)(?:\/|$)/i.test(parsed.pathname)) return '';
         if (isInternal && candidate.startsWith('/') && !candidate.startsWith('//')) {
             return `${parsed.pathname}${parsed.search}${parsed.hash}`;
         }
@@ -26,10 +31,19 @@ function safeUrl(value: unknown, media = false): string {
 }
 
 function normalizeMeConfig(config: MeConfig): MeConfig {
+    if (!config || typeof config !== 'object' || !config.profile || !config.music) throw new Error('Invalid profile configuration.');
     const normalized: MeConfig = {
         ...config,
         site: {
             maintenanceEnabled: config.site?.maintenanceEnabled === true,
+            guestbookEnabled: config.site?.guestbookEnabled !== false,
+            profileEnabled: config.site?.profileEnabled !== false,
+            newsletterEnabled: config.site?.newsletterEnabled !== false,
+            newsletterShowHome: config.site?.newsletterShowHome !== false,
+            newsletterShowProfile: config.site?.newsletterShowProfile !== false,
+            contactEnabled: config.site?.contactEnabled !== false,
+            statusPageEnabled: config.site?.statusPageEnabled !== false,
+            statusBadgeEnabled: config.site?.statusBadgeEnabled !== false,
         },
         profile: { ...config.profile },
         music: { ...config.music },
@@ -39,9 +53,15 @@ function normalizeMeConfig(config: MeConfig): MeConfig {
         widgets: config.widgets ? { ...config.widgets } : config.widgets,
     };
 
-    normalized.music.audioUrl = (normalized.music.audioUrl || '').trim();
-    normalized.music.youtubeVideoId = (normalized.music.youtubeVideoId || '').trim();
+    normalized.music.audioUrl = typeof normalized.music.audioUrl === 'string' ? normalized.music.audioUrl.trim() : '';
+    normalized.music.youtubeVideoId = typeof normalized.music.youtubeVideoId === 'string' ? normalized.music.youtubeVideoId.trim() : '';
+    const coordinates = normalized.profile.weatherCoordinates;
+    if (coordinates && (!Number.isFinite(coordinates.latitude) || !Number.isFinite(coordinates.longitude) || Math.abs(coordinates.latitude) > 90 || Math.abs(coordinates.longitude) > 180)) {
+        delete normalized.profile.weatherCoordinates;
+    }
     normalized.profile.avatarUrl = safeUrl(normalized.profile.avatarUrl, true) || defaultMeConfig.profile.avatarUrl;
+    normalized.profile.fontTheme = isMeFontId(normalized.profile.fontTheme) ? normalized.profile.fontTheme : 'outfit';
+    normalized.profile.visualTheme = isMeThemeId(normalized.profile.visualTheme) ? normalized.profile.visualTheme : 'primary';
     normalized.profile.themeColor = '#ffffff';
     normalized.profile.logoUrl = safeUrl(normalized.profile.logoUrl, true);
     normalized.profile.bannerUrl = safeUrl(normalized.profile.bannerUrl, true);
@@ -93,19 +113,8 @@ export async function getMeConfigAction(): Promise<MeConfig> {
     }
 
     try {
-        const supabase = await createClient();
-        const { data, error } = await supabase
-            .from('me_config')
-            .select('data')
-            .eq('key', 'main_config')
-            .single();
-
-        if (error || !data) {
-            console.warn('Error fetching me_config, returning default:', error);
-            return defaultMeConfig;
-        }
-
-        return normalizeMeConfig(data.data as MeConfig);
+        const config = await getPublicProfileRecord();
+        return config ? normalizeMeConfig(config) : defaultMeConfig;
     } catch (error) {
         console.warn('Unable to fetch me_config, returning default:', error);
         return defaultMeConfig;
@@ -132,8 +141,15 @@ export async function saveMeConfigAction(config: MeConfig) {
         return { error: error.message };
     }
 
+    const cacheInvalidated = await invalidatePublicCache('profile');
+    revalidatePath('/');
     revalidatePath('/me');
-    revalidatePath('/me/admin');
+    revalidatePath('/contact');
+    revalidatePath('/subscribe');
+    revalidatePath(await getAdminDashboardPath());
     revalidatePath('/maintenance');
-    return { success: true };
+    revalidatePath('/status');
+    revalidatePath('/api/status');
+    revalidatePath('/api/status/details');
+    return { success: true, ...(!cacheInvalidated ? { warning: 'Saved, but Redis cache invalidation failed. Public data may take up to two minutes to refresh.' } : {}) };
 }

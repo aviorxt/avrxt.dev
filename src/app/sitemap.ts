@@ -1,7 +1,10 @@
 import { MetadataRoute } from 'next';
 import { tools } from '@/lib/tool-catalog';
+import { getPublicDocuments } from '@/lib/public-data';
+import { absoluteSiteUrl } from '@/lib/site-config';
 
-const SITE_URL = 'https://www.avrxt.dev';
+export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 type SitemapEntry = {
     route: string;
@@ -16,20 +19,7 @@ async function getPublishedDocumentEntries(): Promise<SitemapEntry[]> {
     if (!supabaseUrl || !anonKey) return [];
 
     try {
-        const response = await fetch(
-            `${supabaseUrl}/rest/v1/documents?published=eq.true&select=slug,last_modified,created_at&order=created_at.desc`,
-            {
-                headers: { apikey: anonKey, Authorization: `Bearer ${anonKey}` },
-                next: { revalidate: 3600 },
-            },
-        );
-        if (!response.ok) return [];
-
-        const documents = await response.json() as Array<{
-            slug?: string;
-            last_modified?: string;
-            created_at?: string;
-        }>;
+        const documents = await getPublicDocuments();
 
         return documents
             .filter((document) => typeof document.slug === 'string' && document.slug.length > 0)
@@ -49,17 +39,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const staticPages: SitemapEntry[] = [
         { route: '', priority: 1, changeFrequency: 'weekly' },
         { route: '/about', priority: 0.9, changeFrequency: 'monthly' },
-        { route: '/me', priority: 0.8, changeFrequency: 'monthly' },
         { route: '/contact', priority: 0.8, changeFrequency: 'monthly' },
+        { route: '/guestbook', priority: 0.65, changeFrequency: 'weekly' },
         { route: '/tools', priority: 0.8, changeFrequency: 'monthly' },
+        { route: '/status', priority: 0.6, changeFrequency: 'daily' },
+        { route: '/terminal', priority: 0.6, changeFrequency: 'monthly' },
         ...tools.map(({ slug }) => ({ route: `/tools/${slug}`, priority: 0.7, changeFrequency: 'monthly' as const })),
-        { route: '/gallery', priority: 0.7, changeFrequency: 'monthly' },
         { route: '/signature', priority: 0.65, changeFrequency: 'monthly' },
         { route: '/docs', priority: 0.7, changeFrequency: 'weekly' },
         ...documentEntries,
         { route: '/uses', priority: 0.6, changeFrequency: 'monthly' },
-        { route: '/muzix/chart', priority: 0.65, changeFrequency: 'daily' },
         { route: '/subscribe', priority: 0.5, changeFrequency: 'monthly' },
+        { route: '/announcements', priority: 0.7, changeFrequency: 'monthly' },
+        { route: '/announcements/identity-impersonation-notice', priority: 0.7, changeFrequency: 'monthly' },
         { route: '/system/api/doc', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/legal/privacy', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/legal/terms', priority: 0.3, changeFrequency: 'yearly' },
@@ -72,7 +64,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ];
 
     return staticPages.map(({ route, priority, changeFrequency, lastModified }) => ({
-        url: `${SITE_URL}${route}`,
+        url: absoluteSiteUrl(route),
         ...(lastModified ? { lastModified } : {}),
         changeFrequency,
         priority,

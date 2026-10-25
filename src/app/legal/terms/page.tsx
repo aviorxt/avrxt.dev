@@ -1,10 +1,11 @@
 import Link from 'next/link';
 import { PolicyCallout, PolicyList, PolicySection, PolicyShell } from '@/components/legal/PolicyShell';
+import { PolicyReader } from '@/components/legal/PolicyReader';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
 export const metadata = buildPageMetadata({
   title: 'Terms of Use',
-  description: 'Terms for using avrxt.dev, its public tools, Muzix dashboard, newsletter, Ask AI handoffs, forms, account features, integrations, content, and APIs.',
+  description: 'Terms for AVRXT public tools, profile and Muzix services, accounts, newsletters, email preferences, public media, search, service status, and third-party integrations.',
   keywords: ['terms of use', 'avrxt terms', 'acceptable use', 'developer tools', 'Spotify dashboard', 'AI handoff', 'API terms'],
   path: '/legal/terms',
 });
@@ -14,14 +15,15 @@ const nav = [
 ];
 
 export default function TermsPage() {
-  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using www.avrxt.dev and its tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v4.0" lastUpdated="8 October 2026" nav={nav} highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}>
+  return <PolicyShell eyebrow="Website agreement" title="Terms of use" description="Rules for using AVRXT websites and tools responsibly. Separate written terms may apply when AVRXT provides paid project work." version="v5.7" lastUpdated="24 October 2026" updatedBy={{ handle: '@error', profileUrl: 'https://discord.com/users/1332903068899213363', avatarUrl: 'https://cdn.avrxt.dev/team/erroraero-avatar-1024.png' }} nav={nav} reader highlights={[{ label: 'Public tools', value: 'Informational outputs' }, { label: 'Port testing', value: 'Authorization required' }, { label: 'Paid projects', value: 'Separate scope may apply' }]}><PolicyReader nav={nav}>
     <PolicySection id="agreement" number="01" title="Agreement and scope">
-      <p>By accessing or using www.avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the site. These terms cover public pages, forms, tools, APIs, newsletter features, Ask AI handoffs, the Muzix dashboard, account features, and integrations operated through this website.</p>
+      <p>By accessing or using www.avrxt.dev, me.avrxt.dev, or muzix.avrxt.dev, you agree to these terms and to applicable law. If you do not agree, do not use the applicable service. These terms cover public pages, forms, tools, APIs, newsletter features, Ask AI handoffs, the public profile, the Muzix chart, account features, and integrations operated by AVRXT.</p>
       <p>The site may change, experience downtime, or discontinue a feature. No promise is made that every feature will remain available, error-free, or compatible with every device.</p>
     </PolicySection>
 
     <PolicySection id="tools" number="02" title="Public tools and result accuracy">
       <p>IP, DNS, RDAP, TCP port, email-domain, font, Spotify preview, quote, and keyboard tools are provided for convenience and general information. Outputs may be incomplete, delayed, approximate, provider-dependent, or affected by VPNs, proxies, DNS caching, network filtering, browser restrictions, and third-party outages.</p>
+      <p>The website terminal offers commands for finding public pages and displaying browser-local output. It does not provide a server shell or grant administrator access. Opening a linked tool or service remains subject to its own processing rules and these terms.</p>
       <PolicyList items={[
         'Do not rely on a tool result as the only basis for a legal, medical, financial, safety-critical, or production-security decision.',
         'Mailfy verifies syntax and domain mail routing; it does not confirm that a mailbox exists or belongs to a person.',
@@ -39,11 +41,16 @@ export default function TermsPage() {
     <PolicySection id="accounts" number="04" title="Accounts and connected services">
       <p>Some restricted features may require GitHub or Discord sign-in, while AVRXT’s private administration can connect Spotify to publish the Muzix dashboard. Use only accounts you control, follow each provider’s terms, and do not bypass authorization, OAuth state, session, or role checks.</p>
       <p>You are responsible for securing your provider account and device. Notify AVRXT if you reasonably believe a session or connected feature has been misused. Access may be restricted to protect the site or investigate abuse.</p>
+      <p>Discord login proves identity; administrative access additionally requires a current role in the configured server or explicit owner authorization. A removed role can revoke access, and a provider outage or configuration problem may temporarily prevent verification. Signing in does not grant a right to administrator tools.</p>
     </PolicySection>
 
     <PolicySection id="submissions" number="05" title="Contact messages and other submissions">
       <p>You retain rights you already have in content you submit. You give AVRXT permission to process contact messages, newsletter addresses, tool inputs, and other submissions as reasonably needed to respond, provide the requested feature, protect the site, and meet legal obligations.</p>
-      <p>Newsletter messages may include an unsubscribe link. You may unsubscribe at any time, and you must not subscribe another person without their permission or misuse subscription endpoints for spam, harassment, or automated testing.</p>
+      <p>Newsletter enrollment requires an explicit confirmation on the page linked from the submitted address’s inbox. That link expires after 24 hours and is single-use. Successful confirmation schedules a welcome email; delivery is subject to provider availability and mailbox filtering. You must not subscribe another person without their permission or misuse subscription endpoints for spam, harassment, or automated testing.</p>
+      <p>Newsletter and welcome messages provide a private unsubscribe link. The current preference flow is hosted at <strong>www.avrxt.dev/preference/mail/unsub/</strong>; older links may redirect there. Opening the page does not change your subscription. Confirming the unsubscribe stops newsletter broadcasts, and repeated use of a completed link does not resubscribe you. Keep these links private and use only links issued to you or that you are authorized to manage.</p>
+      <p>Unsubscribing is separate from requesting deletion of your data or revoking a provider login. A message already submitted for delivery may still arrive. Replies and requested service or security communications are separate from newsletter broadcasts; a newsletter subscription is not required to submit a privacy request. Contact <a href="mailto:support@avrxt.dev">support@avrxt.dev</a> if your unsubscribe link is unavailable or you want a separate data review.</p>
+      <p>Authorized administrators may upload supported profile and site media. Those assets are delivered through the public CDN; the upload interface is not a private file vault. You must have permission to publish uploaded content and remove confidential information, embedded location data, or other sensitive metadata before uploading. File-type and size limits apply, and content may be removed to address abuse, security issues, or a valid rights complaint.</p>
+      <p>Contact messages are sent directly to AVRXT’s private Discord channel without email verification; we will review and respond within 72 hours after submission. <Link href="/delete-request">Data-deletion requests</Link> require email verification before review. You must be the record owner or authorized to act for them. Confirmed deletion details are sent to AVRXT’s private Discord review channel. AVRXT will review and get back to you within 72 hours after confirmation; completing deletion may take longer, require further ownership checks, or be limited by lawful retention obligations. Email verification does not authorize automatic deletion.</p>
       <p>Submit only content you have the right to share. Do not submit secrets, passwords, one-time codes, full card data, unlawful content, threats, malware, or another person’s confidential information without authorization.</p>
     </PolicySection>
 
@@ -54,8 +61,13 @@ export default function TermsPage() {
 
     <PolicySection id="services" number="07" title="Third-party services and links">
       <p>The site relies on or links to providers for hosting, analytics, DNS, identity, storage, email, fonts, media, music, network data, and quotes. Their availability, accuracy, policies, and acts are outside AVRXT’s direct control. Your use of a provider is also governed by that provider’s terms.</p>
+      <p>Newsletter delivery currently uses Resend. Amazon SES has been prepared for transactional email on notify.avrxt.dev and production access requested, but website delivery has not been switched to SES. Verifying a sending domain is not an approval, delivery guarantee, or commitment to offer a feature that is still being prepared. Infrastructure setup alone does not make a private storage manager or another planned service available to visitors.</p>
+      <p>The public status page displays Better Stack monitoring and published reports. Updates can be delayed by check intervals, caching, and provider availability. Uptime reflects the monitored endpoint and measurement period, not every possible feature or user experience, and is not a service-level guarantee. Missing or unmonitored periods are not counted as confirmed availability. Manually reported services do not carry measured uptime. The independent hosted status page may remain available when this website cannot be reached.</p>
+      <p>Public search is supplied by Algolia. Results can lag a publication, edit, deletion, or privacy change while updates and daily reconciliation run. Search excerpts do not grant access to restricted content. Provider outages or plan quotas may temporarily limit note search; local page shortcuts remain available.</p>
+      <p>Public pages and API responses may be cached in Redis or delivery infrastructure and can briefly show an earlier version. Rate limits may apply across instances and may temporarily block a request when abuse-protection dependencies are unavailable. The public APIs do not carry an uptime, freshness, or unlimited-access commitment.</p>
+      <p>The administrator newsletter assistant uses Cloudflare Workers AI to produce drafts. Administrators must review recipients, factual claims, links, and generated content before sending. Do not provide confidential information or personal data that is unnecessary for the drafting task. AI output does not create a professional advice relationship.</p>
       <p>The Ask AI launcher prepares the current page title, description, public www.avrxt.dev URL, and your question for a third-party AI service that you choose. AVRXT does not operate those models, control their responses, or guarantee that an answer is accurate, complete, or suitable for your purpose. Review important answers independently, and do not put passwords, confidential material, or sensitive personal data in an AI prompt.</p>
-      <p>The Muzix dashboard displays data supplied by Spotify and can update while you view it. Playback state, rankings, counts, availability, artwork, and listening summaries may be delayed, incomplete, or changed by Spotify. Music, artwork, artist names, and Spotify marks remain subject to their respective rights and platform terms.</p>
+      <p>The Muzix chart at muzix.avrxt.dev displays data supplied by Spotify and can update while you view it. Playback state, rankings, counts, availability, artwork, and listening summaries may be delayed, incomplete, or changed by Spotify. Music, artwork, artist names, and Spotify marks remain subject to their respective rights and platform terms.</p>
       <p>Links do not imply endorsement, and AVRXT is not responsible for content or transactions on an external website.</p>
     </PolicySection>
 
@@ -75,5 +87,5 @@ export default function TermsPage() {
       <p>These terms are governed by the laws of India, subject to mandatory consumer or other protections that apply to you. A dispute may be brought before a court that has jurisdiction under applicable law.</p>
       <p>Questions can be sent to <a href="mailto:support@avrxt.dev">support@avrxt.dev</a>. Information about data handling appears in the <Link href="/legal/privacy">Privacy Policy</Link>, and vulnerability reports belong on the <Link href="/legal/security">Security page</Link>.</p>
     </PolicySection>
-  </PolicyShell>;
+  </PolicyReader></PolicyShell>;
 }

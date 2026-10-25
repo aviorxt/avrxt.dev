@@ -1,8 +1,9 @@
-import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
 import { protectAdminPage } from '@/lib/auth-checks';
+import { getAdminDashboardPath } from '@/lib/admin-dashboard';
 import { getRecentNewsletterBroadcastsAction } from '@/app/actions/mail-broadcast';
 import BroadcastClient from './BroadcastClient';
+import AdminDashboardShell from '@/components/admin/AdminDashboardShell';
+import { getDashboardViewer } from '@/lib/dashboard-viewer';
 
 export const metadata = {
     title: 'Mail Broadcast | avrxt Admin',
@@ -11,19 +12,18 @@ export const metadata = {
 };
 export const maxDuration = 300;
 
-export default async function MailBroadcastPage() {
+export default async function MailBroadcastPage({ dashboardPath: dashboardPathProp }: { dashboardPath?: string }) {
     await protectAdminPage();
+    const dashboardPath = dashboardPathProp ?? await getAdminDashboardPath();
     const recentResult = await getRecentNewsletterBroadcastsAction();
     const broadcasts = 'broadcasts' in recentResult ? recentResult.broadcasts ?? [] : [];
+    const viewer = await getDashboardViewer();
 
     return (
-        <main className="min-h-screen bg-[#070707] px-4 py-6 text-zinc-100 sm:px-7 sm:py-9 lg:px-10">
-            <div className="mx-auto max-w-[1500px]">
-                <Link href="/me/admin" className="mb-7 inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/10 px-3 text-xs text-zinc-400 transition hover:border-white/20 hover:text-white">
-                    <ArrowLeft size={14} /> Admin dashboard
-                </Link>
+        <AdminDashboardShell dashboardPath={dashboardPath} viewer={viewer}><main className="min-h-[calc(100svh-3rem)] bg-[#070707] px-4 py-6 text-zinc-100 sm:px-6 sm:py-8 lg:px-10 lg:py-10">
+            <div className="mx-auto w-full max-w-7xl">
                 <BroadcastClient initialBroadcasts={broadcasts} defaultFrom={process.env.RESEND_DEFAULT_FROM || 'avrxt Updates <news@avrxt.dev>'} />
             </div>
-        </main>
+        </main></AdminDashboardShell>
     );
 }

@@ -9,10 +9,20 @@ export interface MeLink {
 export interface MeConfig {
     site?: {
         maintenanceEnabled: boolean;
+        guestbookEnabled?: boolean;
+        profileEnabled?: boolean;
+        newsletterEnabled?: boolean;
+        newsletterShowHome?: boolean;
+        newsletterShowProfile?: boolean;
+        contactEnabled?: boolean;
+        statusPageEnabled?: boolean;
+        statusBadgeEnabled?: boolean;
     };
     profile: {
         handle: string;
         bio: string;
+        fontTheme?: 'outfit' | 'geist-sans' | 'geist-mono' | 'geist-pixel' | 'inter' | 'space-mono' | 'instrument-serif';
+        visualTheme?: 'primary' | 'lunar' | 'editorial' | 'sunset' | 'signal' | 'ocean' | 'botanical' | 'neon' | 'christmas' | 'new-year' | 'gallery' | 'orbit' | 'brutalist' | 'studio' | 'kinetic';
         avatarUrl: string;
         logoUrl?: string; // nav logo
         bannerUrl?: string; // for gallery card
@@ -30,6 +40,7 @@ export interface MeConfig {
             badgesManual?: Record<string, boolean>;
         };
         location?: string;
+        weatherCoordinates?: { latitude: number; longitude: number };
         weatherEnabled?: boolean;
     };
     music: {
@@ -46,6 +57,7 @@ export interface MeConfig {
         id: string;
         type: 'image' | 'video';
         url: string;
+        muxAssetId?: string;
         caption?: string;
     }[];
     resources: {
@@ -69,10 +81,20 @@ export interface MeConfig {
 export const defaultMeConfig: MeConfig = {
     site: {
         maintenanceEnabled: false,
+        guestbookEnabled: true,
+        profileEnabled: true,
+        newsletterEnabled: true,
+        newsletterShowHome: true,
+        newsletterShowProfile: true,
+        contactEnabled: true,
+        statusPageEnabled: true,
+        statusBadgeEnabled: true,
     },
     profile: {
         handle: "@aviorxt",
         bio: "Independent developer and aircraft maintenance engineer based in India.",
+        fontTheme: 'outfit',
+        visualTheme: 'primary',
         avatarUrl: "https://cdn.avxt.qzz.io/assets/IMG_20251108_224641_264.webp",
         logoUrl: "/assets/logo/avrxt-pure-white.png",
         bannerUrl: "https://cdn.avxt.qzz.io/images/aviorxt_01.jpg",
@@ -104,7 +126,6 @@ export const defaultMeConfig: MeConfig = {
     ],
     gallery: [],
     resources: [
-        { id: 'r1', title: 'Visual Gallery', url: '/gallery', type: 'gallery' },
         { id: 'r2', title: 'Documentation Portal', url: '/docs', type: 'doc' },
         { id: 'r3', title: 'Browse Technical Writing', url: '/docs', type: 'doc' }
     ],

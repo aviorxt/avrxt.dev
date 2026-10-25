@@ -1,28 +1,58 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
-    Plus, Trash2, Save, LogOut,
+    Plus, Trash2, Save,
     Music, Link as LinkIcon, Book,
     Check, ArrowUp, ArrowDown,
-    User, Eye, AlertCircle, Camera, Upload, Activity,
-    Search, Youtube, Wrench
+    User, AlertCircle, Camera, Upload, Activity, Eye,
+    Search, Youtube, Wrench, FileImage, FileVideo, LoaderCircle, Settings, SlidersHorizontal, Palette, MessageSquareQuote, Mail
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MeConfig } from '@/lib/me-config';
 import { saveMeConfigAction } from '@/app/actions/me';
-import { logout } from '@/app/actions/auth';
 import { disconnectSpotifyAction } from '@/app/actions/spotify';
 import { searchYouTubeAction } from '@/app/actions/youtube';
-import { getPresignedR2UrlAction, deleteFromR2Action } from '@/app/actions/r2';
-import { edgeUrl } from '@/lib/edge';
+import { deleteFromR2Action } from '@/app/actions/r2';
+import { createMuxVideoUploadAction, deleteMuxVideoAction, getMuxVideoUploadAction } from '@/app/actions/mux';
+import { uploadToR2 } from '@/lib/upload-client';
 import { apiUrl } from '@/lib/api-gateway';
 import { DISCORD_BADGES } from '@/lib/discord-badges';
+import { SelectMenu } from '@/components/ui/SelectMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
+import { ME_FONT_OPTIONS, isMeFontId } from '@/lib/me-fonts';
+import { ME_THEME_OPTIONS, isMeThemeId } from '@/lib/me-themes';
+import { useAdminProfileSection } from '@/components/admin/AdminDashboardShell';
+import { Switch } from '@/components/ui/switch';
+import { brandIconOptions } from '@/components/BrandIcon';
 
 interface MeAdminClientProps {
     initialConfig: MeConfig;
     isSpotifyConnected: boolean;
+}
+type AdminSection = 'profile' | 'themes' | 'presence' | 'music' | 'widgets' | 'links' | 'resources' | 'gallery' | 'guestbook' | 'settings';
+const R2_CLEANUP_QUEUE_KEY = 'avrxt:admin:r2-cleanup:v1';
+const MUX_CLEANUP_QUEUE_KEY = 'avrxt:admin:mux-cleanup:v1';
+
+function readCleanupQueue(key: string): Set<string> {
+    if (typeof window === 'undefined') return new Set();
+    try {
+        const value: unknown = JSON.parse(window.sessionStorage.getItem(key) || '[]');
+        return new Set(Array.isArray(value) ? value.filter((entry): entry is string => typeof entry === 'string') : []);
+    } catch {
+        return new Set();
+    }
+}
+
+function AdminActivityBadge({ state }: { state: 'syncing' | 'updating' | 'processing' }) {
+    const copy = state === 'syncing' ? 'Syncing' : state === 'updating' ? 'Updating' : 'Processing';
+    const tone = state === 'syncing'
+        ? 'border-emerald-400/20 bg-emerald-400/10 text-emerald-200'
+        : state === 'updating'
+            ? 'border-sky-400/20 bg-sky-400/10 text-sky-200'
+            : 'border-amber-400/20 bg-amber-400/10 text-amber-100';
+    return <span role="status" className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[9px] uppercase tracking-[.12em] ${tone}`}><LoaderCircle size={11} className="animate-spin" />{copy}</span>;
 }
 
 export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeAdminClientProps) {
@@ -33,7 +63,40 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     const [ytError, setYtError] = useState('');
     const [saveStatus, setSaveStatus] = useState<string>('');
     const [isPending, setIsPending] = useState(false);
-    const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => new Set());
+    const [pendingAssetCleanup, setPendingAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(R2_CLEANUP_QUEUE_KEY));
+    const [pendingMuxAssetCleanup, setPendingMuxAssetCleanup] = useState<Set<string>>(() => readCleanupQueue(MUX_CLEANUP_QUEUE_KEY));
+    const [uploadingAsset, setUploadingAsset] = useState<{ name: string; size: number; target: string } | null>(null);
+    const { activeSection } = useAdminProfileSection();
+    const [confirmation, setConfirmation] = useState<{ title: string; description: string; danger?: boolean; confirmLabel: string; action: () => void | Promise<void> } | null>(null);
+    const activityState = uploadingAsset ? 'processing' as const : isPending ? (saveStatus.startsWith('SYNCING') ? 'syncing' as const : 'updating' as const) : null;
+
+    useEffect(() => {
+        try { window.sessionStorage.setItem(R2_CLEANUP_QUEUE_KEY, JSON.stringify([...pendingAssetCleanup])); } catch { /* Session storage is optional. */ }
+    }, [pendingAssetCleanup]);
+
+    useEffect(() => {
+        try { window.sessionStorage.setItem(MUX_CLEANUP_QUEUE_KEY, JSON.stringify([...pendingMuxAssetCleanup])); } catch { /* Session storage is optional. */ }
+    }, [pendingMuxAssetCleanup]);
+
+    // A completed profile save must not be made to look like a failed upload
+    // because an object-store delete hit a short-lived network/provider error.
+    const deleteR2Asset = async (url: string) => {
+        let result = await deleteFromR2Action(url).catch(error => ({ error: error instanceof Error ? error.message : 'R2_DELETE_FAILED' }));
+        if ('error' in result) {
+            await new Promise(resolve => window.setTimeout(resolve, 700));
+            result = await deleteFromR2Action(url).catch(error => ({ error: error instanceof Error ? error.message : 'R2_DELETE_FAILED' }));
+        }
+        return result;
+    };
+
+    const deleteMuxAsset = async (assetId: string) => {
+        let result = await deleteMuxVideoAction(assetId);
+        if ('error' in result) {
+            await new Promise(resolve => window.setTimeout(resolve, 700));
+            result = await deleteMuxVideoAction(assetId);
+        }
+        return result;
+    };
 
     const handleSave = async () => {
         setIsPending(true);
@@ -58,18 +121,20 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             const cleanupUrls = [...pendingAssetCleanup].filter(url => !referencedUrls.has(url));
             const cleanupResults = await Promise.all(cleanupUrls.map(async url => ({
                 url,
-                result: await deleteFromR2Action(url).catch(error => ({
-                    error: error instanceof Error ? error.message : 'R2_DELETE_FAILED',
-                })),
+                result: await deleteR2Asset(url),
             })));
             const failedCleanupUrls = cleanupResults.filter(item => 'error' in item.result).map(item => item.url);
             const completedCleanupUrls = new Set(cleanupResults.filter(item => !('error' in item.result)).map(item => item.url));
             setPendingAssetCleanup(current => new Set([...current].filter(url => !completedCleanupUrls.has(url))));
+            const muxCleanupResults = await Promise.all([...pendingMuxAssetCleanup].map(async assetId => ({ assetId, result: await deleteMuxAsset(assetId) })));
+            const completedMuxAssetIds = new Set(muxCleanupResults.filter(item => !('error' in item.result)).map(item => item.assetId));
+            setPendingMuxAssetCleanup(current => new Set([...current].filter(assetId => !completedMuxAssetIds.has(assetId))));
 
-            setSaveStatus(failedCleanupUrls.length
-                ? `SAVED: R2_CLEANUP_FAILED (${failedCleanupUrls.length}); SAVE_AGAIN_TO_RETRY`
-                : 'SUCCESS: CONFIG_SYNCED');
-            if (!failedCleanupUrls.length) setTimeout(() => setSaveStatus(''), 3000);
+            const failedMuxAssetIds = muxCleanupResults.filter(item => 'error' in item.result).map(item => item.assetId);
+            setSaveStatus(failedCleanupUrls.length || failedMuxAssetIds.length
+                ? `SAVED: MEDIA_CLEANUP_FAILED (${failedCleanupUrls.length + failedMuxAssetIds.length}); SAVE_AGAIN_TO_RETRY`
+                : result.warning || 'SUCCESS: CONFIG_SYNCED');
+            if (!failedCleanupUrls.length && !failedMuxAssetIds.length && !result.warning) setTimeout(() => setSaveStatus(''), 3000);
         } catch (error) {
             setSaveStatus(`ERROR: ${error instanceof Error ? error.message : 'SAVE_FAILED'}`);
         } finally {
@@ -78,11 +143,13 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: string, galleryType?: 'image' | 'video') => {
-        const file = e.target.files?.[0];
+        const input = e.target;
+        const file = input.files?.[0];
         if (!file) return;
 
         let uploadFailed = false;
         setIsPending(true);
+        setUploadingAsset({ name: file.name, size: file.size, target });
         setSaveStatus('UPLOADING...');
 
         try {
@@ -98,40 +165,25 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                 oldUrl = config.links.find(l => l.id === linkId)?.icon;
             }
 
-            // Step 1: Get Presigned URL from Server Action
-            setSaveStatus('STEP 1: PREPARING CLOUD...');
-            const result = await getPresignedR2UrlAction(file.name, file.type, file.size);
-
-            if ('error' in result) {
-                throw new Error(`S1_ERROR: ${result.error}`);
-            }
-
-            const { uploadUrl, publicUrl } = result;
-
-            // Step 2: Upload the file directly to Cloudflare
-            setSaveStatus(`STEP 2: UPLOADING (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
-
-            try {
-                const uploadResponse = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    body: file,
-                    headers: {
-                        'Content-Type': file.type || 'application/octet-stream',
-                    },
-                    // Direct upload to R2 doesn't need credentials in headers if using presigned URL
-                });
-
-                if (!uploadResponse.ok) {
-                    const errorText = await uploadResponse.text();
-                    console.error('Cloud upload response error:', errorText);
-                    // Extract a bit of the error message if possible
-                    const shortError = errorText.substring(0, 50).replace(/[<>]/g, '');
-                    throw new Error(`S2_CLOUD_FAIL: ${uploadResponse.status} ${shortError}`);
+            setSaveStatus(`UPLOADING (${(file.size / 1024 / 1024).toFixed(2)}MB)...`);
+            if (target === 'gallery' && (galleryType === 'video' || file.type.startsWith('video/'))) {
+                const prepared = await createMuxVideoUploadAction(file.name, file.type, file.size);
+                if ('error' in prepared) throw new Error(prepared.error);
+                const uploadResponse = await fetch(prepared.uploadUrl, { method: 'PUT', headers: { 'Content-Type': file.type }, body: file });
+                if (!uploadResponse.ok) throw new Error(`Mux rejected the video upload (${uploadResponse.status}).`);
+                setSaveStatus('MUX IS ENCODING YOUR VIDEO...');
+                for (let attempt = 0; attempt < 60; attempt += 1) {
+                    await new Promise(resolve => setTimeout(resolve, 3000));
+                    const status = await getMuxVideoUploadAction(prepared.uploadId);
+                    if ('error' in status) throw new Error(status.error);
+                    if (status.state !== 'ready') continue;
+                    setConfig(current => ({ ...current, gallery: [...(current.gallery || []), { id: Date.now().toString(), type: 'video', url: status.url, muxAssetId: status.assetId, caption: 'New Upload' }] }));
+                    setSaveStatus('MUX VIDEO READY: SAVE TO PUBLISH');
+                    return;
                 }
-            } catch (fetchError: any) {
-                console.error('Fetch error during upload:', fetchError);
-                throw new Error(`S2_NETWORK_FAIL: ${fetchError.message || 'Check CORS or Connection'}`);
+                throw new Error('Mux is still encoding. Try again shortly; no gallery item was published.');
             }
+            const { publicUrl } = await uploadToR2(file);
 
             // Step 3: Success! Update UI state
             setSaveStatus('STEP 3: FINALIZING...');
@@ -170,7 +222,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
             setSaveStatus(`ERROR: ${error.message || 'UPLOAD_FAILED'}`);
         } finally {
             setIsPending(false);
-            e.target.value = '';
+            setUploadingAsset(null);
+            input.value = '';
             // Keep error messages visible longer (8 seconds)
             // but clear success messages faster (2 seconds)
             setTimeout(() => setSaveStatus(''), uploadFailed ? 12000 : 2000);
@@ -178,65 +231,28 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
     };
 
     const handleDeleteGalleryItem = (id: string, url: string) => {
-        if (!confirm('Remove this item from your profile? Its R2 file will be deleted after you save.')) return;
-        setConfig(current => ({ ...current, gallery: current.gallery?.filter(item => item.id !== id) }));
-        if (/^https?:\/\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url));
-        setSaveStatus('REMOVED_FROM_DRAFT: SAVE_TO_APPLY');
+        const item = config.gallery.find(entry => entry.id === id);
+        setConfirmation({ title: 'Remove gallery item', description: `Remove this item from your profile? Its ${item?.muxAssetId ? 'Mux' : 'R2'} file will be deleted only after you save changes.`, danger: true, confirmLabel: 'Remove item', action: () => { setConfig(current => ({ ...current, gallery: current.gallery?.filter(item => item.id !== id) })); if (item?.muxAssetId) setPendingMuxAssetCleanup(current => new Set(current).add(item.muxAssetId!)); else if (/^https:\/\/cdn\.avrxt\.dev\//i.test(url)) setPendingAssetCleanup(current => new Set(current).add(url)); setSaveStatus('REMOVED_FROM_DRAFT: SAVE_TO_APPLY'); } });
     };
 
     return (
         <>
-            <main className="me-admin-page page-enter min-h-screen bg-black text-white p-5 sm:p-7 md:p-12 selection:bg-white/10">
-                <div className="max-w-4xl mx-auto">
-                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
-                        <div>
-                            <h1 className="text-3xl font-bold tracking-tighter uppercase mb-2 font-mono italic">Me_Dashboard</h1>
+            <ConfirmDialog open={Boolean(confirmation)} title={confirmation?.title || ''} description={confirmation?.description || ''} confirmLabel={confirmation?.confirmLabel || 'Confirm'} danger={confirmation?.danger} onCancel={() => setConfirmation(null)} onConfirm={() => { const action = confirmation?.action; setConfirmation(null); void action?.(); }}/>
+            <main className="me-admin-page page-enter min-h-[calc(100svh-3rem)] bg-black px-4 pb-10 pt-6 text-white selection:bg-white/10 sm:px-6 sm:pt-8 lg:px-10 lg:pt-10">
+                <div className="mx-auto w-full max-w-7xl">
+                    <header className="mx-auto mb-8 w-full max-w-4xl border-b border-white/10 pb-6 sm:mb-10 sm:pb-7">
+                        <div className="min-w-0">
+                            <p className="mb-2 font-mono text-[9px] uppercase tracking-[.24em] text-zinc-600 sm:hidden">AVRXT / control room</p>
+                            <h1 className="mb-2 text-[clamp(1.8rem,8vw,2.5rem)] font-bold italic tracking-tighter uppercase">Me_Dashboard</h1>
                             <div className="flex items-center gap-2">
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Connected_To_Node: avrxt-core-01</span>
+                                <span className="flex flex-wrap items-center gap-2 text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Connected_To_Node: avrxt-core-01 {activityState && <AdminActivityBadge state={activityState} />}</span>
                             </div>
-                        </div>
-                        <div className="flex flex-wrap items-center justify-start md:justify-end gap-3 w-full md:w-auto">
-                            <Link href="/" className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-400 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10">
-                                AVRXT HOME
-                            </Link>
-                            <Link
-                                href="/me"
-                                target="_blank"
-                                prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/5"
-                            >
-                                <Eye size={12} /> PREVIEW
-                            </Link>
-                            <Link
-                                href="/docs/admin"
-                                prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-blue-900/20 hover:bg-blue-900/40 text-blue-400 hover:text-blue-300 rounded-full text-[10px] font-bold font-mono transition-all border border-blue-500/20"
-                            >
-                                DOCS
-                            </Link>
-                            <Link
-                                href="/me/admin/mail-broadcat"
-                                prefetch={false}
-                                className="flex items-center gap-2 px-4 py-2 bg-white/[0.035] hover:bg-white/[0.08] text-zinc-300 hover:text-white rounded-full text-[10px] font-bold font-mono transition-all border border-white/10"
-                            >
-                                MAIL BROADCAST
-                            </Link>
-                            <button
-                                onClick={handleSave}
-                                disabled={isPending}
-                                className="flex items-center gap-2 px-6 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-full text-xs font-bold font-mono transition-all shadow-[0_0_20px_rgba(255,255,255,0.12)] disabled:opacity-50"
-                            >
-                                <Save size={14} /> {isPending ? 'SYNCING...' : 'SAVE'}
-                            </button>
-                            <button onClick={() => logout('/me')} className="flex items-center gap-2 px-3 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-full text-xs font-bold font-mono transition-all">
-                                <LogOut size={14} /> EXIT
-                            </button>
                         </div>
                     </header>
 
-                    {/* Quick Preview Card */}
-                    <div className="mb-12 p-8 rounded-3xl bg-zinc-900/30 border border-white/5 backdrop-blur-xl relative overflow-hidden group">
+                    {/* The live profile preview belongs only to the Profile editor. */}
+                    {activeSection === 'profile' && <div className="group relative mb-8 overflow-hidden rounded-2xl border border-white/5 bg-zinc-900/30 p-6 backdrop-blur-xl sm:mb-10 sm:rounded-3xl sm:p-8">
                         <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-blue-500/5 opacity-50"></div>
                         <div className="relative z-10 flex flex-col items-center text-center">
                             <div className="text-[10px] font-mono text-zinc-500 uppercase tracking-[0.2em] mb-6">// Live_Header_Preview</div>
@@ -252,7 +268,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             <h2 className="text-2xl font-bold font-mono tracking-[0.15em] uppercase text-white">{config.profile.handle || '@USERNAME'}</h2>
                             <p className="text-sm font-light tracking-[0.2em] text-zinc-400 mt-2 uppercase italic">{config.profile.bio || 'Your bio here...'}</p>
                         </div>
-                    </div>
+                    </div>}
 
                     {saveStatus && (
                         <div className={cn(
@@ -266,56 +282,18 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>
                     )}
 
-                    <div className={cn(
-                        "mb-8 flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between",
-                        config.site?.maintenanceEnabled
-                            ? "border-amber-500/30 bg-amber-500/10"
-                            : "border-white/5 bg-zinc-900/40"
-                    )}>
-                        <div className="flex items-start gap-4">
-                            <div className={cn(
-                                "mt-0.5 rounded-xl p-2.5",
-                                config.site?.maintenanceEnabled ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-zinc-500"
-                            )}>
-                                <Wrench size={18} />
-                            </div>
-                            <div>
-                                <h2 className="font-mono text-sm font-bold uppercase tracking-widest">Maintenance_Mode</h2>
-                                <p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">
-                                    Redirect public pages to the maintenance screen. Admin, authentication, and API routes stay available. Press Save to apply.
-                                </p>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            role="switch"
-                            aria-checked={config.site?.maintenanceEnabled === true}
-                            onClick={() => setConfig(prev => ({
-                                ...prev,
-                                site: { maintenanceEnabled: !prev.site?.maintenanceEnabled },
-                            }))}
-                            className={cn(
-                                "relative h-8 w-16 shrink-0 rounded-full border transition-colors",
-                                config.site?.maintenanceEnabled
-                                    ? "border-amber-400/50 bg-amber-500/30"
-                                    : "border-white/10 bg-zinc-800"
-                            )}
-                        >
-                            <span className={cn(
-                                "absolute top-1 h-6 w-6 rounded-full transition-all",
-                                config.site?.maintenanceEnabled
-                                    ? "left-9 bg-amber-300"
-                                    : "left-1 bg-zinc-500"
-                            )} />
-                            <span className="sr-only">Toggle maintenance mode</span>
-                        </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="mx-auto min-w-0 w-full max-w-4xl"><div className="grid grid-cols-1 gap-6 sm:gap-8">
                         {/* Left Column */}
-                        <div className="space-y-6">
+                        <div className="w-full space-y-6">
                             {/* Profile Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'profile' && 'hidden')}>
+                                <div className={cn("mb-6 flex flex-col gap-5 rounded-2xl border p-5 sm:flex-row sm:items-center sm:justify-between", config.site?.profileEnabled === false ? "border-red-400/20 bg-red-400/[0.05]" : "border-white/10 bg-black/20")}>
+                                    <div className="flex items-start gap-4">
+                                        <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.profileEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><Eye size={18} /></div>
+                                        <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Public_Profile_Access</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Control whether visitors can open avrxt.dev/me. Turn this off to show a private unavailable screen instead. Press Save to apply.</p></div>
+                                    </div>
+                                    <Switch checked={config.site?.profileEnabled !== false} onCheckedChange={(profileEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled } }))} aria-label="Toggle public profile access" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                                </div>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                     <User size={16} className="text-zinc-500" /> Profile_Data
                                 </h2>
@@ -387,7 +365,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                             <input
                                                 type="text"
                                                 value={config.profile.location || ''}
-                                                onChange={(e) => setConfig({ ...config, profile: { ...config.profile, location: e.target.value } })}
+                                                onChange={(e) => setConfig({ ...config, profile: { ...config.profile, location: e.target.value, weatherCoordinates: undefined } })}
                                                 className="admin-input flex-1"
                                                 placeholder="City Name (e.g. Chennai)"
                                             />
@@ -398,14 +376,14 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                     setSaveStatus('SEARCHING_GEO...');
                                                     try {
                                                         const path = `/v1/geo/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`;
-                                                        const res = await fetch(apiUrl(path, edgeUrl(`/v1/fnc/geo/search?name=${encodeURIComponent(query)}&count=5&language=en&format=json`)), { cache: 'no-store' });
+                                                        const res = await fetch(apiUrl(path, ''), { cache: 'no-store' });
                                                         const data = await res.json();
-                                                        if (data.results) {
+                                                        if (data.results?.length) {
                                                             // We'll use a simple alert/prompt for now or just take the first one
                                                             const first = data.results[0];
                                                             setConfig({
                                                                 ...config,
-                                                                profile: { ...config.profile, location: `${first.name}, ${first.country}` }
+                                                                profile: { ...config.profile, location: `${first.name}, ${first.country}`, weatherCoordinates: { latitude: first.latitude, longitude: first.longitude } }
                                                             });
                                                             setSaveStatus(`FOUND: ${first.name}`);
                                                         } else {
@@ -436,8 +414,28 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                 </div>
                             </div>
 
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-5", activeSection !== 'themes' && 'hidden')}>
+                                <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono"><Palette size={16} className="text-zinc-500" /> Theme_Studio</h2>
+                                <div className="space-y-2 rounded-xl border border-white/5 bg-black/20 p-3">
+                                    <div><p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Profile display font</p><p className="mt-1 text-[10px] leading-relaxed text-zinc-500">Choose a display family for the large profile name and theme-led headings on <code>/me</code>.</p></div>
+                                    <SelectMenu label="Profile display font" value={config.profile.fontTheme || 'outfit'} options={ME_FONT_OPTIONS.map((font) => ({ ...font }))} onValueChange={(fontTheme) => { if (!isMeFontId(fontTheme)) return; setConfig({ ...config, profile: { ...config.profile, fontTheme } }); }} />
+                                </div>
+                                <div className="space-y-3 rounded-xl border border-white/5 bg-black/20 p-3">
+                                    <div><p className="text-[10px] font-mono uppercase tracking-widest text-zinc-300">Visual systems</p><p className="mt-1 text-[10px] leading-relaxed text-zinc-500">A saved theme controls the full <code>/me</code> visual system: palette, geometry, ambient effects, display treatment, and icon language.</p></div>
+                                    <div className="grid gap-2 sm:grid-cols-2" role="radiogroup" aria-label="Profile visual theme">
+                                        {ME_THEME_OPTIONS.map((theme) => {
+                                            const selected = (config.profile.visualTheme || 'primary') === theme.value;
+                                            return <button key={theme.value} type="button" role="radio" aria-checked={selected} onClick={() => { if (!isMeThemeId(theme.value)) return; setConfig({ ...config, profile: { ...config.profile, visualTheme: theme.value } }); }} className={cn('group flex min-h-20 items-start gap-3 rounded-xl border p-3 text-left transition-colors', selected ? 'border-white/35 bg-white/[.09] text-white' : 'border-white/[.08] bg-black/20 text-zinc-400 hover:border-white/20 hover:bg-white/[.04]')}>
+                                                <span aria-hidden="true" className={cn('mt-0.5 h-9 w-9 shrink-0 rounded-lg border border-white/15', `me-theme-swatch-${theme.value}`)} />
+                                                <span className="min-w-0"><span className="block text-[11px] font-semibold">{theme.label}</span><span className="mt-1 block text-[10px] leading-relaxed text-zinc-500">{theme.description}</span></span>
+                                            </button>;
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Presence Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'presence' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Activity size={16} className="text-zinc-500" /> Presence_System
@@ -504,7 +502,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                             </button>
                                         ) : (
                                             <Link
-                                                href="/auth/start?provider=discord&next=%2Fme%2Fadmin"
+                                                href="/auth/start?provider=discord&next=%2Fdashboard"
                                                 className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[9px] font-bold font-mono rounded-md transition-all uppercase"
                                             >
                                                 Connect_Discord
@@ -695,33 +693,23 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                 className="admin-input flex-1"
                                                 placeholder="Status (e.g. Coding)"
                                             />
-                                            <select
-                                                value={config.profile.status?.color || 'green'}
-                                                onChange={(e) => setConfig({
+                                            <SelectMenu label="Status color" className="w-28" value={config.profile.status?.color || 'green'} onValueChange={(color) => setConfig({
                                                     ...config,
                                                     profile: {
                                                         ...config.profile,
                                                         status: {
                                                             text: config.profile.status?.text || '',
-                                                            color: e.target.value as any
+                                                            color: color as any
                                                         }
                                                     }
-                                                })}
-                                                className="bg-zinc-900 border border-white/5 rounded-lg px-2 text-xs font-mono text-zinc-300 outline-none"
-                                            >
-                                                <option value="green">Green</option>
-                                                <option value="yellow">Yellow</option>
-                                                <option value="red">Red</option>
-                                                <option value="blue">Blue</option>
-                                                <option value="purple">Purple</option>
-                                            </select>
+                                                })} options={['green', 'yellow', 'red', 'blue', 'purple'].map(value => ({ value, label: value.charAt(0).toUpperCase() + value.slice(1) }))}/>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
                             {/* Music Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'music' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Music size={16} className="text-zinc-500" /> Current_Freq
@@ -798,12 +786,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
 
                                         {isSpotifyConnected ? (
                                             <button
-                                                onClick={async () => {
-                                                    if (confirm('Disconnect Spotify?')) {
-                                                        const res = await disconnectSpotifyAction();
-                                                        if (res.success) window.location.reload();
-                                                    }
-                                                }}
+                                                onClick={() => setConfirmation({ title: 'Disconnect Spotify', description: 'Disconnect the current Spotify account from this dashboard.', confirmLabel: 'Disconnect', danger: true, action: async () => { const res = await disconnectSpotifyAction(); if (res.success) window.location.reload(); } })}
                                                 className="text-[9px] font-mono font-bold text-red-400 hover:text-red-300 transition-colors uppercase"
                                             >
                                                 [DISCONNECT]
@@ -948,9 +931,9 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                         </div>{/* END Left Column */}
 
                         {/* Right Column */}
-                        <div className="space-y-6">
+                        <div className="w-full space-y-6">
                             {/* Widget Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'widgets' && 'hidden')}>
                                 <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                     <Activity size={16} className="text-zinc-500" /> Widget_Control
                                 </h2>
@@ -1055,7 +1038,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Links Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'links' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <LinkIcon size={16} className="text-zinc-500" /> Connections
@@ -1122,11 +1105,8 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                 </button>
                                             </div>
                                             <div className="flex gap-2">
-                                                <select
-                                                    value={link.icon?.startsWith('http') ? 'Image' : (link.icon || 'ExternalLink')}
-                                                    onChange={(e) => {
+                                                <SelectMenu label="Link icon" className="w-32" value={link.icon?.startsWith('http') ? 'Image' : (link.icon || 'ExternalLink')} onValueChange={(val) => {
                                                         const newLinks = [...config.links];
-                                                        const val = e.target.value;
                                                         // If switching to Image, current val might be a name. If switching away, set to name.
                                                         if (val === 'Image') {
                                                             // Keep current if it is a URL, else empty
@@ -1135,19 +1115,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                             newLinks[idx] = { ...newLinks[idx], icon: val };
                                                         }
                                                         setConfig({ ...config, links: newLinks });
-                                                    }}
-                                                    className="bg-zinc-900 border border-white/5 rounded-lg px-2 py-1 text-[10px] font-mono text-zinc-400 outline-none focus:border-white/20"
-                                                >
-                                                    <option value="Instagram">Instagram</option>
-                                                    <option value="Github">Github</option>
-                                                    <option value="Mail">Mail</option>
-                                                    <option value="Discord">Discord</option>
-                                                    <option value="Camera">Camera</option>
-                                                    <option value="BookOpen">BookOpen</option>
-                                                    <option value="ExternalLink">External</option>
-                                                    <option value="Share2">Share</option>
-                                                    <option value="Image">CUSTOM IMG</option>
-                                                </select>
+                                                    }} options={[...brandIconOptions.map((value) => ({ value, label: value })), { value: 'Mail', label: 'Mail' }, { value: 'Camera', label: 'Camera' }, { value: 'BookOpen', label: 'BookOpen' }, { value: 'ExternalLink', label: 'External' }, { value: 'Share2', label: 'Share' }, { value: 'Image', label: 'Custom image' }]}/>
 
                                                 {(link.icon === 'Image' || link.icon?.startsWith('http') || link.icon === '' && config.links[idx].icon === '') && (
                                                     <div className="flex items-center gap-1">
@@ -1189,7 +1157,7 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Resources Settings */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'resources' && 'hidden')}>
                                 <div className="flex justify-between items-center">
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Book size={16} className="text-zinc-500" /> Resources
@@ -1237,19 +1205,11 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                             <ArrowDown size={10} />
                                                         </button>
                                                     </div>
-                                                    <select
-                                                        value={res.type}
-                                                        onChange={(e) => {
+                                                    <SelectMenu label="Resource type" className="w-28" value={res.type} onValueChange={(type) => {
                                                             const newRes = [...config.resources];
-                                                            newRes[idx] = { ...newRes[idx], type: e.target.value as any };
+                                                            newRes[idx] = { ...newRes[idx], type: type as any };
                                                             setConfig({ ...config, resources: newRes });
-                                                        }}
-                                                        className="bg-zinc-800 text-[10px] px-2 py-1 rounded-md outline-none border border-white/5 font-mono uppercase text-zinc-400 hover:text-white transition-all cursor-pointer"
-                                                    >
-                                                        <option value="gallery">Gallery</option>
-                                                        <option value="doc">Doc</option>
-                                                        <option value="post">Post</option>
-                                                    </select>
+                                                        }} options={[{ value: 'gallery', label: 'Gallery' }, { value: 'doc', label: 'Doc' }, { value: 'post', label: 'Post' }]}/>
                                                 </div>
                                                 <button
                                                     onClick={() => setConfig({ ...config, resources: config.resources.filter(r => r.id !== res.id) })}
@@ -1310,22 +1270,33 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                             </div>
 
                             {/* Gallery Settings (New) */}
-                            <div className="p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4">
-                                <div className="flex justify-between items-center">
+                            <div className={cn("p-6 rounded-2xl bg-zinc-900/40 border border-white/5 space-y-4", activeSection !== 'gallery' && 'hidden')}>
+                                <div>
                                     <h2 className="text-sm font-bold uppercase tracking-widest flex items-center gap-2 font-mono">
                                         <Camera size={16} className="text-zinc-500" /> Gallery
                                     </h2>
-                                    <div className="flex gap-2">
-                                        <label className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-all font-bold border border-white/10 uppercase tracking-tighter cursor-pointer flex items-center gap-2">
-                                            <Upload size={10} /> ADD_IMG
-                                            <input type="file" className="hidden" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" onChange={(e) => handleFileUpload(e, 'gallery', 'image')} />
-                                        </label>
-                                        <label className="text-[10px] font-mono px-3 py-1 rounded-full bg-white/5 hover:bg-white/10 transition-all font-bold border border-white/10 uppercase tracking-tighter cursor-pointer flex items-center gap-2">
-                                            <Upload size={10} /> ADD_VID
-                                            <input type="file" className="hidden" accept="video/mp4,video/webm,video/ogg" onChange={(e) => handleFileUpload(e, 'gallery', 'video')} />
-                                        </label>
-                                    </div>
+                                    <p className="mt-1 text-[10px] text-zinc-500">Images upload to R2. Videos upload to Mux, encode as adaptive HLS, then are ready to publish.</p>
                                 </div>
+                                <div className="grid gap-3 sm:grid-cols-2">
+                                    <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.035]">
+                                        <span className="icon-surface size-10 shrink-0 text-zinc-400 transition-colors group-hover:text-white"><FileImage size={18} /></span>
+                                        <span className="min-w-0 flex-1"><span className="block text-xs font-medium text-zinc-200">Upload image</span><span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[.1em] text-zinc-500">PNG · JPG · WebP · AVIF</span></span>
+                                        <Upload size={15} className="shrink-0 text-zinc-600 transition-colors group-hover:text-white" />
+                                        <input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp,image/gif,image/avif" onChange={(e) => handleFileUpload(e, 'gallery', 'image')} />
+                                    </label>
+                                    <label className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.035]">
+                                        <span className="icon-surface size-10 shrink-0 text-zinc-400 transition-colors group-hover:text-white"><FileVideo size={18} /></span>
+                                        <span className="min-w-0 flex-1"><span className="block text-xs font-medium text-zinc-200">Upload MP4</span><span className="mt-0.5 block truncate font-mono text-[9px] uppercase tracking-[.1em] text-zinc-500">MP4 · WebM · OGG</span></span>
+                                        <Upload size={15} className="shrink-0 text-zinc-600 transition-colors group-hover:text-white" />
+                                        <input type="file" className="sr-only" accept="video/mp4,video/webm,video/ogg" onChange={(e) => handleFileUpload(e, 'gallery', 'video')} />
+                                    </label>
+                                </div>
+                                {uploadingAsset?.target === 'gallery' && (
+                                    <div className="flex items-center gap-3 rounded-xl border border-emerald-400/20 bg-emerald-400/[0.06] p-3" role="status">
+                                        <span className="icon-surface grid size-10 shrink-0 place-items-center border-emerald-400/20 bg-emerald-400/10 text-emerald-300"><LoaderCircle size={17} className="animate-spin" /></span>
+                                        <span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium text-zinc-100">{uploadingAsset.name}</span><span className="mt-0.5 block font-mono text-[9px] uppercase tracking-[.1em] text-emerald-300">{uploadingAsset.target === 'gallery' ? 'Uploading to Mux' : 'Uploading to R2'} · {(uploadingAsset.size / 1024 / 1024).toFixed(2)} MB</span></span>
+                                    </div>
+                                )}
                                 <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2 custom-scrollbar">
                                     {(config.gallery || []).map((item, idx) => (
                                         <div key={item.id} className="p-4 rounded-xl bg-black/40 border border-white/5 space-y-3 group hover:border-white/20 transition-all">
@@ -1389,22 +1360,59 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
                                                 }}
                                                 placeholder="URL"
                                             />
+                                            {item.type === 'video' && <p className="text-[9px] leading-4 text-zinc-600">Mux videos use an adaptive <code>.m3u8</code> HLS playlist automatically. Existing direct MP4 and R2 HLS URLs remain supported.</p>}
                                         </div>
                                     ))}
                                 </div>
                             </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'guestbook' && 'hidden', config.site?.guestbookEnabled === false ? "border-red-400/20 bg-red-400/[0.05]" : "border-white/10 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.guestbookEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><MessageSquareQuote size={18} /></div>
+                                    <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Guestbook_Access</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Allow visitors to read and publish signed Discord or GitHub notes. Turning this off closes the public page and blocks new, edited, and deleted entries. Press Save to apply.</p></div>
+                                </div>
+                                <Switch checked={config.site?.guestbookEnabled !== false} onCheckedChange={(guestbookEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled, profileEnabled: prev.site?.profileEnabled !== false } }))} aria-label="Toggle guestbook access" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                            </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.newsletterEnabled === false ? "border-red-400/20 bg-red-400/[0.05]" : "border-white/5 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.newsletterEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><Mail size={18} /></div>
+                                    <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Newsletter_Signups</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Enable or disable new newsletter registrations. Existing unsubscribe and preference links remain available. Press Save to apply.</p></div>
+                                </div>
+                                <Switch checked={config.site?.newsletterEnabled !== false} onCheckedChange={(newsletterEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false, newsletterEnabled } }))} aria-label="Toggle newsletter signups" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                            </div>
+                            <div className={cn("ml-0 flex flex-col gap-4 rounded-2xl border border-white/5 bg-black/20 p-5 sm:ml-8 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.newsletterEnabled === false && 'opacity-55')}>
+                                <div><h3 className="font-mono text-xs font-bold uppercase tracking-widest">Show_Newsletter_Forms</h3><p className="mt-1 text-xs leading-5 text-zinc-500">Choose where the signup card is visible. These controls do not override the master newsletter switch.</p><div className="mt-3 flex flex-wrap gap-5"><label className="flex items-center gap-2 text-xs text-zinc-300"><Switch checked={config.site?.newsletterShowHome !== false} onCheckedChange={(newsletterShowHome) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false, newsletterShowHome } }))} aria-label="Show newsletter on landing page" /><span>Landing page</span></label><label className="flex items-center gap-2 text-xs text-zinc-300"><Switch checked={config.site?.newsletterShowProfile !== false} onCheckedChange={(newsletterShowProfile) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false, newsletterShowProfile } }))} aria-label="Show newsletter on profile" /><span>/me profile</span></label></div></div>
+                            </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.contactEnabled === false ? "border-red-400/20 bg-red-400/[0.05]" : "border-white/5 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4"><div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.contactEnabled === false ? "bg-red-400/10 text-red-300" : "bg-white/5 text-zinc-300")}><MessageSquareQuote size={18} /></div><div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Contact_Channel</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Enable or disable the public contact page and its message endpoint. Press Save to apply.</p></div></div>
+                                <Switch checked={config.site?.contactEnabled !== false} onCheckedChange={(contactEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false, contactEnabled } }))} aria-label="Toggle contact channel" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                            </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.statusPageEnabled === false ? "border-amber-400/20 bg-amber-400/[0.05]" : "border-white/5 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4"><div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.statusPageEnabled === false ? "bg-amber-400/10 text-amber-200" : "bg-white/5 text-zinc-300")}><Activity size={18} /></div><div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Public_Status_Page</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Enable the on-site <code>/status</code> dashboard and its status API routes. When disabled, visitors receive a custom handoff page linking to status.avrxt.dev instead.</p></div></div>
+                                <Switch checked={config.site?.statusPageEnabled !== false} onCheckedChange={(statusPageEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false, statusPageEnabled } }))} aria-label="Toggle public status page" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                            </div>
+                            <div className={cn("ml-0 flex flex-col gap-5 rounded-2xl border border-white/5 bg-black/20 p-5 sm:ml-8 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.statusPageEnabled === false && 'opacity-55')}>
+                                <div><h3 className="font-mono text-xs font-bold uppercase tracking-widest">Show_Status_Badge</h3><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Show or hide the footer and profile availability badge. The badge automatically stays hidden whenever the public status page is disabled.</p></div>
+                                <Switch checked={config.site?.statusBadgeEnabled !== false} disabled={config.site?.statusPageEnabled === false} onCheckedChange={(statusBadgeEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled: prev.site?.maintenanceEnabled === true, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false, statusBadgeEnabled } }))} aria-label="Toggle status badge" className="h-8 w-14 shrink-0 data-checked:bg-white/30 data-unchecked:bg-zinc-800" />
+                            </div>
+                            <div className={cn("flex flex-col gap-5 rounded-2xl border p-6 sm:flex-row sm:items-center sm:justify-between", activeSection !== 'settings' && 'hidden', config.site?.maintenanceEnabled ? "border-amber-500/30 bg-amber-500/10" : "border-white/5 bg-zinc-900/40")}>
+                                <div className="flex items-start gap-4">
+                                    <div className={cn("mt-0.5 rounded-xl p-2.5", config.site?.maintenanceEnabled ? "bg-amber-500/15 text-amber-400" : "bg-white/5 text-zinc-500")}><Wrench size={18} /></div>
+                                    <div><h2 className="font-mono text-sm font-bold uppercase tracking-widest">Maintenance_Mode</h2><p className="mt-1 max-w-lg text-xs leading-5 text-zinc-500">Redirect public pages to the maintenance screen. Admin, authentication, and API routes stay available. Press Save to apply.</p></div>
+                                </div>
+                                <Switch checked={config.site?.maintenanceEnabled === true} onCheckedChange={(maintenanceEnabled) => setConfig(prev => ({ ...prev, site: { ...prev.site, maintenanceEnabled, guestbookEnabled: prev.site?.guestbookEnabled !== false, profileEnabled: prev.site?.profileEnabled !== false } }))} aria-label="Toggle maintenance mode" className="h-8 w-14 shrink-0 data-checked:bg-amber-500/40 data-unchecked:bg-zinc-800" />
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </div></div>
 
-                    <div className="sticky bottom-3 z-30 mt-8 flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/90 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/75">
-                        <span className="min-w-0 truncate px-2 font-mono text-[10px] uppercase tracking-widest text-zinc-500" aria-live="polite">
+                    <div className="sticky bottom-3 z-30 mx-auto mt-8 flex w-full max-w-4xl items-center justify-between gap-3 rounded-2xl border border-white/10 bg-[#080808]/95 p-3 shadow-2xl backdrop-blur-xl supports-[backdrop-filter]:bg-[#080808]/80">
+                        <span className="min-w-0 truncate px-2 font-mono text-[9px] uppercase tracking-widest text-zinc-500 sm:text-[10px]" aria-live="polite">
                             {saveStatus || 'Profile settings'}
                         </span>
-                        <button type="button" onClick={handleSave} disabled={isPending} className="inline-flex min-h-11 shrink-0 items-center gap-2 rounded-xl bg-white px-5 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60">
+                        <button type="button" onClick={handleSave} disabled={isPending} className="inline-flex min-h-12 shrink-0 items-center gap-2 rounded-xl bg-white px-4 text-xs font-semibold text-black transition-colors hover:bg-zinc-200 disabled:cursor-wait disabled:opacity-60 sm:px-5">
                             <Save size={14} /> {isPending ? 'Saving…' : 'Save changes'}
                         </button>
                     </div>
+                </div>
 
                 <style jsx global>{`
            .admin-input {
@@ -1422,6 +1430,12 @@ export default function MeAdminClient({ initialConfig, isSpotifyConnected }: MeA
            .admin-input:focus {
              border-color: rgba(255,255,255,0.2);
              background: rgba(0,0,0,0.8);
+           }
+           @media (max-width: 767px) {
+             .admin-input {
+               min-height: 3.25rem;
+               font-size: 16px;
+             }
            }
            .custom-scrollbar::-webkit-scrollbar {
              width: 4px;

@@ -134,7 +134,7 @@ async function ipDetails(ip: string) {
 export async function GET(request: NextRequest, context: RouteContext<'/api/tools/[tool]'>) {
   const { tool } = await context.params;
   try {
-    if (isRateLimited(request.headers, `tool-${tool}`, 30, 60_000)) return json({ error: 'Rate limit reached. Try again in a minute.' }, 429);
+    if (await isRateLimited(request.headers, `tool-${tool}`, 30, 60_000)) return json({ error: 'Rate limit reached. Try again in a minute.' }, 429);
     if (tool === 'whatismyip') {
       const ip = clientIp(request);
       const details = await ipDetails(ip);
@@ -186,7 +186,7 @@ export async function GET(request: NextRequest, context: RouteContext<'/api/tool
 export async function POST(request: NextRequest, context: RouteContext<'/api/tools/[tool]'>) {
   const { tool } = await context.params;
   try {
-    if (isRateLimited(request.headers, `tool-${tool}`, tool === 'portcheck' ? 8 : 20, 60_000)) return json({ error: 'Rate limit reached. Try again in a minute.' }, 429);
+    if (await isRateLimited(request.headers, `tool-${tool}`, tool === 'portcheck' ? 8 : 20, 60_000)) return json({ error: 'Rate limit reached. Try again in a minute.' }, 429);
     const payload = await body(request);
     if (tool === 'portcheck') {
       if (payload.authorized !== true) return json({ error: 'Confirm that you are authorized to test this target.' }, 400);

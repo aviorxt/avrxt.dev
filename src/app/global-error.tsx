@@ -5,7 +5,7 @@ import MinimalErrorPage from '@/components/MinimalErrorPage';
 
 export default function GlobalError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
     useEffect(() => {
-        console.error(error);
+        console.error('[GLOBAL_RENDER_FAILED]', { digest: error.digest });
     }, [error]);
 
     return (

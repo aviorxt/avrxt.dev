@@ -37,8 +37,8 @@ export default function DiscordPrivacyPage() {
         {
           title: 'OAuth, Cookies & Storage',
           content: <>
-            <p>Discord authentication is handled by our self-hosted <strong>OpenAuth</strong> service. It uses essential, HTTP-only cookies and short-lived authorization records to complete OAuth and maintain your session. Authentication records are stored in Cloudflare Workers KV. The public website runs on Vercel.</p>
-            <p>We request only the Discord scopes needed for identity and authentication. Bot-based role verification is performed server-side and does not expose the bot token to your browser.</p>
+            <p>Discord authentication is handled by the AVRXT application on Vercel. It uses an essential, HTTP-only transaction cookie for OAuth and an HTTP-only signed session cookie for administrator access. The public website and authentication flow run on Vercel.</p>
+            <p>Discord OAuth requests the identify and guilds.members.read scopes; the sign-in flow does not request your email. New authentication records retain only your user ID, provider, and authorization result alongside short-lived protocol data needed for authorization. Your profile name, avatar URL, and email are not stored in new authentication records. The current user&apos;s membership and roles in the configured server are checked through their own Discord OAuth authorization. The short-lived access token is encrypted before server-side storage and is never exposed to browser JavaScript. Restricted admin access requires the configured server role or explicit owner authorization. Permission failures and provider outages do not prove that a role is missing, and verification failures do not grant access.</p>
           </>,
         },
         {
@@ -51,7 +51,8 @@ export default function DiscordPrivacyPage() {
         {
           title: 'Retention & Deletion',
           content: <>
-            <p>OAuth state is retained only long enough to complete authorization. Website authentication cookies normally expire within 30 days. Security logs may be retained for up to 30 days unless a longer period is required to investigate abuse or comply with law. Bot interaction data is retained only when necessary for the requested feature.</p>
+            <p>The website’s OAuth transaction cookie expires after 10 minutes. The signed authentication session expires after 12 hours and is not silently renewed. Provider security logs follow their own retention schedules; we do not promise a universal 30-day log-deletion deadline. Bot interaction data is retained when needed for a requested feature or security investigation.</p>
+            <p>Authorization codes and refresh records use automatic storage expiry. Daily maintenance minimizes legacy session records, removes provably expired records, and retires redundant signing or encryption keys after a safety period that protects existing sessions. This is session storage, not a retained login-history database; provider infrastructure may still process ordinary operational logs.</p>
             <p>You may revoke access through Discord&apos;s Authorized Apps settings at any time. To request access, correction, or deletion, email <a href="mailto:connect@elvnx.org">connect@elvnx.org</a> with your Discord user ID. After identity verification, we will act promptly and ordinarily complete deletion within 30 days, except where retention is legally required.</p>
           </>,
         },

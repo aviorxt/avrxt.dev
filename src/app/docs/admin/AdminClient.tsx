@@ -12,8 +12,10 @@ import {
 import { cn } from '@/lib/utils';
 import { DocArticle } from '@/lib/docs-config';
 import { createDocAction, updateDocAction, deleteDocAction } from '@/app/actions/docs';
-import { getPresignedR2UrlAction } from '@/app/actions/r2';
+import { uploadDocsAttachment } from '@/lib/docs-upload-client';
 import { logout } from '@/app/actions/auth';
+import { SelectMenu } from '@/components/ui/SelectMenu';
+import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 
 interface AdminClientProps {
     initialDocs: DocArticle[];
@@ -62,20 +64,8 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         setUploading(true);
         setError('');
         try {
-            const res = await getPresignedR2UrlAction(file.name, file.type, file.size);
-            if ('error' in res) throw new Error(res.error);
-            const { uploadUrl, publicUrl } = res;
-            // Upload directly to R2
-            const uploadResponse = await fetch(uploadUrl, {
-                method: 'PUT',
-                body: file,
-                headers: { 'Content-Type': file.type || 'application/octet-stream' },
-            });
-            if (!uploadResponse.ok) {
-                const details = (await uploadResponse.text()).slice(0, 200);
-                throw new Error(`R2 upload failed (${uploadResponse.status})${details ? `: ${details}` : ''}`);
-            }
-            onInsert(`![${alt || file.name}](${publicUrl})`);
+            const publicUrl = await uploadDocsAttachment(file);
+            onInsert(file.type.startsWith('image/') ? `![${alt || file.name}](${publicUrl})` : `[${alt || file.name}](${publicUrl})`);
         } catch (err: any) {
             setError(err.message);
         } finally {
@@ -88,7 +78,7 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-[#111] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl">
                 <div className="flex justify-between items-center mb-5">
-                    <h3 className="font-bold font-mono uppercase tracking-widest text-sm">Insert Image</h3>
+                    <h3 className="font-bold font-mono uppercase tracking-widest text-sm">Insert Attachment</h3>
                     <button onClick={onClose}><X size={16} className="text-zinc-500 hover:text-white" /></button>
                 </div>
                 <div className="flex gap-2 mb-4">
@@ -113,12 +103,12 @@ function ImageUploadModal({ onInsert, onClose }: { onInsert: (md: string) => voi
                         </>
                     ) : (
                         <>
-                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif" className="hidden" onChange={handleFileUpload} />
+                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,image/avif,application/pdf,text/plain,text/markdown,application/zip,.docx,.xlsx" className="hidden" onChange={handleFileUpload} />
                             <button onClick={() => fileRef.current?.click()}
                                 disabled={uploading}
                                 className="w-full py-2.5 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-sm font-bold font-mono uppercase transition-all flex items-center justify-center gap-2 border border-white/10">
                                 {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
-                                {uploading ? 'Uploading to R2...' : 'Choose File & Upload'}
+                                {uploading ? 'Uploading to docs storage...' : 'Choose File & Upload'}
                             </button>
                             {error && <p className="text-red-400 text-xs font-mono">{error}</p>}
                         </>
@@ -161,14 +151,11 @@ function EmbedModal({ onInsert, onClose }: { onInsert: (md: string) => void; onC
     const [input, setInput] = useState('');
     const insert = () => {
         if (!input) return;
-        if (type === 'youtube') {
-            const id = input.match(/(?:v=|youtu\.be\/)([^&?/]+)/)?.[1] || input;
-            onInsert(`\n<iframe width="100%" height="400" src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen></iframe>\n`);
-        } else if (type === 'tweet') {
-            onInsert(`\n<blockquote class="twitter-tweet"><a href="${input}"></a></blockquote><script async src="https://platform.twitter.com/widgets.js"></script>\n`);
-        } else {
-            onInsert(`\n<iframe src="${input}" width="100%" height="400" frameborder="0"></iframe>\n`);
-        }
+        try {
+            const url = new URL(input);
+            if (!['https:', 'http:'].includes(url.protocol)) return;
+            onInsert(`\n[${type === 'youtube' ? 'Watch on YouTube' : type === 'tweet' ? 'View post' : 'Open link'}](${url.toString()})\n`);
+        } catch { return; }
     };
     return (
         <div className="fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -187,11 +174,11 @@ function EmbedModal({ onInsert, onClose }: { onInsert: (md: string) => void; onC
                 </div>
                 <div className="space-y-3">
                     <input value={input} onChange={e => setInput(e.target.value)}
-                        placeholder={type === 'youtube' ? 'YouTube URL or video ID' : type === 'tweet' ? 'Tweet URL' : 'Embed URL'}
+                        placeholder={type === 'youtube' ? 'YouTube URL or video ID' : type === 'tweet' ? 'Tweet URL' : 'Media URL'}
                         className="w-full bg-black/60 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white outline-none focus:border-blue-500/50 transition-all font-mono" />
                     <button onClick={insert}
                         className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-sm font-bold font-mono uppercase transition-all">
-                        Insert Embed
+                        Insert Media Link
                     </button>
                 </div>
             </div>
@@ -205,21 +192,8 @@ function MarkdownPreview({ content }: { content: string }) {
     useEffect(() => {
         let active = true;
         (async () => {
-            const { unified } = await import('unified');
-            const { default: remarkParse } = await import('remark-parse');
-            const { default: remarkGfm } = await import('remark-gfm');
-            const { default: remarkRehype } = await import('remark-rehype');
-            const { default: rehypeRaw } = await import('rehype-raw');
-            const { default: rehypeHighlight } = await import('rehype-highlight');
-            const { default: rehypeStringify } = await import('rehype-stringify');
-            const result = await unified()
-                .use(remarkParse)
-                .use(remarkGfm)
-                .use(remarkRehype, { allowDangerousHtml: true })
-                .use(rehypeRaw)
-                .use(rehypeHighlight)
-                .use(rehypeStringify)
-                .process(content);
+            const { renderMarkdown } = await import('@/lib/render-markdown');
+            const result = await renderMarkdown(content);
             if (active) setHtml(String(result));
         })();
         return () => { active = false; };
@@ -243,6 +217,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     const [filterPublished, setFilterPublished] = useState<'all' | 'published' | 'draft'>('all');
     const [isPending, setIsPending] = useState(false);
     const [modal, setModal] = useState<null | 'image' | 'link' | 'embed'>(null);
+    const [deleteCandidate, setDeleteCandidate] = useState<string | null>(null);
     const [authors] = useState(['avrxt', 'guest', 'team']);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -314,12 +289,12 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
             } else {
                 result = await createDocAction(selectedDoc);
             }
-            if (result.error) {
+            if (!('data' in result)) {
                 setSaveOk(false);
                 setSaveStatus(`ERROR: ${result.error}`);
             } else {
                 setSaveOk(true);
-                setSaveStatus('✓ SYNCED');
+                setSaveStatus(result.warning || '✓ SYNCED');
                 if (result.data) {
                     if (isNew) {
                         setDocs([result.data as DocArticle, ...docs]);
@@ -329,7 +304,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                         setSelectedDoc(result.data as DocArticle);
                     }
                 }
-                setTimeout(() => setSaveStatus(''), 3000);
+                if (!result.warning) setTimeout(() => setSaveStatus(''), 3000);
             }
         } catch {
             setSaveOk(false);
@@ -340,12 +315,17 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Delete this document? THIS CANNOT BE UNDONE.')) return;
         setIsPending(true);
-        await deleteDocAction(id);
-        setDocs(docs.filter(d => d.id !== id));
-        setSelectedDoc(null);
-        setIsPending(false);
+        try {
+            const result = await deleteDocAction(id);
+            if ('error' in result) { setSaveOk(false); setSaveStatus(`ERROR: ${result.error}`); return; }
+            setDocs(docs.filter(d => d.id !== id));
+            setSelectedDoc(null);
+            setDeleteCandidate(null);
+            setSaveOk(true);
+            setSaveStatus(result.warning || '✓ DELETED');
+        } catch { setSaveOk(false); setSaveStatus('DELETE_FAILED'); }
+        finally { setIsPending(false); }
     };
 
     const handleNewDoc = () => {
@@ -403,6 +383,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                     onClose={() => setModal(null)}
                 />
             )}
+            <ConfirmDialog open={Boolean(deleteCandidate)} title="Delete document" description="This permanently removes the document. This action cannot be undone." confirmLabel="Delete document" danger busy={isPending} onCancel={() => setDeleteCandidate(null)} onConfirm={() => { if (deleteCandidate) void handleDelete(deleteCandidate); }}/>
 
             {/* ── Header ─────────────────────────────────────────────────────── */}
             <header className="sticky top-0 z-50 border-b border-white/5 bg-[#080808]/90 backdrop-blur-xl">
@@ -425,7 +406,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-800/60 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-lg text-[10px] font-bold font-mono transition-all border border-white/5">
                             <Eye size={11} /> PREVIEW
                         </Link>
-                        <Link href="/me/admin" prefetch={false}
+                        <Link href="/dashboard" prefetch={false}
                             className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-900/20 hover:bg-purple-900/40 text-purple-400 rounded-lg text-[10px] font-bold font-mono transition-all border border-purple-500/20">
                             PROFILE
                         </Link>
@@ -533,20 +514,12 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                     {/* Author */}
                                     <div>
                                         <label className="editor-label">Author</label>
-                                        <select id="doc-author" value={selectedDoc.author || authors[0]}
-                                            onChange={e => setSelectedDoc(p => ({ ...p, author: e.target.value }))}
-                                            className="editor-input bg-black">
-                                            {authors.map(a => <option key={a} value={a}>{a}</option>)}
-                                        </select>
+                                        <SelectMenu label="Author" value={selectedDoc.author || authors[0]} onValueChange={author => setSelectedDoc(p => ({ ...p, author }))} options={authors.map(author => ({ value: author, label: author }))}/>
                                     </div>
                                     {/* Color */}
                                     <div>
                                         <label className="editor-label">Color Theme</label>
-                                        <select id="doc-color" value={selectedDoc.color || 'blue'}
-                                            onChange={e => setSelectedDoc(p => ({ ...p, color: e.target.value as DocArticle['color'] }))}
-                                            className="editor-input bg-black">
-                                            {['blue', 'cyan', 'purple', 'green', 'orange', 'pink'].map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
-                                        </select>
+                                        <SelectMenu label="Color theme" value={selectedDoc.color || 'blue'} onValueChange={color => setSelectedDoc(p => ({ ...p, color: color as DocArticle['color'] }))} options={['blue', 'cyan', 'purple', 'green', 'orange', 'pink'].map(color => ({ value: color, label: color.charAt(0).toUpperCase() + color.slice(1) }))}/>
                                     </div>
                                     {/* Tags */}
                                     <div>
@@ -604,7 +577,7 @@ export default function AdminClient({ initialDocs, userEmail }: AdminClientProps
                                         </div>
                                         <div className="flex items-center gap-1.5">
                                             {selectedDoc.id && (
-                                                <button onClick={() => handleDelete(selectedDoc.id!)}
+                                                <button onClick={() => setDeleteCandidate(selectedDoc.id!)}
                                                     disabled={isPending}
                                                     className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600/10 hover:bg-red-600/20 text-red-500 rounded-lg text-[10px] font-mono uppercase transition-all border border-red-500/20">
                                                     <Trash2 size={10} /> Delete

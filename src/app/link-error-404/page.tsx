@@ -13,8 +13,8 @@ export default function LinkError404Page() {
             code="404"
             title="Short Link Missing"
             message="It seems like you’re trying to open a go.avrxt.dev link. It may have been removed, expired, or the path may be incorrect."
-            primaryHref="https://www.avrxt.dev/me"
-            primaryLabel="Visit avrxt.dev/me"
+            primaryHref="https://me.avrxt.dev"
+            primaryLabel="Visit me.avrxt.dev"
             secondaryHref="mailto:connect@elvnx.org"
             secondaryLabel="connect@elvnx.org"
         />
