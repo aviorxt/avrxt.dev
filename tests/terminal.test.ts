@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { runTerminalCommand, TERMINAL_PAGES, terminalCompletions, COMMAND_LIMIT } from '../src/lib/terminal';
 
 test('terminal navigates only to explicitly listed public routes', () => {
-  assert.equal(runTerminalCommand('open profile', TERMINAL_PAGES).navigate, '/me');
+  assert.equal(runTerminalCommand('open profile', TERMINAL_PAGES).navigate, 'https://me.avrxt.dev');
   assert.equal(runTerminalCommand('open /contact', TERMINAL_PAGES).navigate, '/contact');
   for (const target of ['javascript:alert(1)', 'https://evil.example', '//evil.example', '/me/admin', '/auth/start', '/api/health', '/docs/admin', '/contact?next=//evil.example', '/%2e%2e/me/admin', '/storage', '/\\evil.example']) {
     const result = runTerminalCommand(`open ${target}`, TERMINAL_PAGES);
@@ -20,7 +20,7 @@ test('terminal treats shell syntax and HTML as inert input and bounds command si
   }
 });
 test('terminal directory search, aliases and autocomplete expose public destinations', () => {
-  assert.equal(runTerminalCommand('me', TERMINAL_PAGES).pages?.[0].href, '/me');
+  assert.equal(runTerminalCommand('me', TERMINAL_PAGES).pages?.[0].href, 'https://me.avrxt.dev');
   assert.ok(runTerminalCommand('ls legal', TERMINAL_PAGES).pages?.every(page => page.group === 'legal'));
   assert.equal(runTerminalCommand('search privacy', TERMINAL_PAGES).pages?.length, 2);
   assert.deepEqual(terminalCompletions('open prof', TERMINAL_PAGES), ['open profile']);
