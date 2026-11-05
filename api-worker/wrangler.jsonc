@@ -19,6 +19,7 @@
   ],
   "vars": {
     "SITE_ORIGIN": "https://www.avrxt.dev",
+    "EDGE_ORIGIN": "https://edge.avrxt.space",
     "MUZIX_SEGMENT_ID": "1c9132ed-4b08-4e4a-8b5b-4b77eaa998d1"
   },
   "routes": [
