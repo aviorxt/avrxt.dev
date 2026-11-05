@@ -15,3 +15,5 @@ History is cached internally for 20 seconds; charts and monthly summaries for 15
 Workers Cache uses the explicit allowlist in `cache-policy.mjs`. Only successful public root/status/weather/link-preview reads may be cached. Cookies, Authorization, Set-Cookie, private/no-store directives, health, playback, presence, profile config, writes, errors and unknown routes are uncached. Vary includes Origin, Cookie and Authorization. WebSockets remain live.
 
 `npm run api:deploy` targets the existing Worker/domain. `npx wrangler deploy --dry-run --config api-worker/wrangler.jsonc` validates without deployment. Source cache/artwork/history tests live in the Muzix repo. When rolling back to old code without these safeguards, disable Workers Cache as well as restoring the previous Cloudflare version.
+
+Extended monthly template support is mirrored in extended.mjs and enrich.mjs. The Worker bundles only the shared confirmation/welcome shell; the monthly artwork and playtime collection runs in GitHub Actions. Public logo images are hosted by Muzix for cross-origin email use.
