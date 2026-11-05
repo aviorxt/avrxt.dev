@@ -18,7 +18,8 @@
     }
   ],
   "vars": {
-    "SITE_ORIGIN": "https://www.avrxt.dev"
+    "SITE_ORIGIN": "https://www.avrxt.dev",
+    "MUZIX_SEGMENT_ID": "d4c05cd2-9789-4d1a-8b4c-d3119e4a6166"
   },
   "routes": [
     {
