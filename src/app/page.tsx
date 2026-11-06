@@ -69,7 +69,7 @@ export default async function HomePage() {
                     </div>
                 </section>
                 {showNewsletter && (
-                    <div className="mt-8 w-full">
+                    <div className="ml-auto mt-6 w-full max-w-[38rem]">
                         <HomeSubscribe />
                     </div>
                 )}

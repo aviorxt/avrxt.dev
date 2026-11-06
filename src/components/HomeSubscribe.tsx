@@ -37,8 +37,8 @@ export default function HomeSubscribe() {
     };
 
     return (
-        <div className="avrxt-signal-capture w-full max-w-[30rem] border border-white/15 bg-[#080808]/80 p-3 text-left backdrop-blur-xl sm:p-4">
-            <div className="mb-3 flex items-center justify-between gap-4">
+        <div className="avrxt-signal-capture w-full border border-white/15 bg-[#080808]/80 p-3 text-left backdrop-blur-xl sm:p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
                 <div className="flex items-center gap-2 font-mono text-[8px] uppercase tracking-[.2em] text-[#A3A3A3]"><Mail size={11} /> Monthly signal</div>
                 <span className="font-mono text-[7px] uppercase tracking-[.16em] text-[#666666]">No noise / Unsubscribe anytime</span>
             </div>
