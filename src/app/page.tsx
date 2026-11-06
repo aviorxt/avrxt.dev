@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { buildPageMetadata } from '@/lib/page-metadata';
 import HomeSubscribe from '@/components/HomeSubscribe';
 import { getPublicProfileRecord } from '@/lib/public-data';
@@ -34,20 +34,40 @@ export default async function HomePage() {
                     <span className="home-word block">Nothing</span>
                     <span className="home-word home-outline-word block">Special</span>
                 </p>
-                <div className="home-tagline ml-auto mt-8 flex w-full max-w-[30rem] flex-col items-end gap-4 border-r border-white/35 pr-4 text-right sm:mt-12 sm:pr-6">
-                    <h1 className="font-[family-name:var(--font-outfit)] text-2xl font-medium tracking-tight sm:text-3xl">avrxt — independent developer</h1>
-                    <p className="max-w-md text-sm leading-7 text-zinc-400">Also known as aviorxt and avr.xt. I build web applications, APIs, and automation in India. This is my personal website: a home for practical tools, technical notes, and projects.</p>
-                    <nav aria-label="Explore avrxt" className="flex flex-wrap justify-end gap-x-5 gap-y-2 text-sm text-zinc-300">
-                        <Link href="/about" className="transition-colors hover:text-white">About me</Link>
-                        <Link href="/docs" className="transition-colors hover:text-white">Technical notes</Link>
-                        <Link href="https://muzix.avrxt.dev" className="transition-colors hover:text-white">Muzix</Link>
-                        <Link href="/contact" className="transition-colors hover:text-white">Contact</Link>
+                <section aria-labelledby="home-identity" className="home-tagline ml-auto mt-10 w-full max-w-[38rem] border-t border-white/20 sm:mt-14">
+                    <div className="flex items-center justify-between gap-4 py-4 font-mono text-[9px] uppercase tracking-[.18em] text-zinc-500">
+                        <span>01 / The person behind it</span>
+                        <span>India <span className="ml-2 inline-block size-1 bg-white/70" /></span>
+                    </div>
+                    <div className="grid gap-5 pb-7 sm:grid-cols-[.9fr_1.1fr] sm:gap-8 sm:pb-9">
+                        <h1 id="home-identity" className="font-[family-name:var(--font-outfit)] leading-none tracking-[-.06em]">
+                            <span className="block text-6xl font-medium sm:text-7xl">avrxt<span className="text-zinc-600">.</span></span>
+                            <span className="mt-3 block font-mono text-[9px] font-normal uppercase tracking-[.17em] text-zinc-400">Independent developer</span>
+                        </h1>
+                        <div className="flex flex-col justify-end gap-4">
+                            <p className="max-w-xs text-sm leading-6 text-zinc-300">Web applications. APIs. Small tools that solve real problems.</p>
+                            <p className="font-mono text-[9px] uppercase tracking-[.12em] text-zinc-500">Personal website / aviorxt / avr.xt</p>
+                        </div>
+                    </div>
+                    <nav aria-label="Explore avrxt" className="grid grid-cols-2 border-t border-white/15">
+                        {[
+                            { number: '01', label: 'The person', detail: 'About & approach', href: '/about' },
+                            { number: '02', label: 'The workshop', detail: 'Tools & experiments', href: '/tools' },
+                            { number: '03', label: 'Field notes', detail: 'Writing & documentation', href: '/docs' },
+                            { number: '04', label: 'Muzix', detail: 'A listening journal', href: 'https://muzix.avrxt.dev' },
+                        ].map(({ number, label, detail, href }, index) => (
+                            <Link key={href} href={href} className={`group relative flex min-h-24 items-start gap-3 border-b border-white/15 py-5 transition-colors duration-300 hover:bg-white/[.04] focus-visible:bg-white/[.04] focus-visible:outline focus-visible:outline-white/60 ${index % 2 === 0 ? 'border-r pr-4' : 'pl-4'}`}>
+                                <span className="pt-1 font-mono text-[8px] text-zinc-600 transition-colors group-hover:text-zinc-300">{number}</span>
+                                <span className="flex flex-1 flex-col gap-1.5"><span className="text-sm font-medium tracking-tight text-zinc-200">{label}</span><span className="text-[10px] text-zinc-500">{detail}</span></span>
+                                <ArrowUpRight size={13} className="mt-1 shrink-0 text-zinc-600 transition-all duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-white" />
+                            </Link>
+                        ))}
                     </nav>
-                    <p className="font-mono text-[clamp(.62rem,1.4vw,.9rem)] uppercase tracking-[.22em] text-zinc-400 sm:tracking-[.42em]">Just Leave IT</p>
-                    <Link href="/tools" prefetch={false} className="group inline-flex min-h-11 items-center gap-3 border border-white/15 bg-white/[.035] px-4 font-mono text-[10px] uppercase tracking-[.16em] text-zinc-300 transition-colors hover:border-white/45 hover:bg-white/[.08] hover:text-white sm:px-5">
-                        Explore the tools <ArrowDownRight size={14} className="transition-transform group-hover:translate-x-0.5 group-hover:translate-y-0.5" />
-                    </Link>
-                </div>
+                    <div className="flex items-center justify-between gap-4 pt-4 font-mono text-[9px] uppercase tracking-[.15em]">
+                        <span className="text-zinc-600">Just Leave IT</span>
+                        <Link href="/contact" className="inline-flex min-h-10 items-center gap-3 text-zinc-400 transition-colors hover:text-white">Start a conversation <ArrowUpRight size={12} /></Link>
+                    </div>
+                </section>
                 {showNewsletter && (
                     <div className="mt-8 w-full">
                         <HomeSubscribe />
