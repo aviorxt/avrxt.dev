@@ -13,12 +13,12 @@ export default function Navbar() {
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const pathname = usePathname();
 
-    const isHiddenRoute = pathname.startsWith('/me') || pathname.startsWith('/dashboard') || pathname.startsWith('/docs/admin');
+    const isHiddenRoute = pathname.startsWith('/me') || pathname.startsWith('/dashboard');
 
     const navLinks = [
         { name: 'Home', href: '/' },
         { name: 'About', href: '/about' },
-        { name: 'Docs', href: '/docs' },
+        { name: 'Docs', href: 'https://docs.avrxt.dev' },
         { name: 'Tools', href: '/tools' },
     ];
 

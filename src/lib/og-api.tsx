@@ -1,5 +1,4 @@
 import { ImageResponse } from 'next/og';
-import { getPublicDocument } from '@/lib/public-data';
 
 import { getOgFonts } from '@/app/_og/fonts';
 import { getTool, tools } from '@/lib/tool-catalog';
@@ -24,7 +23,6 @@ const ROUTES: Record<string, OgCard> = {
   '/uses': card('Working system', 'The tools behind the work.', 'Hardware, software and everyday instruments that make the process possible.', 'tools', '06', ['HARDWARE', 'SOFTWARE', 'WORKFLOW']),
   '/tools': card('Public utilities · 08', 'Small tools. Serious utility.', 'Fast, privacy-conscious browser tools designed with the same care as the rest of avrxt.dev.', 'tools', '07', ['NETWORK', 'TYPE', 'DIAGNOSTICS']),
   '/subscribe': card('Low-frequency signal', 'Notes worth opening.', 'Occasional product notes, experiments and new releases — delivered without the noise.', 'contact', '09', ['NEWSLETTER', 'UPDATES', 'NO SPAM']),
-  '/docs': card('Knowledge base', 'Documentation & field notes.', 'Technical guides, implementation notes and carefully documented experiments.', 'docs', '10', ['GUIDES', 'NOTES', 'REFERENCE']),
   '/system/api/doc': card('Developer interface', 'avrxt API reference.', 'Endpoints, response models and integration guidance for the public avrxt.dev API.', 'tools', '11', ['REST', 'JSON', 'REFERENCE']),
   '/annon/ownership': card('Ownership disclosure', 'Independent by design.', 'avrxt.dev is a personal website run and maintained by one independent individual.', 'legal', '12', ['PERSONAL', 'INDEPENDENT', 'TRANSPARENT']),
   '/legal/privacy': card('Legal · Privacy', 'Privacy, written plainly.', 'What avrxt.dev collects, why it is needed and the choices available to every visitor.', 'legal', '13', ['DATA', 'CHOICES', 'TRANSPARENCY']),
@@ -46,14 +44,6 @@ function normalizePath(input: string | null) {
   return !raw.startsWith('/') || raw.includes('://') || raw.includes('..') || raw.length > 200 ? '/' : raw;
 }
 
-async function documentCard(path: string): Promise<OgCard> {
-  const slug = path.split('/').filter(Boolean)[1] || 'docs';
-  const fallback = card(`Documentation · ${slug.replace(/-/g, ' ')}`, slug.replace(/-/g, ' '), 'A technical field note from the avrxt.dev knowledge base.', 'docs', '10', ['DOCUMENT', 'REFERENCE', 'AVRXT.DEV']);
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) return fallback;
-  const data = await getPublicDocument(decodeURIComponent(slug)).catch(() => null);
-  return data ? { ...fallback, title: clampText(data.title || fallback.title, 58), description: clampText(data.description || fallback.description, 150) } : fallback;
-}
-
 async function cardForPath(path: string): Promise<OgCard> {
   if (ROUTES[path]) return ROUTES[path];
   if (path.startsWith('/tools/')) {
@@ -63,7 +53,6 @@ async function cardForPath(path: string): Promise<OgCard> {
       return card(tool.eyebrow, tool.title, tool.description, 'tools', `T${String(position).padStart(2, '0')}`, ['BROWSER TOOL', tool.shortTitle.toUpperCase(), 'FREE TO USE']);
     }
   }
-  if (path.startsWith('/docs/')) return documentCard(path);
   return card('avrxt.dev', path.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') || 'avrxt', 'An independent corner of the web, designed and maintained by avrxt.', 'identity', '—', ['AVRXT.DEV', 'INDEPENDENT', 'WEB']);
 }
 

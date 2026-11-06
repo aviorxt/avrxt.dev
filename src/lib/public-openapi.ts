@@ -10,7 +10,7 @@ export const publicOpenApiDocument = {
   servers: [{ url: 'https://api.avrxt.dev/v1', description: 'Production' }],
   externalDocs: {
     description: 'Read the complete AVRXT API reference',
-    url: 'https://www.avrxt.dev/system/api/doc',
+    url: 'https://docs.avrxt.dev/api-reference/overview',
   },
   tags: [
     { name: 'System', description: 'Service availability and public status.' },

@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { documentSearchRecord, fetchSearch, parseSearchHits, localSearch, PUBLIC_SEARCH_PAGES } from '../src/lib/site-search';
-import type { DocArticle } from '../src/lib/docs-config';
+import { fetchSearch, parseSearchHits, localSearch, PUBLIC_SEARCH_PAGES } from '../src/lib/site-search';
 import { waitForSearchTask } from '../src/lib/search-task';
 
 test('search accepts only public destinations and treats provider HTML as text', () => {
@@ -12,15 +11,19 @@ test('search accepts only public destinations and treats provider HTML as text',
   assert.ok(PUBLIC_SEARCH_PAGES.every(page => !page.href.includes('admin')));
   assert.equal(localSearch('terminal')[0].href, '/terminal');
 });
-test('index records omit drafts, auth metadata and oversized content', () => {
-  const doc = { id: 'example', slug: 'example-note', title: 'Example', published: true, content: 'x'.repeat(20000), tags: ['public'], author: 'private identity' } as DocArticle;
-  assert.equal(documentSearchRecord({ ...doc, published: false }), null);
-  assert.equal(documentSearchRecord({ ...doc, slug: 'admin' }), null);
-  const record = documentSearchRecord(doc)!;
-  assert.equal(record.content?.length, 1500);
-  assert.equal('author' in record, false);
-  assert.equal(Buffer.byteLength(JSON.stringify(record)) < 10000, true);
+test('documentation search accepts only the new official root and rejects stale or arbitrary external hits', () => {
+  const hits = parseSearchHits([
+    { title: 'Docs', href: 'https://docs.avrxt.dev', category: 'docs' },
+    { title: 'Old article', href: '/docs/example-note' },
+    { title: 'Old admin', href: '/docs/admin' },
+    { title: 'Spoofed docs', href: 'https://docs.avrxt.dev.evil.test' },
+    { title: 'Private path', href: 'https://docs.avrxt.dev/admin' },
+  ]);
+  assert.equal(hits.length, 1);
+  assert.equal(hits[0].href, 'https://docs.avrxt.dev');
+  assert.equal(localSearch('documentation')[0].href, 'https://docs.avrxt.dev');
 });
+
 test('browser search bounds requests, disables analytics and uses only its supplied search key', async () => {
   const config = { appId: 'ABC1234567', index: 'avrxt_public', key: 'a'.repeat(32) };
   let calls = 0;

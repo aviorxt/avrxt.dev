@@ -1,24 +1,15 @@
 import { TERMINAL_PAGES } from './terminal';
 import { tools } from './tool-catalog';
-import type { DocArticle } from './docs-config';
 
 export type SearchRecord = { objectID: string; title: string; description: string; href: string; category: string; content?: string; keywords?: string };
 export const SEARCH_QUERY_LIMIT = 120;
 export const PUBLIC_SEARCH_PAGES: SearchRecord[] = [
-  ...TERMINAL_PAGES.filter(page => !page.external).map(page => ({ objectID: `page:${page.href}`, title: page.title, description: page.description, href: page.href, category: page.group })),
+  ...TERMINAL_PAGES.filter(page => !page.external || page.href === 'https://docs.avrxt.dev').map(page => ({ objectID: `page:${page.href}`, title: page.title, description: page.description, href: page.href, category: page.group })),
   ...tools.map(tool => ({ objectID: `page:/tools/${tool.slug}`, title: tool.title, description: tool.description, href: `/tools/${tool.slug}`, category: 'tools' })),
 ];
 const publicPaths = new Set(PUBLIC_SEARCH_PAGES.map(page => page.href));
 export function isPublicSearchPath(value: unknown): value is string {
-  return typeof value === 'string' && (publicPaths.has(value) || /^\/docs\/[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(value) && value.length <= 106 && value.toLowerCase() !== '/docs/admin');
-}
-export function documentSearchRecord(doc: DocArticle): SearchRecord | null {
-  const href = `/docs/${doc.slug}`;
-  if (!doc.published || !isPublicSearchPath(href)) return null;
-  return { objectID: `doc:${doc.id}`, title: doc.title.slice(0, 160), description: (doc.description || '').slice(0, 300), href, category: 'docs',
-    // Excerpts only: never upload the database record, author identity or admin metadata.
-    content: (doc.content || '').replace(/<[^>]*>/g, ' ').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[`#*_>]/g, ' ').replace(/\s+/g, ' ').slice(0, 1500),
-    keywords: (doc.tags || []).join(' ').slice(0, 250) };
+  return typeof value === 'string' && publicPaths.has(value);
 }
 export function parseSearchHits(input: unknown): SearchRecord[] {
   if (!Array.isArray(input)) return [];

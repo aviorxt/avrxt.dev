@@ -1,6 +1,5 @@
 import { MetadataRoute } from 'next';
 import { tools } from '@/lib/tool-catalog';
-import { getPublicDocuments } from '@/lib/public-data';
 import { absoluteSiteUrl } from '@/lib/site-config';
 
 export const dynamic = 'force-dynamic';
@@ -13,29 +12,7 @@ type SitemapEntry = {
     lastModified?: string;
 };
 
-async function getPublishedDocumentEntries(): Promise<SitemapEntry[]> {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '');
-    const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!supabaseUrl || !anonKey) return [];
-
-    try {
-        const documents = await getPublicDocuments();
-
-        return documents
-            .filter((document) => typeof document.slug === 'string' && document.slug.length > 0)
-            .map((document) => ({
-                route: `/docs/${encodeURIComponent(document.slug!)}`,
-                priority: 0.65,
-                changeFrequency: 'monthly' as const,
-                lastModified: document.last_modified || document.created_at,
-            }));
-    } catch {
-        return [];
-    }
-}
-
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const documentEntries = await getPublishedDocumentEntries();
     const staticPages: SitemapEntry[] = [
         { route: '', priority: 1, changeFrequency: 'weekly', lastModified: '2026-11-06' },
         { route: '/about', priority: 0.9, changeFrequency: 'monthly', lastModified: '2026-11-06' },
@@ -46,13 +23,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         { route: '/terminal', priority: 0.6, changeFrequency: 'monthly' },
         ...tools.map(({ slug }) => ({ route: `/tools/${slug}`, priority: 0.7, changeFrequency: 'monthly' as const })),
         { route: '/signature', priority: 0.65, changeFrequency: 'monthly' },
-        { route: '/docs', priority: 0.7, changeFrequency: 'weekly' },
-        ...documentEntries,
         { route: '/uses', priority: 0.6, changeFrequency: 'monthly' },
         { route: '/subscribe', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/announcements', priority: 0.7, changeFrequency: 'monthly' },
         { route: '/announcements/identity-impersonation-notice', priority: 0.7, changeFrequency: 'monthly' },
-        { route: '/system/api/doc', priority: 0.5, changeFrequency: 'monthly' },
         { route: '/legal/privacy', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/legal/terms', priority: 0.3, changeFrequency: 'yearly' },
         { route: '/dc/privacy', priority: 0.3, changeFrequency: 'yearly' },

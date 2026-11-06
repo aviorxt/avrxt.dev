@@ -35,6 +35,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   async redirects() {
     return [
+        // Documentation now has its own repository and Mintlify deployment.
+        { source: '/docs/admin/:path*', destination: '/dashboard', permanent: false },
+        { source: '/docs', destination: 'https://docs.avrxt.dev', permanent: true },
+        { source: '/docs/welcome', destination: 'https://docs.avrxt.dev/notes/welcome', permanent: true },
+        { source: '/docs/nxtdev.xyz', destination: 'https://docs.avrxt.dev/notes/nxtdev', permanent: true },
+        { source: '/docs/:path*', destination: 'https://docs.avrxt.dev/:path*', permanent: true },
+        { source: '/system/api/doc', destination: 'https://docs.avrxt.dev/api-reference/overview', permanent: true },
       // The public profile is independently hosted on Amplify. Keep the
       // administrative profile routes on this application.
       { source: '/me', destination: 'https://me.avrxt.dev', permanent: true },

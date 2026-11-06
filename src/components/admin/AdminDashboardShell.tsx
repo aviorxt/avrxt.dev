@@ -3,7 +3,7 @@
 import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Activity, BookOpen, Camera, ChevronUp, Eye, FileText, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, ScrollText, Settings, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
+import { Activity, BookOpen, Camera, ChevronUp, Eye, FolderLock, House, LayoutDashboard, Link2, LogOut, Mail, MessageSquareQuote, Music, NotebookPen, Palette, PanelLeft, ScrollText, Settings, SlidersHorizontal, User, type LucideIcon } from 'lucide-react';
 import { logout } from '@/app/actions/auth';
 import type { DashboardViewer } from '@/lib/dashboard-viewer';
 import { Kbd, KbdGroup } from '@/components/ui/kbd';
@@ -27,7 +27,6 @@ import {
 
 const navigation: ReadonlyArray<{ label: string; suffix: string; href?: string; section?: ProfileSection; icon: LucideIcon }> = [
   { label: 'Profile editor', suffix: '', icon: LayoutDashboard },
-  { label: 'Docs admin', suffix: '/docs/admin', icon: FileText },
   { label: 'Personal storage', suffix: '/storage', icon: FolderLock },
   { label: 'Notes', suffix: '', href: '/notes', icon: NotebookPen },
   { label: 'Guestbook', suffix: '', section: 'guestbook', icon: MessageSquareQuote },
@@ -84,7 +83,7 @@ export default function AdminDashboardShell({ dashboardPath, viewer, children, s
             <SidebarGroupContent>
               <SidebarMenu>
                 {navigation.map(({ label, suffix, href: directHref, section, icon: Icon }) => {
-                  const href = directHref || (section ? `${dashboardPath}?section=${section}` : suffix === '/docs/admin' ? '/docs/admin' : `${dashboardPath}${suffix}`);
+                  const href = directHref || (section ? `${dashboardPath}?section=${section}` : `${dashboardPath}${suffix}`);
                   const active = section ? pathname === dashboardPath && activeSection === section : pathname === href;
                   return <SidebarMenuItem key={href}><SidebarMenuButton render={<Link href={href} />} isActive={active} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>;
                 })}
@@ -118,7 +117,6 @@ export default function AdminDashboardShell({ dashboardPath, viewer, children, s
               <div className="p-1">
                 <Link href="/" className="flex min-h-9 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-sidebar-accent"><House size={15} /> AVRXT home</Link>
                 <Link href="/me" target="_blank" prefetch={false} className="flex min-h-9 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-sidebar-accent"><Eye size={15} /> Preview profile</Link>
-                <Link href="/docs/admin" prefetch={false} className="flex min-h-9 items-center gap-2 rounded-md px-2.5 text-sm hover:bg-sidebar-accent"><BookOpen size={15} /> Documentation</Link>
               </div>
               <div className="border-t border-sidebar-border p-1"><button type="button" onClick={() => logout('/me')} className="flex min-h-9 w-full items-center gap-2 rounded-md px-2.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent"><LogOut size={15} /> Log out</button></div>
             </div>

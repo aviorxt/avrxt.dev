@@ -26,7 +26,7 @@ const pageGroups = [
     {
         title: 'Resources',
         links: [
-            { label: 'Documentation', href: '/docs' },
+            { label: 'Documentation', href: 'https://docs.avrxt.dev' },
             { label: 'Guestbook', href: '/guestbook' },
             { label: 'Tools directory', href: '/tools' },
             { label: 'Terminal', href: '/terminal' },

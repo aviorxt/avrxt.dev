@@ -126,8 +126,8 @@ export const defaultMeConfig: MeConfig = {
     ],
     gallery: [],
     resources: [
-        { id: 'r2', title: 'Documentation Portal', url: '/docs', type: 'doc' },
-        { id: 'r3', title: 'Browse Technical Writing', url: '/docs', type: 'doc' }
+        { id: 'r2', title: 'Documentation Portal', url: 'https://docs.avrxt.dev', type: 'doc' },
+        { id: 'r3', title: 'Browse Technical Writing', url: 'https://docs.avrxt.dev', type: 'doc' }
     ],
     widgets: {
         quotesEnabled: true,

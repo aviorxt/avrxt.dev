@@ -9,7 +9,6 @@ const MAINTENANCE_BYPASS_PREFIXES = [
     '/twitter-image',
     '/me/admin',
     '/dashboard',
-    '/docs/admin',
     '/mail',
     '/auth',
     '/api',

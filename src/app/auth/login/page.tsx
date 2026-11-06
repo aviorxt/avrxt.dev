@@ -21,7 +21,7 @@ function LoginContent() {
     const [clientError, setClientError] = useState<string | null>(null);
     const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
     const source = searchParams.get('source');
-    const next = searchParams.get('next') || (source === 'admin' ? '/dashboard' : '/docs/admin');
+    const next = searchParams.get('next') || '/dashboard';
 
     useEffect(() => {
         if (!source) router.replace('/');

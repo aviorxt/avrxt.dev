@@ -1,9 +1,7 @@
 import 'server-only';
 import { randomUUID } from 'node:crypto';
-import { createPublicClient } from '@/utils/supabase/public';
 import { configuredRedis } from '@/lib/redis-rest';
-import { PUBLIC_SEARCH_PAGES, documentSearchRecord, validSearchConfig, type SearchRecord } from '@/lib/site-search';
-import type { DocArticle } from '@/lib/docs-config';
+import { PUBLIC_SEARCH_PAGES, validSearchConfig, type SearchRecord } from '@/lib/site-search';
 import { waitForSearchTask } from '@/lib/search-task';
 
 function indexConfig() {
@@ -46,10 +44,8 @@ async function withIndexLock<T>(operation: () => Promise<T>) {
 export async function syncPublicSearchIndex() {
   if (process.env.VERCEL_ENV === 'preview') throw new Error('Only Production reconciles the public index');
   return withIndexLock(async () => {
-    // Query the anonymous/RLS client directly. A database outage must not erase the index.
-    const { data, error } = await createPublicClient().from('documents').select('id,slug,title,description,content,tags,published').eq('published', true).limit(5000);
-    if (error || !data || data.length === 5000) throw new Error('Public search source lookup failed or exceeded its limit');
-    const records = [...PUBLIC_SEARCH_PAGES, ...(data as DocArticle[]).flatMap(doc => documentSearchRecord(doc) || [])];
+    // Documentation is indexed by Mintlify. Reconciliation removes stale CMS hits.
+    const records = PUBLIC_SEARCH_PAGES;
     const existing = new Set<string>();
     let cursor: string | undefined;
     for (let page = 0; page < 20; page++) {
@@ -68,16 +64,4 @@ export async function syncPublicSearchIndex() {
     ]);
     return { records: records.length, removed: Array.from(existing).filter(id => !ids.has(id)).length };
   });
-}
-
-export async function syncSearchDocument(id: string) {
-  if (!process.env.ALGOLIA_WRITE_KEY || process.env.VERCEL_ENV === 'preview') return;
-  try {
-    await withIndexLock(async () => {
-      const { data, error } = await createPublicClient().from('documents').select('id,slug,title,description,content,tags,published').eq('id', id).eq('published', true).maybeSingle();
-      if (error) throw new Error('Public search source lookup failed');
-      const record = data ? documentSearchRecord(data as DocArticle) : null;
-      await batch([record ? { action: 'addObject', body: record } : { action: 'deleteObject', body: { objectID: `doc:${id}` } }]);
-    });
-  } catch { console.warn('Public search update deferred to the daily reconciliation.'); }
 }

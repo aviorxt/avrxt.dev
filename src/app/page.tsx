@@ -53,7 +53,7 @@ export default async function HomePage() {
                         {[
                             { number: '01', label: 'The person', detail: 'About & approach', href: '/about' },
                             { number: '02', label: 'The workshop', detail: 'Tools & experiments', href: '/tools' },
-                            { number: '03', label: 'Field notes', detail: 'Writing & documentation', href: '/docs' },
+                            { number: '03', label: 'Field notes', detail: 'Writing & documentation', href: 'https://docs.avrxt.dev' },
                             { number: '04', label: 'Muzix', detail: 'A listening journal', href: 'https://muzix.avrxt.dev' },
                         ].map(({ number, label, detail, href }, index) => (
                             <Link key={href} href={href} className={`group relative flex min-h-24 items-start gap-3 border-b border-white/15 py-5 transition-colors duration-300 hover:bg-white/[.04] focus-visible:bg-white/[.04] focus-visible:outline focus-visible:outline-white/60 ${index % 2 === 0 ? 'border-r pr-4' : 'pl-4'}`}>
