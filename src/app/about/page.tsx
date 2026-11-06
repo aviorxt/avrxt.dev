@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { ArrowRight, ArrowUpRight, Braces, Github, Instagram, MapPin, Plane, ShieldCheck } from 'lucide-react';
 import { buildPageMetadata } from '@/lib/page-metadata';
 
-const siteUrl = 'https://www.avrxt.dev';
+import { SITE_URL as siteUrl } from '@/lib/site-config';
+import { personSchema, serializeJsonLd } from '@/lib/site-identity';
 
 export const metadata = buildPageMetadata({
   title: 'About avrxt (aviorxt)',
@@ -23,24 +24,13 @@ const profileSchema = {
   '@id': `${siteUrl}/about#profile`,
   url: `${siteUrl}/about`,
   name: 'About avrxt (aviorxt)',
-  mainEntity: {
-    '@type': 'Person',
-    '@id': `${siteUrl}/about#person`,
-    name: 'avrxt',
-    alternateName: ['aviorxt', '@aviorxt'],
-    url: `${siteUrl}/about`,
-    jobTitle: 'Independent Developer and Aircraft Maintenance Engineer',
-    description: 'Independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, tools, and automation.',
-    address: { '@type': 'PostalAddress', addressCountry: 'IN' },
-    knowsAbout: ['Full-stack web development', 'API development', 'Web security', 'AI automation', 'Aircraft maintenance'],
-    sameAs: ['https://github.com/aviorxt', 'https://www.instagram.com/aviorxt/'],
-  },
+  mainEntity: personSchema,
 };
 
 export default function AboutPage() {
   return (
     <main className="about-premium relative min-h-screen overflow-x-clip bg-[#050505] px-4 pb-24 pt-28 text-white sm:px-6 sm:pb-32 sm:pt-36">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(profileSchema).replace(/</g, '\\u003c') }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeJsonLd(profileSchema) }} />
       <div className="about-ambient pointer-events-none absolute inset-x-0 top-0 h-[54rem]" />
       <div className="about-grid pointer-events-none absolute inset-0" />
 
@@ -51,7 +41,7 @@ export default function AboutPage() {
               <span className="inline-flex items-center gap-2 border border-[#292929] bg-black/60 px-3 py-2"><MapPin size={12} /> India</span>
               <span className="inline-flex items-center gap-2 border border-[#292929] bg-black/60 px-3 py-2"><span className="about-signal size-1.5 rounded-full bg-white" /> Independent practice</span>
             </div>
-            <p className="font-mono text-[9px] uppercase tracking-[.3em] text-[#858585] sm:text-[10px]">Identity / avrxt aka aviorxt</p>
+            <p className="font-mono text-[9px] uppercase tracking-[.3em] text-[#858585] sm:text-[10px]">Identity / avrxt aka aviorxt / avr.xt</p>
             <h1 className="mt-6 max-w-4xl font-outfit text-[clamp(3.65rem,10.5vw,8.6rem)] font-semibold uppercase leading-[.76] tracking-[-.078em]">
               Built for{' '}<br /><span className="about-outline">precision.</span>
             </h1>

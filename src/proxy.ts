@@ -2,6 +2,11 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 const MAINTENANCE_BYPASS_PREFIXES = [
     '/maintenance',
+    '/robots.txt',
+    '/sitemap.xml',
+    '/manifest.webmanifest',
+    '/opengraph-image',
+    '/twitter-image',
     '/me/admin',
     '/dashboard',
     '/docs/admin',

@@ -37,8 +37,8 @@ async function getPublishedDocumentEntries(): Promise<SitemapEntry[]> {
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const documentEntries = await getPublishedDocumentEntries();
     const staticPages: SitemapEntry[] = [
-        { route: '', priority: 1, changeFrequency: 'weekly' },
-        { route: '/about', priority: 0.9, changeFrequency: 'monthly' },
+        { route: '', priority: 1, changeFrequency: 'weekly', lastModified: '2026-11-06' },
+        { route: '/about', priority: 0.9, changeFrequency: 'monthly', lastModified: '2026-11-06' },
         { route: '/contact', priority: 0.8, changeFrequency: 'monthly' },
         { route: '/guestbook', priority: 0.65, changeFrequency: 'weekly' },
         { route: '/tools', priority: 0.8, changeFrequency: 'monthly' },

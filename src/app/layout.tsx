@@ -6,6 +6,7 @@ import SiteChrome from "@/components/SiteChrome";
 import CookieBanner from "@/components/CookieBanner";
 import { ogSize } from "@/lib/og-image";
 import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/site-config';
+import { SITE_TITLE, SITE_DESCRIPTION, personSchema, websiteSchema, serializeJsonLd } from '@/lib/site-identity';
 
 const inter = Inter({
   variable: "--font-sans",
@@ -51,10 +52,10 @@ export const metadata: Metadata = {
   metadataBase,
   applicationName: SITE_NAME,
   title: {
-    default: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",
+    default: SITE_TITLE,
     template: "%s",
   },
-  description: "avrxt, also known as aviorxt, is an independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, and automation.",
+  description: SITE_DESCRIPTION,
   keywords: ["avrxt", "aviorxt", "independent developer India", "aircraft maintenance engineer", "full stack developer", "web security", "API development", "AI automation"],
   authors: [{ name: "avrxt (aviorxt)", url: "/about" }],
   creator: "avrxt",
@@ -84,8 +85,8 @@ export const metadata: Metadata = {
     apple: [{ url: "/brand/avrxt-selected/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
   openGraph: {
-    title: "avrxt (aviorxt) | Developer & Aircraft Maintenance Engineer",
-    description: "Independent developer and aircraft maintenance engineer based in India, building secure web systems, APIs, and automation.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     type: "website",
     url: "/",
     siteName: SITE_NAME,
@@ -94,8 +95,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "avrxt | Full Stack Developer & Tech Innovator",
-    description: "avrxt: Full Stack Developer specializing in React, Node.js, API development, and AI automation. Building secure, scalable, and enterprise-ready web solutions.",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
     images: [twitterImage],
   },
 };
@@ -118,28 +119,7 @@ export default function RootLayout({
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              '@context': 'https://schema.org',
-              '@graph': [
-                {
-                  '@type': 'WebSite',
-                  '@id': `${SITE_URL}/#website`,
-                  url: `${SITE_URL}/`,
-                  name: 'AVRXT.DEV',
-                  alternateName: ['avrxt', 'aviorxt'],
-                  inLanguage: 'en-IN',
-                  publisher: { '@id': `${SITE_URL}/about#person` },
-                },
-                {
-                  '@type': 'Person',
-                  '@id': `${SITE_URL}/about#person`,
-                  name: 'avrxt',
-                  alternateName: 'aviorxt',
-                  url: `${SITE_URL}/about`,
-                  jobTitle: 'Developer and Aircraft Maintenance Engineer',
-                },
-              ],
-            }).replace(/</g, '\\u003c'),
+            __html: serializeJsonLd({ '@context': 'https://schema.org', '@graph': [websiteSchema, personSchema] }),
           }}
         />
         <SiteChrome position="before" />
