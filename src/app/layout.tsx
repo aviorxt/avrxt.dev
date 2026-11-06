@@ -3,6 +3,7 @@ import { Inter, Space_Mono, Outfit, Instrument_Serif } from "next/font/google";
 import OptionalAnalytics from '@/components/OptionalAnalytics';
 import "./globals.css";
 import SiteChrome from "@/components/SiteChrome";
+import SiteFloralAtmosphere from '@/components/SiteFloralAtmosphere';
 import CookieBanner from "@/components/CookieBanner";
 import { ogSize } from "@/lib/og-image";
 import { SITE_LOCALE, SITE_NAME, SITE_URL } from '@/lib/site-config';
@@ -123,6 +124,7 @@ export default function RootLayout({
           }}
         />
         <SiteChrome position="before" />
+        <SiteFloralAtmosphere />
         <main className="relative z-10 min-h-screen">
           {children}
         </main>

@@ -1,6 +1,5 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 
@@ -34,29 +33,6 @@ function isNavHidden(pathname: string) {
 
 export default function SiteChrome({ position }: { position: 'before' | 'after' }) {
     const pathname = usePathname();
-    const deferHomeFooter = position === 'after' && pathname === '/';
-    const [isHomeFooterReady, setIsHomeFooterReady] = useState(!deferHomeFooter);
-
-    useEffect(() => {
-        if (!deferHomeFooter) {
-            setIsHomeFooterReady(true);
-            return;
-        }
-
-        const reveal = () => setIsHomeFooterReady(true);
-        const windowWithIdle = window as Window & {
-            requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
-            cancelIdleCallback?: (handle: number) => void;
-        };
-        const idleHandle = windowWithIdle.requestIdleCallback?.(reveal, { timeout: 1800 });
-        const timeoutHandle = idleHandle === undefined ? window.setTimeout(reveal, 900) : undefined;
-
-        return () => {
-            if (idleHandle !== undefined) windowWithIdle.cancelIdleCallback?.(idleHandle);
-            if (timeoutHandle !== undefined) window.clearTimeout(timeoutHandle);
-        };
-    }, [deferHomeFooter]);
-
     // Authentication is intentionally a self-contained surface. Rendering any
     // site chrome here creates overflowing menus on small screens and distracts
     // from the OAuth flow.
@@ -85,7 +61,7 @@ export default function SiteChrome({ position }: { position: 'before' | 'after' 
             </aside>
         );
     }
-    if (deferHomeFooter && !isHomeFooterReady) return null;
+    if (pathname === '/') return null;
 
     return <Footer />;
 }

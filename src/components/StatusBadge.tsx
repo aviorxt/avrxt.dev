@@ -43,7 +43,7 @@ function isStatusPayload(value: unknown): value is StatusState {
     return typeof payload.label === 'string' && ['operational', 'down', 'maintenance', 'unknown', 'degraded'].includes(payload.status || '');
 }
 
-export default function StatusBadge() {
+export default function StatusBadge({ variant = 'default' }: { variant?: 'default' | 'garden' } = {}) {
     const [data, setData] = useState<StatusState>({ status: 'unknown', label: 'Checking status' });
     const [loading, setLoading] = useState(true);
     const [enabled, setEnabled] = useState(true);
@@ -118,9 +118,17 @@ export default function StatusBadge() {
 
     const current = loading ? loadingConfig : statusConfig[data.status];
     const Icon = current.icon;
-    const statusLabel = loading ? 'Checking status' : data.label;
+    const statusLabel = loading ? 'Checking status' : variant === 'garden' && data.status === 'unknown' && data.label === 'Checking status' ? 'Status unavailable' : data.label;
 
     if (!enabled) return null;
+
+    if (variant === 'garden') return (
+        <Link href="/status" prefetch={false} className="garden-status" data-status={loading ? 'checking' : data.status} aria-label={`${statusLabel}. View the AVRXT system status page.`}>
+            <span className="garden-status-lamp" aria-hidden="true" />
+            <span><span className="garden-status-caption">System status</span><span className="garden-status-label" aria-live="polite">{statusLabel}</span></span>
+            <ArrowUpRight size={13} aria-hidden="true" />
+        </Link>
+    );
 
     return (
         <Link
